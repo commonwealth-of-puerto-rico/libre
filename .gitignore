@@ -1,0 +1,10 @@
+*.orig
+*.pyc
+*.pyo
+/*.sqlite
+/settings_local.py
+/celerybeat-schedule
+build/
+_build/
+/static/
+/venv/
