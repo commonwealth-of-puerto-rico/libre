@@ -1,7 +1,21 @@
 # Django settings for libre project.
+import os
+import sys
 
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), './'))
+SITE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.append(os.path.join(PROJECT_ROOT, 'modules'))
+sys.path.append(os.path.join(PROJECT_ROOT, 'customization_apps'))
+sys.path.append(os.path.join(PROJECT_ROOT, 'apps'))
+sys.path.append(os.path.join(PROJECT_ROOT, '3rd_party_apps'))
+
+PROJECT_TITLE = 'LIBRE'
+PROJECT_NAME = 'libre'
+
+DEBUG = False
+DEVELOPMENT = False
+TEMPLATE_DEBUG = False
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -11,8 +25,8 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '',                      # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3',  # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': os.path.join(SITE_ROOT, '%s.sqlite' % PROJECT_NAME),     # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': '',
         'PASSWORD': '',
@@ -29,7 +43,7 @@ ALLOWED_HOSTS = []
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'America/Puerto_Rico'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
