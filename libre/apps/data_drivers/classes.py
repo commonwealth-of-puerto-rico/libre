@@ -1,4 +1,5 @@
 import os
+import string
 
 from django.conf import settings
 
@@ -10,7 +11,7 @@ class Resource(object):
         self.obj = obj
 
     def __unicode__(self):
-        return unicode([i.value for i in self.obj])
+        return unicode(self.obj)
 
 
 class Source(object):
@@ -33,9 +34,18 @@ class Excel(Source):
             self._sheet = self._book.sheet_by_name(self.sheet)
 
     def get(self, id):
-        return Resource(self._sheet.row(id))
+        result = {}
+        column_count = 0
+        column_names = getattr(self, 'column_names', string.ascii_uppercase)
+
+        for cell in self._sheet.row(id):
+            result[column_names[column_count]] = cell.value
+            column_count += 1
+
+        return Resource(result)
 
 
 class SampleExcel(Excel):
     file_path = os.path.join(settings.PROJECT_ROOT, 'contrib', 'sample.xls')
     sheet = 0
+    column_names = ['First name', 'Last name', 'Region', 'Office']
