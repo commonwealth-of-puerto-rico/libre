@@ -168,3 +168,51 @@ LOGGING = {
         },
     }
 }
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.i18n',
+    'django.core.context_processors.static',
+    'django.core.context_processors.request',
+)
+
+try:
+    from settings_local import *
+except ImportError:
+    pass
+
+
+if DEVELOPMENT:
+    INTERNAL_IPS = ('127.0.0.1',)
+
+    TEMPLATE_LOADERS = (
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    )
+    try:
+        import rosetta
+        INSTALLED_APPS += ('rosetta',)
+    except ImportError:
+        pass
+
+    try:
+        import django_extensions
+        INSTALLED_APPS += ('django_extensions',)
+    except ImportError:
+        pass
+
+    try:
+        import debug_toolbar
+        #INSTALLED_APPS +=('debug_toolbar',)
+    except ImportError:
+        pass
+
+    TEMPLATE_CONTEXT_PROCESSORS += ('django.core.context_processors.debug',)
+
+    WSGI_AUTO_RELOAD = True
+    if 'debug_toolbar' in INSTALLED_APPS:
+        MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+        DEBUG_TOOLBAR_CONFIG = {
+            'INTERCEPT_REDIRECTS': False,
+        }
+
