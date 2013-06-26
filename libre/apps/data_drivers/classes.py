@@ -19,6 +19,9 @@ class Resource(object):
 
 
 class Source(object):
+    # limit: limit the number of results
+    # zero_base: allow ids starting from 0
+
     limit = DEFAULT_LIMIT
     zero_base = DEFAULT_ZERO_BASE
 
@@ -62,7 +65,7 @@ class Excel(Source):
             result[column_names[column_count]] = cell.value
             column_count += 1
 
-        return Resource(result)
+        return result
 
     def all(self):
         result = []
@@ -77,7 +80,6 @@ class Excel(Source):
 
 class SampleExcel(Excel):
     file_path = os.path.join(settings.PROJECT_ROOT, 'contrib', 'sample.xls')
-    #file_path = os.path.join(settings.PROJECT_ROOT, '..', 'CorpsBAK.xlsx')
     sheet = 0
     column_names = ['First name', 'Last name', 'Region', 'Office']
     first_row_names = True
