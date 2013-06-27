@@ -1,5 +1,6 @@
+# Row based
 DEFAULT_LIMIT = 100
-DEFAULT_ZERO_BASE = False
 
 # Excel
 DEFAULT_FIRST_ROW_NAMES = False
+DEFAULT_SHEET = '0'
