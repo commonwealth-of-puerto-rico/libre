@@ -6,6 +6,7 @@ import hashlib
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import now
 
 import jsonfield
 import xlrd
@@ -82,52 +83,95 @@ class SourceSpreadsheet(Source):
 
     def import_data(self):
         if self.path:
-            self._book = xlrd.open_workbook(self.path)
-            file_handle = None
+            new_hash = HASH_FUNCTION(open(self.path).read())
         else:
-            file_handle = self.file.open()
-            self._book = xlrd.open_workbook(file_contents=file_handle.read())
+            new_hash = HASH_FUNCTION(self.path.open().read())
 
         try:
-            self._sheet = self._book.sheet_by_name(self.sheet)
-        except xlrd.XLRDError:
-            self._sheet = self._book.sheet_by_index(int(self.sheet))
+            old_hash = self.sourcedataversion_set.latest().checksum
+        except SourceDataVersion.DoesNotExist:
+            old_hash = None
 
-        id = 1
-        for row in self._get_items():
-            instance, created = SourceData.objects.get_or_create(source=self, id=id, defaults={'row': row})
-            if not created:
-                instance.row = row
-                instance.save()
-            id = id + 1
-            print row
+        print 'old_hash != new_hash', old_hash, new_hash
+        if old_hash != new_hash:
+            source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
 
-        if file_handle:
-            file_handle.close()
+            if self.path:
+                self._book = xlrd.open_workbook(self.path)
+                file_handle = None
+            else:
+                file_handle = self.file.open()
+                self._book = xlrd.open_workbook(file_contents=file_handle.read())
 
-    def get_one(self, id):
-        return self.sourcedata_set.get(id=id).row
+            try:
+                self._sheet = self._book.sheet_by_name(self.sheet)
+            except xlrd.XLRDError:
+                self._sheet = self._book.sheet_by_index(int(self.sheet))
 
-    def get_all(self):
-        return [item.row for item in SourceData.objects.all()]
+            print 'source_data_version.checksum', source_data_version.checksum
+            id = 1
+            for row in self._get_items():
+                #instance, created = SourceData.objects.get_or_create(source=self, id=id, defaults={'row': row})
+                SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
+                #if not created:
+                #    instance.row = row
+                #    instance.save()
+                id = id + 1
+                print row
+
+            if file_handle:
+                file_handle.close()
+
+            source_data_version.ready = True
+            source_data_version.save()
+
+    def get_one(self, id, timestamp=None):
+        if timestamp:
+            source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
+        else:
+            source_data_version = self.sourcedataversion_set.latest()
+
+        return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
+
+    def get_all(self, timestamp=None):
+        if timestamp:
+            source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
+        else:
+            source_data_version = self.sourcedataversion_set.latest()
+
+        return [item.row for item in SourceData.objects.filter(source_data_version=source_data_version)]
+
+    def save(self, *args, **kwargs):
+        super(self.__class__, self).save(*args, **kwargs)
+        if not self.file:
+            self.import_data()
 
     class Meta:
         verbose_name = _('spreadsheet source')
         verbose_name_plural = _('spreadsheet sources')
 
-'''
+
 class SourceDataVersion(models.Model):
-    datetime = models.DateTimeField()
-    checksum = models.CharField(
-    ready = False
+    source = models.ForeignKey(Source, verbose_name=_('source'))
+    datetime = models.DateTimeField(default=lambda: now())
+    timestamp = models.CharField(blank=True, max_length=14, verbose_name=_('timestamp'))
+    checksum = models.TextField(verbose_name=_('checksum'))
+    ready = models.BooleanField(default=False, verbose_name=('ready'))
 
+    def save(self, *args, **kwargs):
+        self.timestamp = datetime.datetime.strftime(self.datetime, "%Y%m%d%H%M%S")
+        super(self.__class__, self).save(*args, **kwargs)
 
+    class Meta:
+        verbose_name = _('source data version')
+        verbose_name_plural = _('sources data versions')
+        get_latest_by = 'datetime'
 
-'''
 
 class SourceData(models.Model):
-    source = models.ForeignKey(Source, verbose_name=_('source'))
+    source_data_version = models.ForeignKey(SourceDataVersion, verbose_name=_('source data version'))
     row = jsonfield.JSONField(verbose_name=_('row'))
+    row_id = models.PositiveIntegerField(verbose_name=_('row id'), db_index=True, unique=True)
 
     def __unicode__(self):
         return unicode(self.row)
