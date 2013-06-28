@@ -141,7 +141,7 @@ class SourceSpreadsheet(Source):
         else:
             source_data_version = self.sourcedataversion_set.latest()
 
-        return [item.row for item in SourceData.objects.filter(source_data_version=source_data_version)]
+        return [item.row for item in SourceData.objects.filter(source_data_version=source_data_version)[0:self.limit]]
 
     def save(self, *args, **kwargs):
         super(self.__class__, self).save(*args, **kwargs)
