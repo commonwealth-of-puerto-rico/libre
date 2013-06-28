@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import string
 import datetime
+import hashlib
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -12,10 +13,12 @@ from model_utils.managers import InheritanceManager
 
 from .literals import DEFAULT_FIRST_ROW_NAMES, DEFAULT_LIMIT, DEFAULT_SHEET
 
+HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
+
 
 class Source(models.Model):
-    name = models.CharField(max_length=32, verbose_name=_('name'), help_text=('Human readable name for this source.'))
-    slug = models.SlugField(blank=True, max_length=32, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
+    name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
+    slug = models.SlugField(blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
 
     objects = InheritanceManager()
 
@@ -116,6 +119,7 @@ class SourceSpreadsheet(Source):
 class SourceDataVersion(models.Model):
     datetime = models.DateTimeField()
     checksum = models.CharField(
+    ready = False
 
 
 
