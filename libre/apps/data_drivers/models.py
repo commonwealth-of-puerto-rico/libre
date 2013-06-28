@@ -50,7 +50,12 @@ class SourceSpreadsheet(Source):
         """
         # Thx to Augusto C Men to point fast solution for XLS/XLSX dates
         if item.ctype == 3: #XL_CELL_DATE:
-            return datetime.datetime(*xlrd.xldate_as_tuple(item.value, self._book.datemode))
+            try:
+                return datetime.datetime(*xlrd.xldate_as_tuple(item.value, self._book.datemode))
+            except ValueError:
+                # TODO: make togglable
+                # Invalid date
+                return item.value
 
         if item.ctype == 2: #XL_CELL_NUMBER:
             if item.value % 1 == 0:  # integers
@@ -109,13 +114,8 @@ class SourceSpreadsheet(Source):
 
             id = 1
             for row in self._get_items():
-                #instance, created = SourceData.objects.get_or_create(source=self, id=id, defaults={'row': row})
                 SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
-                #if not created:
-                #    instance.row = row
-                #    instance.save()
                 id = id + 1
-                print row
 
             if file_handle:
                 file_handle.close()
