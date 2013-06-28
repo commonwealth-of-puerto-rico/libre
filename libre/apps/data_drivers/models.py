@@ -97,11 +97,8 @@ class SourceSpreadsheet(Source):
             new_hash = HASH_FUNCTION(self.path.open().read())
 
         try:
-            old_hash = self.sourcedataversion_set.latest().checksum
+            source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
         except SourceDataVersion.DoesNotExist:
-            old_hash = None
-
-        if old_hash != new_hash:
             source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
 
             if self.path:
@@ -125,6 +122,10 @@ class SourceSpreadsheet(Source):
                 file_handle.close()
 
             source_data_version.ready = True
+            source_data_version.active = True
+            source_data_version.save()
+        else:
+            source_data_version.active = True
             source_data_version.save()
 
     def get_one(self, id, timestamp=None):
@@ -158,10 +159,13 @@ class SourceDataVersion(models.Model):
     datetime = models.DateTimeField(default=lambda: now())
     timestamp = models.CharField(blank=True, max_length=14, verbose_name=_('timestamp'))
     checksum = models.TextField(verbose_name=_('checksum'))
-    ready = models.BooleanField(default=False, verbose_name=('ready'))
+    ready = models.BooleanField(default=False, verbose_name=_('ready'))
+    active = models.BooleanField(default=False, verbose_name=_('active'))
 
     def save(self, *args, **kwargs):
         self.timestamp = datetime.datetime.strftime(self.datetime, "%Y%m%d%H%M%S")
+        if self.active:
+            SourceDataVersion.objects.filter(source=self.source).update(active=False)
         super(self.__class__, self).save(*args, **kwargs)
 
     class Meta:
@@ -173,7 +177,7 @@ class SourceDataVersion(models.Model):
 class SourceData(models.Model):
     source_data_version = models.ForeignKey(SourceDataVersion, verbose_name=_('source data version'))
     row = jsonfield.JSONField(verbose_name=_('row'))
-    row_id = models.PositiveIntegerField(verbose_name=_('row id'), db_index=True, unique=True)
+    row_id = models.PositiveIntegerField(verbose_name=_('row id'), db_index=True)
 
     def __unicode__(self):
         return unicode(self.row)
