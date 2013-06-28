@@ -92,7 +92,6 @@ class SourceSpreadsheet(Source):
         except SourceDataVersion.DoesNotExist:
             old_hash = None
 
-        print 'old_hash != new_hash', old_hash, new_hash
         if old_hash != new_hash:
             source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
 
@@ -108,7 +107,6 @@ class SourceSpreadsheet(Source):
             except xlrd.XLRDError:
                 self._sheet = self._book.sheet_by_index(int(self.sheet))
 
-            print 'source_data_version.checksum', source_data_version.checksum
             id = 1
             for row in self._get_items():
                 #instance, created = SourceData.objects.get_or_create(source=self, id=id, defaults={'row': row})
