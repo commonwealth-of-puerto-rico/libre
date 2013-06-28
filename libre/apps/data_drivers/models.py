@@ -157,13 +157,13 @@ class SourceSpreadsheet(Source):
 class SourceDataVersion(models.Model):
     source = models.ForeignKey(Source, verbose_name=_('source'))
     datetime = models.DateTimeField(default=lambda: now())
-    timestamp = models.CharField(blank=True, max_length=14, verbose_name=_('timestamp'))
+    timestamp = models.CharField(blank=True, max_length=20, verbose_name=_('timestamp'))
     checksum = models.TextField(verbose_name=_('checksum'))
     ready = models.BooleanField(default=False, verbose_name=_('ready'))
     active = models.BooleanField(default=False, verbose_name=_('active'))
 
     def save(self, *args, **kwargs):
-        self.timestamp = datetime.datetime.strftime(self.datetime, "%Y%m%d%H%M%S")
+        self.timestamp = datetime.datetime.strftime(self.datetime, '%Y%m%d%H%M%S%f')
         if self.active:
             SourceDataVersion.objects.filter(source=self.source).update(active=False)
         super(self.__class__, self).save(*args, **kwargs)
