@@ -1,0 +1,5 @@
+* Only use new version when ready is True
+* Add Pyinotify support
+* Improve resource navigation template
+* Add Celery support
+* Add django-rest-framework support
