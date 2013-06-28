@@ -31,6 +31,10 @@ class Source(models.Model):
             self.slug = self.name
         super(Source, self).save(*args, **kwargs)
 
+    @models.permalink
+    def get_absolute_url(self):
+        return ('resource_get_all', [self.slug])
+
     class Meta:
         verbose_name = _('source')
         verbose_name_plural = _('sources')

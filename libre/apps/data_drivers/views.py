@@ -12,22 +12,14 @@ from django.core.urlresolvers import reverse
 
 from .models import Source, SourceData
 
-'''
-def namespace_list(request):
-    object_list = [namespace]
+
+def resource_list(request):
+    object_list = Source.objects.all()
 
     return render_to_response('generic_list.html', {
         'object_list': object_list,
     }, context_instance=RequestContext(request))
 
-
-def namespace_view(request, endpoint):
-    object_list = namespace.get_sources()
-
-    return render_to_response('generic_list.html', {
-        'object_list': object_list,
-    }, context_instance=RequestContext(request))
-'''
 
 def resource_get_all(request, resource_slug):
     timestamp = request.GET.get('_timestamp', None)
