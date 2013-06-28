@@ -132,7 +132,7 @@ class SourceSpreadsheet(Source):
         if timestamp:
             source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
         else:
-            source_data_version = self.sourcedataversion_set.latest()
+            source_data_version = self.sourcedataversion_set.get(active=True)
 
         return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
 
@@ -140,7 +140,7 @@ class SourceSpreadsheet(Source):
         if timestamp:
             source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
         else:
-            source_data_version = self.sourcedataversion_set.latest()
+            source_data_version = self.sourcedataversion_set.get(active=True)
 
         return [item.row for item in SourceData.objects.filter(source_data_version=source_data_version)[0:self.limit]]
 
