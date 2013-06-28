@@ -30,14 +30,18 @@ def namespace_view(request, endpoint):
 '''
 
 def resource_get_all(request, resource_slug):
+    timestamp = request.GET.get('_timestamp', None)
+
     source = get_object_or_404(Source.objects.select_subclasses(), slug=resource_slug)
-    data = source.get_all()
+    data = source.get_all(timestamp=timestamp)
 
     return HttpResponse(json.dumps(data), content_type='application/json')
 
 
 def resource_get_one(request, resource_slug, id):
+    timestamp = request.GET.get('_timestamp', None)
+
     source = get_object_or_404(Source.objects.select_subclasses(), slug=resource_slug)
-    data = source.get_one(int(id))
+    data = source.get_one(int(id), timestamp=timestamp)
 
     return HttpResponse(json.dumps(data), content_type='application/json')
