@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 
-import string
+import csv
 import datetime
 import hashlib
+import string
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -185,3 +186,91 @@ class SourceData(models.Model):
     class Meta:
         verbose_name = _('source data')
         verbose_name_plural = _('sources data')
+
+
+class SourceCSV(Source):
+    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=('Maximum number of items to show when all items are requested.'))
+    path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=('Location to a file in the filesystem.'))
+    file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('upload a file'))
+    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use.'))
+    first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
+    delimiter = models.CharField(max_length=1, verbose_name=_('delimiter'))
+    quote_character = models.CharField(max_length=1, verbose_name=_('quote character'))
+
+    def save(self, *args, **kwargs):
+        super(self.__class__, self).save(*args, **kwargs)
+        if not self.file:
+            self.import_data()
+
+    def _get_items(self):
+        column_names = self.column_names or string.ascii_uppercase
+
+        reader = csv.reader(self._file_handle, delimiter=str(self.delimiter), quotechar=str(self.quote_character))
+
+        if self.first_row_names:
+            column_names = reader.next()
+
+        for row in reader:
+            #values = [self.convert_value(cell) for cell in self._sheet.row(i)]
+            #if not any(values):
+            #    continue  # empty lines are ignored
+            #yield values
+
+            result = {}
+            column_count = 0
+
+            for cell in row:
+                result[column_names[column_count]] = cell
+                column_count += 1
+
+            yield result
+
+    def import_data(self):
+        if self.path:
+            new_hash = HASH_FUNCTION(open(self.path).read())
+        else:
+            new_hash = HASH_FUNCTION(self.path.open().read())
+
+        try:
+            source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
+        except SourceDataVersion.DoesNotExist:
+            source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
+
+            if self.path:
+                self._file_handle = open(self.path)
+            else:
+                self._file_handle = self.file.open()
+
+            id = 1
+            for row in self._get_items():
+                SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
+                id = id + 1
+
+            self._file_handle.close()
+
+            source_data_version.ready = True
+            source_data_version.active = True
+            source_data_version.save()
+        else:
+            source_data_version.active = True
+            source_data_version.save()
+
+    def get_one(self, id, timestamp=None):
+        if timestamp:
+            source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
+        else:
+            source_data_version = self.sourcedataversion_set.get(active=True)
+
+        return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
+
+    def get_all(self, timestamp=None):
+        if timestamp:
+            source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
+        else:
+            source_data_version = self.sourcedataversion_set.get(active=True)
+
+        return [item.row for item in SourceData.objects.filter(source_data_version=source_data_version)[0:self.limit]]
+
+    class Meta:
+        verbose_name = _('CSV source')
+        verbose_name_plural = _('CSV sources')
