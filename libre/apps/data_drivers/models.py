@@ -171,7 +171,7 @@ class SourceDataVersion(models.Model):
     class Meta:
         verbose_name = _('source data version')
         verbose_name_plural = _('sources data versions')
-        get_latest_by = 'datetime'
+        unique_together = (('source', 'datetime'), ('source', 'timestamp'), ('source', 'checksum'))
 
 
 class SourceData(models.Model):
