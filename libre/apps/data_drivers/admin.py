@@ -17,7 +17,7 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
 
 
 class SourceCSVAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'first_row_names', 'delimiter', 'quote_character')
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'first_row_names', 'delimiter', 'quote_character', 'column_widths')
     inlines = [SourceDataVersionInline]
 
 
