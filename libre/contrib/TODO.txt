@@ -1,3 +1,11 @@
 * Improve resource navigation template
 * Add Celery support
 * Add django-rest-framework support
+* Add compressed file support
+* Add locking
+* Parse dates?
+* -> Use dateutil
+* True values, False values
+* Row ranges to import
+* Improve output logging
+* Toggable auto update via inotify or polling
