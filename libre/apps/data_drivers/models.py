@@ -197,7 +197,7 @@ class SourceCSV(Source):
     first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
-    column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'))
+    column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'), help_text=_('The column widths separated by a comma.'))
 
     def save(self, *args, **kwargs):
         super(self.__class__, self).save(*args, **kwargs)
