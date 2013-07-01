@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from django.contrib import admin
+from django.utils.translation import ugettext_lazy as _
 
 from .models import SourceCSV, SourceDataVersion, SourceSpreadsheet
 
@@ -9,6 +10,18 @@ class SourceDataVersionInline(admin.TabularInline):
     model = SourceDataVersion
     readonly_fields = ('datetime', 'timestamp', 'checksum', 'ready')
     extra = 0
+
+
+def check_updated(modeladmin, request, queryset):
+    for source in queryset:
+        source.import_data()
+
+    if len(queryset) == 1:
+        message_bit = 'Source file was checked for update.'
+    else:
+        message_bit = '%s sources were checked for update.' % len(queryset)
+    modeladmin.message_user(request, message_bit)
+check_updated.short_description = _('Check for updated source file')
 
 
 class SourceSpreadsheetAdmin(admin.ModelAdmin):
@@ -29,6 +42,7 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
 
     list_display = ('name', 'slug', 'limit', 'path', 'file', 'sheet', 'column_names', 'first_row_names')
     inlines = [SourceDataVersionInline]
+    actions = [check_updated]
 
 
 class SourceCSVAdmin(admin.ModelAdmin):
@@ -54,6 +68,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
     )
     list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'first_row_names', 'delimiter', 'quote_character', 'column_widths')
     inlines = [SourceDataVersionInline]
+    actions = [check_updated]
 
 
 admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)

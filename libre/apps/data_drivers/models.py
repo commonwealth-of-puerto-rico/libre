@@ -146,11 +146,6 @@ class SourceSpreadsheet(Source):
 
         return [item.row for item in SourceData.objects.filter(source_data_version=source_data_version)[0:self.limit]]
 
-    def save(self, *args, **kwargs):
-        super(self.__class__, self).save(*args, **kwargs)
-        if not self.file:
-            self.import_data()
-
     class Meta:
         verbose_name = _('spreadsheet source')
         verbose_name_plural = _('spreadsheet sources')
@@ -198,11 +193,6 @@ class SourceCSV(Source):
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
     column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'), help_text=_('The column widths separated by a comma.'))
-
-    def save(self, *args, **kwargs):
-        super(self.__class__, self).save(*args, **kwargs)
-        if not self.file:
-            self.import_data()
 
     def _get_items(self):
         column_names = self.column_names or string.ascii_uppercase
