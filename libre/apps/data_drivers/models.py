@@ -8,7 +8,7 @@ from multiprocessing import Process
 import string
 import struct
 
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 
@@ -58,20 +58,22 @@ class SourceFileBased(Source):
                 logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
                 raise
         else:
+            # Don't bother updating uploaded files
             return
 
         try:
             source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
         except SourceDataVersion.DoesNotExist:
             source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
-            self.import_data(source_data_version)
             p = Process(target=self.import_data, args=(source_data_version,))
             p.start()
+            logger.debug('launching subprocess: %s' % p)
         else:
             source_data_version.active = True
             source_data_version.save()
 
     def get_one(self, id, timestamp=None):
+        # TODO: return a proper response when no sourcedataversion is found
         if timestamp:
             source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
         else:
@@ -128,6 +130,7 @@ class SourceCSV(SourceFileBased):
             for row in reader:
                 yield dict(zip(column_names, row))
 
+    @transaction.commit_on_success
     def import_data(self, source_data_version):
         # Reload data in case this is executed in another thread
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
@@ -200,10 +203,12 @@ class SourceSpreadsheet(SourceFileBased):
 
             yield result
 
+    @transaction.commit_on_success
     def import_data(self, source_data_version):
         # Reload data in case this is executed in another thread
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
 
+        logger.debug('opening workbook')
         if self.path:
             self._book = xlrd.open_workbook(self.path)
             file_handle = None
@@ -211,11 +216,13 @@ class SourceSpreadsheet(SourceFileBased):
             file_handle = self.file.open()
             self._book = xlrd.open_workbook(file_contents=file_handle.read())
 
+        logger.debug('opening sheet: %s' % self.sheet)
         try:
             self._sheet = self._book.sheet_by_name(self.sheet)
         except xlrd.XLRDError:
             self._sheet = self._book.sheet_by_index(int(self.sheet))
 
+        logger.debug('importing rows')
         id = 1
         for row in self._get_items():
             SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
@@ -224,9 +231,12 @@ class SourceSpreadsheet(SourceFileBased):
         if file_handle:
             file_handle.close()
 
+        logger.debug('finished importing rows')
+
         source_data_version.ready = True
         source_data_version.active = True
         source_data_version.save()
+        logger.debug('exiting')
 
     class Meta:
         verbose_name = _('spreadsheet source')
