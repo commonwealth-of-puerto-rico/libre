@@ -73,13 +73,16 @@ class SourceWS(Source):
         client = Client(self.wsdl_url)
 
         result = []
-        for i in client.service.getEstablishments(**self.get_parameters(parameters))[0]:
-            entry = {}
-            for field in self.wsresultfield_set.all():
-                print i
-                entry[field.name] = getattr(i, field.name, field.default)
+        try:
+            for i in client.service.getEstablishments(**self.get_parameters(parameters))[0]:
+                entry = {}
+                for field in self.wsresultfield_set.all():
+                    print i
+                    entry[field.name] = getattr(i, field.name, field.default)
 
-            result.append(entry)
+                result.append(entry)
+        except IndexError:
+            result = []
 
         return result
 
@@ -135,7 +138,7 @@ class SourceFileBased(Source):
             source_data_version.active = True
             source_data_version.save()
 
-    def get_one(self, id, timestamp=None):
+    def get_one(self, id, timestamp=None, parameters=None):
         # TODO: return a proper response when no sourcedataversion is found
         if timestamp:
             source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
@@ -144,7 +147,7 @@ class SourceFileBased(Source):
 
         return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
 
-    def get_all(self, timestamp=None):
+    def get_all(self, timestamp=None, parameters=None):
         try:
             if timestamp:
                 source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
