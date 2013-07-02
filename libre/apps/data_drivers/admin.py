@@ -14,7 +14,7 @@ class SourceDataVersionInline(admin.TabularInline):
 
 def check_updated(modeladmin, request, queryset):
     for source in queryset:
-        source.import_data()
+        source.check_file()
 
     if len(queryset) == 1:
         message_bit = 'Source file was checked for update.'

@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
+from multiprocessing import Process
 import string
 import struct
 
@@ -46,6 +47,23 @@ class SourceFileBased(Source):
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=('Maximum number of items to show when all items are requested.'))
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
+
+    def check_file(self):
+        if self.path:
+            new_hash = HASH_FUNCTION(open(self.path).read())
+        else:
+            return
+
+        try:
+            source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
+        except SourceDataVersion.DoesNotExist:
+            source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
+            self.import_data(source_data_version)
+            p = Process(target=self.import_data, args=(source_data_version,))
+            p.start()
+        else:
+            source_data_version.active = True
+            source_data_version.save()
 
     def get_one(self, id, timestamp=None):
         if timestamp:
@@ -104,35 +122,25 @@ class SourceCSV(SourceFileBased):
             for row in reader:
                 yield dict(zip(column_names, row))
 
-    def import_data(self):
+    def import_data(self, source_data_version):
+        # Reload data in case this is executed in another thread
+        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
         if self.path:
-            new_hash = HASH_FUNCTION(open(self.path).read())
+            self._file_handle = open(self.path)
         else:
-            new_hash = HASH_FUNCTION(self.path.open().read())
+            self._file_handle = self.file.open()
 
-        try:
-            source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
-        except SourceDataVersion.DoesNotExist:
-            source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
+        id = 1
+        for row in self._get_items():
+            SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
+            id = id + 1
 
-            if self.path:
-                self._file_handle = open(self.path)
-            else:
-                self._file_handle = self.file.open()
+        self._file_handle.close()
 
-            id = 1
-            for row in self._get_items():
-                SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
-                id = id + 1
-
-            self._file_handle.close()
-
-            source_data_version.ready = True
-            source_data_version.active = True
-            source_data_version.save()
-        else:
-            source_data_version.active = True
-            source_data_version.save()
+        source_data_version.ready = True
+        source_data_version.active = True
+        source_data_version.save()
 
     class Meta:
         verbose_name = _('CSV source')
@@ -186,43 +194,33 @@ class SourceSpreadsheet(SourceFileBased):
 
             yield result
 
-    def import_data(self):
+    def import_data(self, source_data_version):
+        # Reload data in case this is executed in another thread
+        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
         if self.path:
-            new_hash = HASH_FUNCTION(open(self.path).read())
+            self._book = xlrd.open_workbook(self.path)
+            file_handle = None
         else:
-            new_hash = HASH_FUNCTION(self.path.open().read())
+            file_handle = self.file.open()
+            self._book = xlrd.open_workbook(file_contents=file_handle.read())
 
         try:
-            source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
-        except SourceDataVersion.DoesNotExist:
-            source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
+            self._sheet = self._book.sheet_by_name(self.sheet)
+        except xlrd.XLRDError:
+            self._sheet = self._book.sheet_by_index(int(self.sheet))
 
-            if self.path:
-                self._book = xlrd.open_workbook(self.path)
-                file_handle = None
-            else:
-                file_handle = self.file.open()
-                self._book = xlrd.open_workbook(file_contents=file_handle.read())
+        id = 1
+        for row in self._get_items():
+            SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
+            id = id + 1
 
-            try:
-                self._sheet = self._book.sheet_by_name(self.sheet)
-            except xlrd.XLRDError:
-                self._sheet = self._book.sheet_by_index(int(self.sheet))
+        if file_handle:
+            file_handle.close()
 
-            id = 1
-            for row in self._get_items():
-                SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
-                id = id + 1
-
-            if file_handle:
-                file_handle.close()
-
-            source_data_version.ready = True
-            source_data_version.active = True
-            source_data_version.save()
-        else:
-            source_data_version.active = True
-            source_data_version.save()
+        source_data_version.ready = True
+        source_data_version.active = True
+        source_data_version.save()
 
     class Meta:
         verbose_name = _('spreadsheet source')
