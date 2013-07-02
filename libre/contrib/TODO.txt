@@ -1,5 +1,5 @@
 * Improve resource navigation template
-* Add Celery support
+* Add Celery support or subprocess
 * Add django-rest-framework support
 * Add compressed file support
 * Add locking
@@ -9,3 +9,6 @@
 * Row ranges to import
 * Improve output logging
 * Toggable auto update via inotify or polling
+* Fix file uploads
+* Enable custom column names
+* Take column names for an arbitrary row not just the first one
