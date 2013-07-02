@@ -10,3 +10,6 @@ LIBRE = Libre Information Batch Restructuring Engine
 The engine that will power the liberation of government data for island of Puerto Rico.
 
 
+![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/main_diagram.png)
+
+
