@@ -12,3 +12,5 @@
 * Fix file uploads
 * Enable custom column names
 * Take column names for an arbitrary row not just the first one
+* Add support for generating other formats other than JSON (Shapefiles)
+* Add better sample source files
