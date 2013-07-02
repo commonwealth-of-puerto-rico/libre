@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from django.contrib import admin, messages
 from django.utils.translation import ugettext_lazy as _
 
-from .models import SourceCSV, SourceDataVersion, SourceSpreadsheet
+from .models import SourceCSV, SourceDataVersion, SourceSpreadsheet, SourceWS, WSArgument, WSResultField
 
 
 class SourceDataVersionInline(admin.TabularInline):
@@ -77,5 +77,21 @@ class SourceCSVAdmin(admin.ModelAdmin):
     actions = [check_updated]
 
 
+class WSArgumentInline(admin.TabularInline):
+    model = WSArgument
+    extra = 1
+
+
+class WSResultFieldInline(admin.TabularInline):
+    model = WSResultField
+    extra = 1
+
+
+class SourceWSAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'wsdl_url')
+    inlines = [WSArgumentInline, WSResultFieldInline]
+
+
 admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
 admin.site.register(SourceCSV, SourceCSVAdmin)
+admin.site.register(SourceWS, SourceWSAdmin)

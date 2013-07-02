@@ -12,6 +12,7 @@ from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 
+from suds.client import Client
 import jsonfield
 import xlrd
 from model_utils.managers import InheritanceManager
@@ -43,6 +44,68 @@ class Source(models.Model):
     class Meta:
         verbose_name = _('source')
         verbose_name_plural = _('sources')
+
+
+class SourceWS(Source):
+    wsdl_url = models.URLField(verbose_name=_('WSDL URL'))
+
+    def get_parameters(self, parameters=None):
+        result = parameters.copy()
+
+        for argument in self.wsargument_set.all():
+            if argument.name not in result:
+                if argument.default:
+                    result[argument.name] = argument.default
+
+        return result
+
+    def get_one(self, id, timestamp=None, parameters=None):
+        # ID are all base 1
+        if id == 0:
+            raise Http404
+
+        return self.get_all(timestamp, parameters)[id-1]
+
+    def get_all(self, timestamp=None, parameters=None):
+        if not parameters:
+            parameters = {}
+
+        client = Client(self.wsdl_url)
+
+        result = []
+        for i in client.service.getEstablishments(**self.get_parameters(parameters))[0]:
+            entry = {}
+            for field in self.wsresultfield_set.all():
+                print i
+                entry[field.name] = getattr(i, field.name, field.default)
+
+            result.append(entry)
+
+        return result
+
+    class Meta:
+        verbose_name = _('web service source')
+        verbose_name_plural = _('web service sources')
+
+
+class WSArgument(models.Model):
+    source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
+    name = models.CharField(max_length=32, verbose_name=_('name'))
+    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
+
+    class Meta:
+        verbose_name = _('web service argument')
+        verbose_name_plural = _('web service arguments')
+
+
+class WSResultField(models.Model):
+    source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
+    name = models.CharField(max_length=32, verbose_name=_('name'))
+    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
+
+    class Meta:
+        verbose_name = _('web service result field')
+        verbose_name_plural = _('web service result fields')
 
 
 class SourceFileBased(Source):

@@ -5,3 +5,4 @@ django-jsonfield==0.9.10
 django-model-utils==1.4.0
 pytz==2013b
 pyinotify==0.9.4
+suds==0.4
