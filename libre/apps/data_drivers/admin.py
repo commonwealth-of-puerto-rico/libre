@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.translation import ugettext_lazy as _
 
 from .models import SourceCSV, SourceDataVersion, SourceSpreadsheet
@@ -13,8 +13,14 @@ class SourceDataVersionInline(admin.TabularInline):
 
 
 def check_updated(modeladmin, request, queryset):
+    count = 0
     for source in queryset:
-        source.check_file()
+        try:
+            source.check_file()
+        except IOError:
+            messages.error(request, _('Error opening file for source: %s') % source)
+        else:
+            count += 1
 
     if len(queryset) == 1:
         message_bit = 'Source file was checked for update.'

@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
+import logging
 from multiprocessing import Process
 import string
 import struct
@@ -18,6 +19,7 @@ from model_utils.managers import InheritanceManager
 from .literals import DEFAULT_FIRST_ROW_NAMES, DEFAULT_LIMIT, DEFAULT_SHEET
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
+logger = logging.getLogger(__name__)
 
 
 class Source(models.Model):
@@ -50,7 +52,11 @@ class SourceFileBased(Source):
 
     def check_file(self):
         if self.path:
-            new_hash = HASH_FUNCTION(open(self.path).read())
+            try:
+                new_hash = HASH_FUNCTION(open(self.path).read())
+            except IOError as exception:
+                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
+                raise
         else:
             return
 
