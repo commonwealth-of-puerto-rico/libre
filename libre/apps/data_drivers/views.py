@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def resource_list(request):
-    object_list = Source.objects.all()
+    object_list = Source.objects.all().select_subclasses()
 
     return render_to_response('generic_list.html', {
         'object_list': object_list,

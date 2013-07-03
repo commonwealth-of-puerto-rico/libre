@@ -1,0 +1,19 @@
+{% load i18n %}
+{% block content %}
+    <div class="content tc">
+        <h1>LIBRE</h1>
+        <img src="{{ STATIC_URL }}images/libre_logo.png" />
+        <h2>{% trans 'FOSS data restructuring, versioning and exporting tool' %}</h2>
+    </div>
+
+    <a href="{% url 'resource_list' %}">{% trans 'Resources' %}</a>
+
+    <hr>
+{% endblock %}
+{% block footer %}
+    <div id="footer">
+        <div class="block">
+            <p>Copyright &copy; 2013 Roberto Rosario.</p>
+        </div>
+    </div>
+{% endblock %}

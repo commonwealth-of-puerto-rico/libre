@@ -29,6 +29,9 @@ class Source(models.Model):
 
     objects = InheritanceManager()
 
+    def get_type(self):
+        return self.__class__.source_type
+
     def __unicode__(self):
         return self.name
 
@@ -47,6 +50,7 @@ class Source(models.Model):
 
 
 class SourceWS(Source):
+    source_type = _('SOAP web service')
     wsdl_url = models.URLField(verbose_name=_('WSDL URL'))
 
     def get_parameters(self, parameters=None):
@@ -162,6 +166,8 @@ class SourceFileBased(Source):
 
 
 class SourceCSV(SourceFileBased):
+    source_type = _('CSV file')
+
     column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use.'))
     first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
@@ -222,6 +228,8 @@ class SourceCSV(SourceFileBased):
 
 
 class SourceSpreadsheet(SourceFileBased):
+    source_type = _('Spreadsheet file')
+
     sheet = models.CharField(max_length=32, default=DEFAULT_SHEET, verbose_name=_('sheet'), help_text=('Worksheet of the spreadsheet file to use.'))
     column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use.'))
     first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
