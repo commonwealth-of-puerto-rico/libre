@@ -77,7 +77,6 @@ class SourceWS(Source):
             for i in client.service.getEstablishments(**self.get_parameters(parameters))[0]:
                 entry = {}
                 for field in self.wsresultfield_set.all():
-                    print i
                     entry[field.name] = getattr(i, field.name, field.default)
 
                 result.append(entry)
