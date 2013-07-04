@@ -5,6 +5,7 @@ import datetime
 import hashlib
 import logging
 from multiprocessing import Process
+import shlex
 import string
 import struct
 
@@ -118,7 +119,22 @@ class SourceFileBased(Source):
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=('Maximum number of items to show when all items are requested.'))
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
-    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use.'))
+    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use. Enclose names with quotes and separate with commas.'))
+
+    def get_column_names(self):
+        """
+        Split column names by comma but obeying quoted names
+        """
+        if self.column_names:
+            result = []
+            for number, token in enumerate(shlex.split(self.column_names)):
+                if number < len(shlex.split(self.column_names)) - 1:
+                    result.append(token[:-1])
+                else:
+                    result.append(token)
+            return result
+        else:
+            return string.ascii_uppercase
 
     def check_file(self):
         if self.path:
@@ -174,7 +190,7 @@ class SourceCSV(SourceFileBased):
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
 
     def _get_items(self):
-        column_names = self.column_names or string.ascii_uppercase
+        column_names = self.get_column_names()
 
         kwargs = {}
         if self.delimiter:
@@ -223,7 +239,7 @@ class SourceFixedWidth(SourceFileBased):
     column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'), help_text=_('The column widths separated by a comma.'))
 
     def _get_items(self):
-        column_names = self.column_names or string.ascii_uppercase
+        column_names = self.get_column_names()
 
         fmtstring = ''.join('%ds' % f for f in map(int, self.column_widths.split(',')))
         parse = struct.Struct(fmtstring).unpack_from
@@ -288,7 +304,7 @@ class SourceSpreadsheet(SourceFileBased):
         return item.value
 
     def _get_items(self):
-        column_names = self.column_names or string.ascii_uppercase
+        column_names = self.get_column_names()
 
         if self.first_row_names:
             column_names = [cell.value for cell in self._sheet.row(0)]
