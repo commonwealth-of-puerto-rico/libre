@@ -122,14 +122,14 @@ class SourceFileBased(Source):
     def check_file(self):
         if self.path:
             try:
-                new_hash = HASH_FUNCTION(open(self.path).read())
+                with open(self.path) as handle:
+                    new_hash = HASH_FUNCTION(handle.read())
             except IOError as exception:
                 logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
                 raise
         else:
-            # Don't bother updating uploaded files
-            return
-
+            new_hash = HASH_FUNCTION(self.file.read())
+            self.file.seek(0)
         try:
             source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
         except SourceDataVersion.DoesNotExist:
@@ -209,12 +209,12 @@ class SourceCSV(SourceFileBased):
         if self.path:
             self._file_handle = open(self.path)
         else:
-            self._file_handle = self.file.open()
+            self._file_handle = self.file
 
-        id = 1
+        row_id = 1
         for row in self._get_items():
-            SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
-            id = id + 1
+            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=row)
+            row_id = row_id + 1
 
         self._file_handle.close()
 
@@ -286,7 +286,7 @@ class SourceSpreadsheet(SourceFileBased):
             self._book = xlrd.open_workbook(self.path)
             file_handle = None
         else:
-            file_handle = self.file.open()
+            file_handle = self.file
             self._book = xlrd.open_workbook(file_contents=file_handle.read())
 
         logger.debug('opening sheet: %s' % self.sheet)
@@ -296,10 +296,10 @@ class SourceSpreadsheet(SourceFileBased):
             self._sheet = self._book.sheet_by_index(int(self.sheet))
 
         logger.debug('importing rows')
-        id = 1
+        row_id = 1
         for row in self._get_items():
-            SourceData.objects.create(source_data_version=source_data_version, row_id=id, row=row)
-            id = id + 1
+            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=row)
+            row_id = row_id + 1
 
         if file_handle:
             file_handle.close()
