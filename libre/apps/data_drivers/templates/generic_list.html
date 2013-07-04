@@ -1,5 +1,5 @@
 <ul>
 {% for object in object_list %}
-    <li><a href="{{ object.get_absolute_url }}">{{ object }} ({{ object.get_type }})</a></li>
+    <li><a href="{{ object.get_absolute_url }}">{{ object }} ({{ object.get_type }}) - {{ object.description }}</a></li>
 {% endfor %}
 </ul>

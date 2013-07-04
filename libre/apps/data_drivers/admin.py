@@ -34,7 +34,7 @@ check_updated.short_description = _('Check for updated source file')
 class SourceSpreadsheetAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (('name', 'slug'),)
+            'fields': (('name', 'slug'), 'description')
         }),
         ('Result limiting', {
             'fields': ('limit',)
@@ -55,7 +55,7 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
 class SourceCSVAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (('name', 'slug'),)
+            'fields': (('name', 'slug'), 'description')
         }),
         ('Result limiting', {
             'fields': ('limit',)
@@ -78,7 +78,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
 class SourceFixedWidthAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (('name', 'slug'),)
+            'fields': (('name', 'slug'), 'description')
         }),
         ('Result limiting', {
             'fields': ('limit',)
