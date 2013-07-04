@@ -159,7 +159,23 @@ class SourceFileBased(Source):
         except SourceDataVersion.DoesNotExist:
             return []
 
-        return [item.row for item in SourceData.objects.filter(source_data_version=source_data_version)[0:self.limit]]
+        queryset = SourceData.objects.filter(source_data_version=source_data_version)
+
+        if not parameters:
+            parameters = {}
+
+        kwargs = {}
+
+        for parameter, value in parameters.items():
+            if not parameter.startswith('_'):
+                kwargs['row__icontains'] = {parameter: value}
+
+        #if kwargs:
+        #    queryset = queryset.filter(**kwargs)
+        #print 'kwargs', kwargs
+        queryset = queryset.filter(row__icontains={"CorpName": "EVANGEL"})
+
+        return [item.row for item in queryset[0:self.limit]]
 
     class Meta:
         abstract = True
