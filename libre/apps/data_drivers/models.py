@@ -118,6 +118,7 @@ class SourceFileBased(Source):
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=('Maximum number of items to show when all items are requested.'))
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
+    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use.'))
 
     def check_file(self):
         if self.path:
@@ -168,38 +169,26 @@ class SourceFileBased(Source):
 class SourceCSV(SourceFileBased):
     source_type = _('CSV file')
 
-    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use.'))
     first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
-    column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'), help_text=_('The column widths separated by a comma.'))
 
     def _get_items(self):
         column_names = self.column_names or string.ascii_uppercase
 
-        if self.column_widths:
-            fmtstring = ''.join('%ds' % f for f in map(int, self.column_widths.split(',')))
-            parse = struct.Struct(fmtstring).unpack_from
+        kwargs = {}
+        if self.delimiter:
+            kwargs['delimiter'] = str(self.delimiter)
+        if self.quote_character:
+            kwargs['quotechar'] = str(self.quote_character)
 
-            if self.first_row_names:
-                column_names = map(string.strip, parse(self._file_handle.next()))
+        reader = csv.reader(self._file_handle, **kwargs)
 
-            for row in self._file_handle:
-                yield dict(zip(column_names, map(string.strip, parse(row))))
-        else:
-            kwargs = {}
-            if self.delimiter:
-                kwargs['delimiter'] = str(self.delimiter)
-            if self.quote_character:
-                kwargs['quotechar'] = str(self.quote_character)
+        if self.first_row_names:
+            column_names = reader.next()
 
-            reader = csv.reader(self._file_handle, **kwargs)
-
-            if self.first_row_names:
-                column_names = reader.next()
-
-            for row in reader:
-                yield dict(zip(column_names, row))
+        for row in reader:
+            yield dict(zip(column_names, row))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -227,11 +216,54 @@ class SourceCSV(SourceFileBased):
         verbose_name_plural = _('CSV sources')
 
 
+class SourceFixedWidth(SourceFileBased):
+    source_type = _('Fixed width column file')
+
+    first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
+    column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'), help_text=_('The column widths separated by a comma.'))
+
+    def _get_items(self):
+        column_names = self.column_names or string.ascii_uppercase
+
+        fmtstring = ''.join('%ds' % f for f in map(int, self.column_widths.split(',')))
+        parse = struct.Struct(fmtstring).unpack_from
+
+        if self.first_row_names:
+            column_names = map(string.strip, parse(self._file_handle.readline()))
+
+        for row in self._file_handle.readlines():
+            yield dict(zip(column_names, map(string.strip, parse(row))))
+
+    @transaction.commit_on_success
+    def import_data(self, source_data_version):
+        # Reload data in case this is executed in another thread
+        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
+        if self.path:
+            self._file_handle = open(self.path)
+        else:
+            self._file_handle = self.file
+
+        row_id = 1
+        for row in self._get_items():
+            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=row)
+            row_id = row_id + 1
+
+        self._file_handle.close()
+
+        source_data_version.ready = True
+        source_data_version.active = True
+        source_data_version.save()
+
+    class Meta:
+        verbose_name = _('Fixed width source')
+        verbose_name_plural = _('Fixed width sources')
+
+
 class SourceSpreadsheet(SourceFileBased):
     source_type = _('Spreadsheet file')
 
     sheet = models.CharField(max_length=32, default=DEFAULT_SHEET, verbose_name=_('sheet'), help_text=('Worksheet of the spreadsheet file to use.'))
-    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use.'))
     first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
 
     def _convert_value(self, item):

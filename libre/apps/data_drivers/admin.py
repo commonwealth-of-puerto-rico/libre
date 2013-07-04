@@ -3,7 +3,8 @@ from __future__ import absolute_import
 from django.contrib import admin, messages
 from django.utils.translation import ugettext_lazy as _
 
-from .models import SourceCSV, SourceDataVersion, SourceSpreadsheet, SourceWS, WSArgument, WSResultField
+from .models import (SourceCSV, SourceDataVersion, SourceFixedWidth, SourceSpreadsheet,
+    SourceWS, WSArgument, WSResultField)
 
 
 class SourceDataVersionInline(admin.TabularInline):
@@ -68,11 +69,31 @@ class SourceCSVAdmin(admin.ModelAdmin):
         ('Comma delimited files', {
             'fields': (('delimiter', 'quote_character'),)
         }),
+    )
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'first_row_names', 'delimiter', 'quote_character')
+    inlines = [SourceDataVersionInline]
+    actions = [check_updated]
+
+
+class SourceFixedWidthAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (('name', 'slug'),)
+        }),
+        ('Result limiting', {
+            'fields': ('limit',)
+        }),
+        ('File source', {
+            'fields': (('path', 'file'),)
+        }),
+        ('Column identifiers', {
+            'fields': (('column_names', 'first_row_names'),)
+        }),
         ('Fixed width column files', {
             'fields': ('column_widths',)
         }),
     )
-    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'first_row_names', 'delimiter', 'quote_character', 'column_widths')
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'first_row_names', 'column_widths')
     inlines = [SourceDataVersionInline]
     actions = [check_updated]
 
@@ -94,4 +115,5 @@ class SourceWSAdmin(admin.ModelAdmin):
 
 admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
 admin.site.register(SourceCSV, SourceCSVAdmin)
+admin.site.register(SourceFixedWidth, SourceFixedWidthAdmin)
 admin.site.register(SourceWS, SourceWSAdmin)
