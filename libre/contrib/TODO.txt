@@ -20,6 +20,7 @@ PENDING
 * Add better sample source files
 * Add caching support to WS Sources
 * Add REST query language
+  * https://github.com/edmund-huber/jsonq
 * Add DB Source support
 * Add Relationship support
 * Add instructions to sources, per source type
