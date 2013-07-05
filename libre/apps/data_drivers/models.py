@@ -11,6 +11,7 @@ import struct
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
+from django.template.defaultfilters import slugify
 
 from suds.client import Client
 import jsonfield
@@ -37,7 +38,7 @@ class Source(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = self.name
+            self.slug = slugify(self.name)
         super(Source, self).save(*args, **kwargs)
 
     @models.permalink
