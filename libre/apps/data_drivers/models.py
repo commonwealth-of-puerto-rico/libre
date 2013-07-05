@@ -194,10 +194,8 @@ class SourceFileBased(Source):
             if not parameter.startswith('_'):
                 kwargs['row__icontains'] = {parameter: value}
 
-        #if kwargs:
-        #    queryset = queryset.filter(**kwargs)
-        #print 'kwargs', kwargs
-        queryset = queryset.filter(row__icontains={"CorpName": "EVANGEL"})
+        if kwargs:
+            queryset = queryset.filter(**kwargs)
 
         return [item.row for item in queryset[0:self.limit]]
 
