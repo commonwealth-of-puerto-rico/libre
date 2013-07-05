@@ -5,9 +5,9 @@ import datetime
 import hashlib
 import logging
 from multiprocessing import Process
-import shlex
 import string
 import struct
+import re
 import urllib2
 
 from django.db import models, transaction
@@ -133,13 +133,8 @@ class SourceFileBased(Source):
         Split column names by comma but obeying quoted names
         """
         if self.column_names:
-            result = []
-            for number, token in enumerate(shlex.split(self.column_names)):
-                if number < len(shlex.split(self.column_names)) - 1:
-                    result.append(token[:-1])
-                else:
-                    result.append(token)
-            return result
+            pattern = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
+            return map(lambda x: x.replace('"', '').replace("'", '').strip(), pattern.split(self.column_names)[1::2])
         else:
             return string.ascii_uppercase
 
