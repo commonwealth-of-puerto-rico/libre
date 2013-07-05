@@ -20,3 +20,19 @@ Into this!
 
 ![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/after.png)
 
+INSTALLATION
+============
+
+$ git clone https://github.com/commonwealth-of-puerto-rico/libre.git
+$ cd libre
+$ virtualenv venv
+$ source venv/bin/activate
+$ pip install -r libre/requirements/common.txt
+$ ./manage.py syncdb --migrate
+$ cat <<'EOF' > settings_local.py
+DEBUG=True
+DEVELOPMENT=True
+EOF
+$ ./manage.py runserver
+
+Point your browsers to 127.0.0.1:8000
