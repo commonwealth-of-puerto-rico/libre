@@ -18,13 +18,13 @@ PENDING
   * Excel
   * Fixed width
 * Add better sample source files
-* Import files from URLs
 * Add caching support to WS Sources
 * Add REST query language
 * Add DB Source support
 * Add Relationship support
 * Add instructions to sources, per source type
 * Skip blank lines?
+* Switch from column widths to column ranges
 
 DONE
 ----
@@ -35,3 +35,6 @@ DONE
 * Take column names from an arbitrary row
 * Copy WSDL file or use suds caching features - NOT NEEDED; suds caches the WSDL by default for 1 day
 * Add description field to sources
+* Close file handles
+* Import files from URLs
+* Improve custom column names parsing
