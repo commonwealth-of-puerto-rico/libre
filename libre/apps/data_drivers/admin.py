@@ -43,11 +43,11 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
             'fields': (('path', 'file'), 'sheet')
         }),
         ('Column identifiers', {
-            'fields': (('column_names', 'first_row_names'),)
+            'fields': (('column_names', 'name_row'),)
         }),
     )
 
-    list_display = ('name', 'slug', 'limit', 'path', 'file', 'sheet', 'column_names', 'first_row_names')
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'sheet', 'column_names', 'name_row')
     inlines = [SourceDataVersionInline]
     actions = [check_updated]
 
@@ -64,13 +64,13 @@ class SourceCSVAdmin(admin.ModelAdmin):
             'fields': (('path', 'file'),)
         }),
         ('Column identifiers', {
-            'fields': (('column_names', 'first_row_names'),)
+            'fields': (('column_names', 'name_row'),)
         }),
         ('Comma delimited files', {
             'fields': (('delimiter', 'quote_character'),)
         }),
     )
-    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'first_row_names', 'delimiter', 'quote_character')
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'name_row', 'delimiter', 'quote_character')
     inlines = [SourceDataVersionInline]
     actions = [check_updated]
 
@@ -87,13 +87,13 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
             'fields': (('path', 'file'),)
         }),
         ('Column identifiers', {
-            'fields': (('column_names', 'first_row_names'),)
+            'fields': (('column_names', 'name_row'),)
         }),
         ('Fixed width column files', {
             'fields': ('column_widths',)
         }),
     )
-    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'first_row_names', 'column_widths')
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'name_row', 'column_widths')
     inlines = [SourceDataVersionInline]
     actions = [check_updated]
 

@@ -18,7 +18,7 @@ import jsonfield
 import xlrd
 from model_utils.managers import InheritanceManager
 
-from .literals import DEFAULT_FIRST_ROW_NAMES, DEFAULT_LIMIT, DEFAULT_SHEET
+from .literals import DEFAULT_LIMIT, DEFAULT_SHEET
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
@@ -121,6 +121,7 @@ class SourceFileBased(Source):
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
     column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use. Enclose names with quotes and separate with commas.'))
+    name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
 
     def get_column_names(self):
         """
@@ -186,7 +187,6 @@ class SourceFileBased(Source):
 class SourceCSV(SourceFileBased):
     source_type = _('CSV file')
 
-    first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
 
@@ -201,11 +201,16 @@ class SourceCSV(SourceFileBased):
 
         reader = csv.reader(self._file_handle, **kwargs)
 
-        if self.first_row_names:
-            column_names = reader.next()
+        if self.name_row:
+            for i, row in enumerate(reader):
+                if i == self.name_row - 1:
+                    column_names = row
+                    self._file_handle.seek(0)
+                    break
 
-        for row in reader:
-            yield dict(zip(column_names, row))
+        for i, row in enumerate(reader):
+            if i != self.name_row - 1:
+                yield dict(zip(column_names, row))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -236,7 +241,6 @@ class SourceCSV(SourceFileBased):
 class SourceFixedWidth(SourceFileBased):
     source_type = _('Fixed width column file')
 
-    first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
     column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'), help_text=_('The column widths separated by a comma.'))
 
     def _get_items(self):
@@ -245,11 +249,16 @@ class SourceFixedWidth(SourceFileBased):
         fmtstring = ''.join('%ds' % f for f in map(int, self.column_widths.split(',')))
         parse = struct.Struct(fmtstring).unpack_from
 
-        if self.first_row_names:
-            column_names = map(string.strip, parse(self._file_handle.readline()))
+        if self.name_row:
+            for i, row in enumerate(self._file_handle):
+                if i == self.name_row - 1:
+                    column_names = map(string.strip, parse(row))
+                    self._file_handle.seek(0)
+                    break
 
-        for row in self._file_handle.readlines():
-            yield dict(zip(column_names, map(string.strip, parse(row))))
+        for i, row in enumerate(self._file_handle):
+            if i != self.name_row - 1:
+                yield dict(zip(column_names, map(string.strip, parse(row))))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -281,7 +290,6 @@ class SourceSpreadsheet(SourceFileBased):
     source_type = _('Spreadsheet file')
 
     sheet = models.CharField(max_length=32, default=DEFAULT_SHEET, verbose_name=_('sheet'), help_text=('Worksheet of the spreadsheet file to use.'))
-    first_row_names = models.BooleanField(default=DEFAULT_FIRST_ROW_NAMES, verbose_name=_('first row names'), help_text=('Use the values of the first row as the column names.'))
 
     def _convert_value(self, item):
         """
@@ -292,7 +300,7 @@ class SourceSpreadsheet(SourceFileBased):
             try:
                 return datetime.datetime(*xlrd.xldate_as_tuple(item.value, self._book.datemode))
             except ValueError:
-                # TODO: make togglable
+                # TODO: make toggable
                 # Invalid date
                 return item.value
 
@@ -307,23 +315,24 @@ class SourceSpreadsheet(SourceFileBased):
     def _get_items(self):
         column_names = self.get_column_names()
 
-        if self.first_row_names:
-            column_names = [cell.value for cell in self._sheet.row(0)]
+        if self.name_row:
+            column_names = [cell.value for cell in self._sheet.row(self.name_row - 1)]
 
-        for i in range(1 if self.first_row_names else 0, self._sheet.nrows):
+        for i in range(0, self._sheet.nrows):
             #values = [self.convert_value(cell) for cell in self._sheet.row(i)]
             #if not any(values):
             #    continue  # empty lines are ignored
             #yield values
 
-            result = {}
-            column_count = 0
+            if i != self.name_row - 1:
+                result = {}
+                column_count = 0
 
-            for cell in self._sheet.row(i):
-                result[column_names[column_count]] = self._convert_value(cell)
-                column_count += 1
+                for cell in self._sheet.row(i):
+                    result[column_names[column_count]] = self._convert_value(cell)
+                    column_count += 1
 
-            yield result
+                yield result
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
