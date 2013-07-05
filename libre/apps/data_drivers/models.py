@@ -8,6 +8,7 @@ from multiprocessing import Process
 import shlex
 import string
 import struct
+import urllib2
 
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
@@ -122,6 +123,7 @@ class SourceFileBased(Source):
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
+    url = models.URLField(blank=True, verbose_name=_('URL'), help_text=_('Import a file from an URL.'))
     column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=_('Specify the column names to use. Enclose names with quotes and separate with commas.'))
     name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=_('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
     import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
@@ -149,9 +151,14 @@ class SourceFileBased(Source):
             except IOError as exception:
                 logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
                 raise
-        else:
+        elif self.file:
             new_hash = HASH_FUNCTION(self.file.read())
             self.file.seek(0)
+        elif self.url:
+            handle = urllib2.urlopen(self.url)
+            new_hash = HASH_FUNCTION(handle.read())
+            handle.close()
+
         try:
             source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
         except SourceDataVersion.DoesNotExist:
@@ -213,10 +220,14 @@ class SourceCSV(SourceFileBased):
 
         if self.import_rows:
             parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
+        else:
+            parsed_range = None
 
         for i, row in enumerate(reader):
-            if i != self.name_row - 1:
-                if self.import_rows and i in parsed_range:
+            if self.name_row and i == self.name_row - 1:
+                pass
+            else:
+                if parsed_range and i in parsed_range:
                     yield dict(zip(column_names, row))
 
     @transaction.commit_on_success
@@ -226,8 +237,10 @@ class SourceCSV(SourceFileBased):
 
         if self.path:
             self._file_handle = open(self.path)
-        else:
+        elif self.file:
             self._file_handle = self.file
+        elif self.url:
+            self._file_handle = urllib2.urlopen(self.url)
 
         row_id = 1
         for row in self._get_items():
@@ -239,6 +252,9 @@ class SourceCSV(SourceFileBased):
         source_data_version.ready = True
         source_data_version.active = True
         source_data_version.save()
+
+        if self._file_handle:
+            self._file_handle.close()
 
     class Meta:
         verbose_name = _('CSV source')
@@ -265,10 +281,14 @@ class SourceFixedWidth(SourceFileBased):
 
         if self.import_rows:
             parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
+        else:
+            parsed_range = None
 
         for i, row in enumerate(self._file_handle):
-            if i != self.name_row - 1:
-                if self.import_rows and i in parsed_range:
+            if self.name_row and i == self.name_row - 1:
+                pass
+            else:
+                if parsed_range and i in parsed_range:
                     yield dict(zip(column_names, map(string.strip, parse(row))))
 
     @transaction.commit_on_success
@@ -278,8 +298,10 @@ class SourceFixedWidth(SourceFileBased):
 
         if self.path:
             self._file_handle = open(self.path)
-        else:
+        elif self.file:
             self._file_handle = self.file
+        elif self.url:
+            self._file_handle = urllib2.urlopen(self.url)
 
         row_id = 1
         for row in self._get_items():
@@ -291,6 +313,9 @@ class SourceFixedWidth(SourceFileBased):
         source_data_version.ready = True
         source_data_version.active = True
         source_data_version.save()
+
+        if self._file_handle:
+            self._file_handle.close()
 
     class Meta:
         verbose_name = _('Fixed width source')
@@ -351,8 +376,11 @@ class SourceSpreadsheet(SourceFileBased):
         if self.path:
             self._book = xlrd.open_workbook(self.path)
             file_handle = None
-        else:
+        elif self.file:
             file_handle = self.file
+            self._book = xlrd.open_workbook(file_contents=file_handle.read())
+        elif self.url:
+            file_handle = urllib2.urlopen(self.url)
             self._book = xlrd.open_workbook(file_contents=file_handle.read())
 
         logger.debug('opening sheet: %s' % self.sheet)
@@ -376,6 +404,9 @@ class SourceSpreadsheet(SourceFileBased):
         source_data_version.active = True
         source_data_version.save()
         logger.debug('exiting')
+
+        if file_handle:
+            file_handle.close()
 
     class Meta:
         verbose_name = _('spreadsheet source')

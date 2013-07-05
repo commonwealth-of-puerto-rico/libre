@@ -40,7 +40,7 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
             'fields': ('limit',)
         }),
         ('File source', {
-            'fields': (('path', 'file'), 'sheet')
+            'fields': (('path', 'file', 'url'), 'sheet')
         }),
         ('Row related', {
             'fields': (('import_rows'),)
@@ -50,7 +50,7 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
         }),
     )
 
-    list_display = ('name', 'slug', 'limit', 'path', 'file', 'sheet', 'column_names', 'name_row')
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'url', 'sheet', 'column_names', 'name_row')
     inlines = [SourceDataVersionInline]
     actions = [check_updated]
 
@@ -64,7 +64,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
             'fields': ('limit',)
         }),
         ('File source', {
-            'fields': (('path', 'file'),)
+            'fields': (('path', 'file', 'url'),)
         }),
         ('Row related', {
             'fields': (('import_rows'),)
@@ -76,7 +76,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
             'fields': (('delimiter', 'quote_character'),)
         }),
     )
-    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'name_row', 'delimiter', 'quote_character')
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'url', 'column_names', 'name_row', 'delimiter', 'quote_character')
     inlines = [SourceDataVersionInline]
     actions = [check_updated]
 
@@ -90,7 +90,7 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
             'fields': ('limit',)
         }),
         ('File source', {
-            'fields': (('path', 'file'),)
+            'fields': (('path', 'file', 'url'),)
         }),
         ('Row related', {
             'fields': (('import_rows'),)
@@ -102,7 +102,7 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
             'fields': ('column_widths',)
         }),
     )
-    list_display = ('name', 'slug', 'limit', 'path', 'file', 'column_names', 'name_row', 'column_widths')
+    list_display = ('name', 'slug', 'limit', 'path', 'file', 'url', 'column_names', 'name_row', 'column_widths')
     inlines = [SourceDataVersionInline]
     actions = [check_updated]
 
