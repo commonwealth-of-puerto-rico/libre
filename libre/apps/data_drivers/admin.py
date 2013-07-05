@@ -42,6 +42,9 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
         ('File source', {
             'fields': (('path', 'file'), 'sheet')
         }),
+        ('Row related', {
+            'fields': (('import_rows'),)
+        }),
         ('Column identifiers', {
             'fields': (('column_names', 'name_row'),)
         }),
@@ -62,6 +65,9 @@ class SourceCSVAdmin(admin.ModelAdmin):
         }),
         ('File source', {
             'fields': (('path', 'file'),)
+        }),
+        ('Row related', {
+            'fields': (('import_rows'),)
         }),
         ('Column identifiers', {
             'fields': (('column_names', 'name_row'),)
@@ -85,6 +91,9 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
         }),
         ('File source', {
             'fields': (('path', 'file'),)
+        }),
+        ('Row related', {
+            'fields': (('import_rows'),)
         }),
         ('Column identifiers', {
             'fields': (('column_names', 'name_row'),)

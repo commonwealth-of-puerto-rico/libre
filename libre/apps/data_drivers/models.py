@@ -20,6 +20,7 @@ import xlrd
 from model_utils.managers import InheritanceManager
 
 from .literals import DEFAULT_LIMIT, DEFAULT_SHEET
+from .utils import parse_range
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
@@ -118,11 +119,12 @@ class WSResultField(models.Model):
 
 
 class SourceFileBased(Source):
-    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=('Maximum number of items to show when all items are requested.'))
-    path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=('Location to a file in the filesystem.'))
+    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
+    path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
-    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=('Specify the column names to use. Enclose names with quotes and separate with commas.'))
-    name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
+    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=_('Specify the column names to use. Enclose names with quotes and separate with commas.'))
+    name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=_('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
+    import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
 
     def get_column_names(self):
         """
@@ -209,9 +211,13 @@ class SourceCSV(SourceFileBased):
                     self._file_handle.seek(0)
                     break
 
+        if self.import_rows:
+            parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
+
         for i, row in enumerate(reader):
             if i != self.name_row - 1:
-                yield dict(zip(column_names, row))
+                if self.import_rows and i in parsed_range:
+                    yield dict(zip(column_names, row))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -257,9 +263,13 @@ class SourceFixedWidth(SourceFileBased):
                     self._file_handle.seek(0)
                     break
 
+        if self.import_rows:
+            parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
+
         for i, row in enumerate(self._file_handle):
             if i != self.name_row - 1:
-                yield dict(zip(column_names, map(string.strip, parse(row))))
+                if self.import_rows and i in parsed_range:
+                    yield dict(zip(column_names, map(string.strip, parse(row))))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -319,21 +329,18 @@ class SourceSpreadsheet(SourceFileBased):
         if self.name_row:
             column_names = [cell.value for cell in self._sheet.row(self.name_row - 1)]
 
-        for i in range(0, self._sheet.nrows):
-            #values = [self.convert_value(cell) for cell in self._sheet.row(i)]
-            #if not any(values):
-            #    continue  # empty lines are ignored
-            #yield values
+        logger.debug('column_names: %s' % column_names)
 
-            if i != self.name_row - 1:
-                result = {}
-                column_count = 0
+        if self.import_rows:
+            parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
+        else:
+            parsed_range = xrange(0, self._sheet.nrows)
 
-                for cell in self._sheet.row(i):
-                    result[column_names[column_count]] = self._convert_value(cell)
-                    column_count += 1
+        if self.name_row:
+            parsed_range = (i for i in set(parsed_range) - set([self.name_row - 1]))
 
-                yield result
+        for i in parsed_range:
+            yield dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
