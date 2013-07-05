@@ -1,3 +1,5 @@
+PENDING
+-------
 * Improve resource navigation template (look and feel)
 * Add Celery support or subprocess
 * Add django-rest-framework support
@@ -7,30 +9,29 @@
   * Parse dates?
     * Use dateutil
   * True values, False values
-* Row ranges to import
-
-# http://stackoverflow.com/questions/4248399/page-range-for-printing-algorithm
-def parse_range(astr):
-    result = set()
-    for part in astr.split(u','):
-        x = part.split(u'-')
-        result.update(range(int(x[0]), int(x[-1]) + 1))
-    return sorted(result)
-
-* Take column names from an arbitrary row
 * Improve output logging
 * Toggable auto update via inotify, polling or python-watchdog
 * Specify number of versions to keep, deleting old ones
-* Fix file uploads - DONE
-* Enable custom column names - DONE
-* Take column names for an arbitrary row not just the first one
-* Add support for generating other formats other than JSON (Shapefiles)
+* Add support for generating output formats other than JSON
+  * Shapefiles
+  * CSV
+  * Excel
+  * Fixed width
 * Add better sample source files
 * Import files from URLs
 * Add caching support to WS Sources
 * Add REST query language
 * Add DB Source support
 * Add Relationship support
+* Add instructions to sources, per source type
+* Skip blank lines?
+
+DONE
+----
+* Fix file uploads
+* Enable custom column names
+* Take column names for an arbitrary row not just the first one
+* Row ranges to import
+* Take column names from an arbitrary row
 * Copy WSDL file or use suds caching features - NOT NEEDED; suds caches the WSDL by default for 1 day
 * Add description field to sources
-* Add instructions to sources, per source type
