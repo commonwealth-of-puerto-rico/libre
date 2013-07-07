@@ -105,8 +105,8 @@ class WSArgument(models.Model):
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
 
     class Meta:
-        verbose_name = _('web service argument')
-        verbose_name_plural = _('web service arguments')
+        verbose_name = _('argument')
+        verbose_name_plural = _('arguments')
 
 
 class WSResultField(models.Model):
@@ -115,8 +115,8 @@ class WSResultField(models.Model):
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
 
     class Meta:
-        verbose_name = _('web service result field')
-        verbose_name_plural = _('web service result fields')
+        verbose_name = _('result field')
+        verbose_name_plural = _('result fields')
 
 
 class SourceFileBased(Source):
@@ -127,6 +127,17 @@ class SourceFileBased(Source):
     column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=_('Specify the column names to use. Enclose names with quotes and separate with commas.'))
     name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=_('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
     import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
+
+    def get_stream_type(self):
+        if self.file:
+            return _('Uploaded file')
+        elif self.path:
+            return _('Filesystem path')
+        elif self.url:
+            return _('URL')
+        else:
+            return _('None')
+    get_stream_type.short_description = 'stream type'
 
     def get_column_names(self):
         """

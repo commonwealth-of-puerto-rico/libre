@@ -2,6 +2,8 @@
 import os
 import sys
 
+from django.utils.translation import ugettext_lazy as _
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), './'))
 SITE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -10,7 +12,7 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'customization_apps'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'apps'))
 sys.path.append(os.path.join(PROJECT_ROOT, '3rd_party_apps'))
 
-PROJECT_TITLE = 'LIBRE'
+PROJECT_TITLE = 'L.I.B.R.E.'
 PROJECT_NAME = 'libre'
 
 DEBUG = False
@@ -130,6 +132,7 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
+    'suit',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -179,6 +182,19 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
     'django.contrib.messages.context_processors.messages',
 )
+
+SUIT_CONFIG = {
+    'ADMIN_NAME': PROJECT_TITLE,
+    #'MENU_EXCLUDE': ('sites', 'auth'),
+    'MENU_OPEN_FIRST_CHILD': False,
+    'MENU': (
+        #     'sites',
+        #     {'app': 'auth', 'icon':'icon-lock', 'models': ('user', 'group')},
+        #     {'label': 'Settings', 'icon':'icon-cog', 'models': ('auth.user', 'auth.group')},
+        #     {'label': 'Support', 'icon':'icon-question-sign', 'url': '/support/'},
+        {'label': _('Data drivers'), 'icon':'icon-cog', 'app': 'data_drivers'},
+    ),
+}
 
 try:
     from settings_local import *
