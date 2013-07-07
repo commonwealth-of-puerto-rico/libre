@@ -25,6 +25,7 @@ PENDING
 * Add instructions to sources, per source type
 * Skip blank lines?
 * Switch from column widths to column ranges
+* Move insertion of _id to the import phase from the retrieval phase
 
 DONE
 ----
@@ -40,3 +41,4 @@ DONE
 * Improve custom column names parsing
 * Add locking
 * Out of data context _ids
+* Add support for shape sources
