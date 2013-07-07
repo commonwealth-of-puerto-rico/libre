@@ -241,7 +241,8 @@ class SourceShapeAdmin(admin.ModelAdmin):
         }),
         (_('Source data (choose one)'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('path', 'file', 'url')
+            #'fields': ('path', 'file', 'url') #Disables until file handle support is added
+            'fields': ('path',)
         }),
     )
 
