@@ -188,21 +188,27 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
 
 
 class WSArgumentInline(admin.TabularInline):
+    suit_classes = 'suit-tab suit-tab-configuration'
     model = WSArgument
     extra = 1
 
 
 class WSResultFieldInline(admin.TabularInline):
+    suit_classes = 'suit-tab suit-tab-configuration'
     model = WSResultField
     extra = 1
 
 
 class SourceWSAdmin(admin.ModelAdmin):
+    suit_form_tabs = (('configuration', _('Configuration')),)
+
     fieldsets = (
         (_('Basic information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('name', 'slug', 'description')
         }),
-        ('Source data', {
+        (_('Source data'), {
+            'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('wsdl_url',)
         }),
     )
