@@ -183,7 +183,8 @@ class SourceFileBased(Source):
         else:
             source_data_version = self.sourcedataversion_set.get(active=True)
 
-        return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
+        instance = SourceData.objects.get(source_data_version=source_data_version, row_id=id)
+        return dict(instance.row, **{'_id': instance.row_id})
 
     def get_all(self, timestamp=None, parameters=None):
         try:
@@ -208,7 +209,7 @@ class SourceFileBased(Source):
         if kwargs:
             queryset = queryset.filter(**kwargs)
 
-        return [item.row for item in queryset[0:self.limit]]
+        return [dict(item.row, **{'_id': item.row_id}) for item in queryset[0:self.limit]]
 
     class Meta:
         abstract = True
