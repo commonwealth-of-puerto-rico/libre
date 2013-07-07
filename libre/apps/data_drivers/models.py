@@ -214,20 +214,22 @@ class SourceFileBased(models.Model):
         if not parameters:
             parameters = {}
 
-        kwargs = {}
         post_filters = []
 
         for parameter, value in parameters.items():
             valid = True
             # If value is quoted is a string else try to see if it is a number
-            if value[0] == '"' and value[-1] == '"':
-                # Strip quotes
-                value = str(value[1:-1])
-            else:
-                try:
-                    value = int(value)
-                except ValueError:
-                    valid = False
+            try:
+                if value[0] == '"' and value[-1] == '"':
+                    # Strip quotes
+                    value = str(value[1:-1])
+                else:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        valid = False
+            except IndexError:
+                raise Http400('Malformed query')
 
             if valid:
                 if not parameter.startswith('_'):
@@ -237,6 +239,7 @@ class SourceFileBased(models.Model):
                         key, operation = parameter.split('__')
                         post_filters.append({'key': key, 'operation': operation, 'value': value})
 
+        kwargs = {}
         if post_filters:
             results = []
             for post_filter in post_filters:
@@ -245,20 +248,37 @@ class SourceFileBased(models.Model):
                         real_value = item.row
                         for part in post_filter['key'].split('.'):
                             real_value = real_value.get(part)
+                            if not real_value:
+                                raise Http400('Invalid element: %s' % post_filter['key'])
                     except AttributeError:
                         # A dotted attribute is not found
                         raise Http400('Invalid element: %s' % post_filter['key'])
                     else:
                         if post_filter['operation'] == 'icontains':
-                            if value.upper() in real_value.upper():
+                            if post_filter['value'].upper() in real_value.upper():
                                 results.append(item.pk)
                         elif post_filter['operation'] == 'contains':
-                            if value in real_value:
+                            if post_filter['value'] in real_value:
                                 results.append(item.pk)
                         elif post_filter['operation'] == 'equals':
-                            if value == real_value:
+                            if post_filter['value'] == real_value:
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'lt':
+                            if real_value < post_filter['value']:
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'lte':
+                            if real_value <= post_filter['value']:
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'gt':
+                            if real_value > post_filter['value']:
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'gte':
+                            if real_value >= post_filter['value']:
                                 results.append(item.pk)
 
+            # TODO: convert to Q objects
+            # TODO: query terms are inclusive, move to chain filtering
+            # TODO: implement _join=OR modifier
             kwargs['pk__in'] = results
 
         if kwargs:
