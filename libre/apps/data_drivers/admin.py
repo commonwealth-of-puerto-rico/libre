@@ -209,10 +209,10 @@ class SourceWSAdmin(admin.ModelAdmin):
         }),
         (_('Source data'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('wsdl_url',)
+            'fields': ('wsdl_url', 'endpoint')
         }),
     )
-    list_display = ('name', 'slug', 'wsdl_url')
+    list_display = ('name', 'slug', 'wsdl_url', 'endpoint')
     inlines = [WSArgumentInline, WSResultFieldInline]
     form = SourceWSForm
 

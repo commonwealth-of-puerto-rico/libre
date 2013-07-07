@@ -57,6 +57,7 @@ class Source(models.Model):
 class SourceWS(Source):
     source_type = _('SOAP web service')
     wsdl_url = models.URLField(verbose_name=_('WSDL URL'))
+    endpoint = models.CharField(max_length=64, verbose_name=_('endpoint'), help_text=_('Endpoint, function or method to call.'))
 
     def get_parameters(self, parameters=None):
         result = parameters.copy()
@@ -83,12 +84,14 @@ class SourceWS(Source):
 
         result = []
         try:
-            for i in client.service.getEstablishments(**self.get_parameters(parameters))[0]:
-                entry = {}
+            row_id = 1
+            for data in getattr(client.service, self.endpoint)(**self.get_parameters(parameters)):
+                entry = {'_id': row_id}
                 for field in self.wsresultfield_set.all():
-                    entry[field.name] = getattr(i, field.name, field.default)
+                    entry[field.name] = getattr(data, field.name, field.default)
 
                 result.append(entry)
+                row_id += 1
         except IndexError:
             result = []
 
