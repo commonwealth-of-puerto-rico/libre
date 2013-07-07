@@ -5,8 +5,7 @@ PENDING
 * Add django-rest-framework support
 * Add compressed file support
 * Parse values
-  * Parse dates?
-    * Use dateutil
+  * Parse dates (using dateutil)
   * True values, False values
 * Improve output logging
 * Toggable auto update via inotify, polling or python-watchdog
@@ -15,6 +14,8 @@ PENDING
   * Shapefiles
   * CSV
   * Excel
+  * XML
+  * NIEM
   * Fixed width
 * Add better sample source files
 * Add caching support to WS Sources
@@ -26,6 +27,11 @@ PENDING
 * Skip blank lines?
 * Switch from column widths to column ranges
 * Move insertion of _id to the import phase from the retrieval phase
+* Data translation
+* Stored JSON data index support
+* Add software version
+* Cache Webservices
+  * TTL support
 
 DONE
 ----
