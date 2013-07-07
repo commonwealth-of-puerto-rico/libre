@@ -4,7 +4,6 @@ PENDING
 * Add Celery support or subprocess
 * Add django-rest-framework support
 * Add compressed file support
-* Add locking
 * Parse values
   * Parse dates?
     * Use dateutil
@@ -39,3 +38,5 @@ DONE
 * Close file handles
 * Import files from URLs
 * Improve custom column names parsing
+* Add locking
+* Out of data context _ids
