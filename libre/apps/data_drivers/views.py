@@ -10,10 +10,20 @@ from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse, Http404
 from django.core.urlresolvers import reverse
+from django.views.generic import TemplateView
 
 from .models import Source, SourceData
 
 logger = logging.getLogger(__name__)
+
+
+class DashboardWelcomeView(TemplateView):
+    template_name = 'admin/dashboard/welcome.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+
+        return self.render_to_response(context=context)
 
 
 def resource_list(request):

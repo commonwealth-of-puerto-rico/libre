@@ -2,6 +2,9 @@ from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
 
+from data_drivers.sites import SitePlus
+
+admin.site = SitePlus()
 admin.autodiscover()
 
 urlpatterns = patterns('',

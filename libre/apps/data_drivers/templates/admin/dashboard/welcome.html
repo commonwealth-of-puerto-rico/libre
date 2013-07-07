@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block extrastyle %}
+  {{ block.super }}
+{% endblock %}
+
+{% block coltype %}colMS{% endblock %}
+
+{% block bodyclass %}dashboard{% endblock %}
+
+{% block content %}
+    <h2 class="legend">{% trans 'Dashboard' %}</h2>
+    <table class="table-overview">
+      <tbody><tr>
+        <th>{% trans 'Alerts' %}</th>
+        <td>None</td>
+      </tr>
+      <tr>
+        <th>Outdated versions</th>
+        <td>None</td>
+      </tr>
+    </tbody></table>
+{% endblock %}

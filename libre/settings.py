@@ -142,8 +142,8 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.admindocs',
     'south',
-    'main',
     'data_drivers',
+    'main',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -185,14 +185,10 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 
 SUIT_CONFIG = {
     'ADMIN_NAME': PROJECT_TITLE,
-    #'MENU_EXCLUDE': ('sites', 'auth'),
     'MENU_OPEN_FIRST_CHILD': False,
     'MENU': (
-        #     'sites',
-        #     {'app': 'auth', 'icon':'icon-lock', 'models': ('user', 'group')},
-        #     {'label': 'Settings', 'icon':'icon-cog', 'models': ('auth.user', 'auth.group')},
-        #     {'label': 'Support', 'icon':'icon-question-sign', 'url': '/support/'},
         {'label': _('Data drivers'), 'icon':'icon-cog', 'app': 'data_drivers'},
+        {'label': _('Homepage'), 'icon':'icon-globe', 'url': 'https://github.com/commonwealth-of-puerto-rico/libre/'},
     ),
 }
 
