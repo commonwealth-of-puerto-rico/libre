@@ -42,3 +42,4 @@ DONE
 * Add locking
 * Out of data context _ids
 * Add support for shape sources
+* return Http Invalid Request on query syntax error
