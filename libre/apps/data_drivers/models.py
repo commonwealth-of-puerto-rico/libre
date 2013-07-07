@@ -20,6 +20,8 @@ import jsonfield
 import xlrd
 from model_utils.managers import InheritanceManager
 
+from lock_manager import Lock, LockError
+
 from .literals import DEFAULT_LIMIT, DEFAULT_SHEET
 from .utils import parse_range
 
@@ -72,7 +74,7 @@ class SourceWS(Source):
     def get_one(self, id, timestamp=None, parameters=None):
         # ID are all base 1
         if id == 0:
-            raise Http404
+            raise Http404  # TODO: may be return HTTP INVALID REQUEST?
 
         return self.get_all(timestamp, parameters)[id-1]
 
@@ -153,6 +155,23 @@ class SourceFileBased(Source):
             return string.ascii_uppercase
 
     def check_file(self):
+        try:
+            lock_id = u'check_file-%d' % self.pk
+            logger.debug('trying to acquire lock: %s' % lock_id)
+            lock = Lock.acquire_lock(lock_id, 60)
+            logger.debug('acquired lock: %s' % lock_id)
+            try:
+                self._check_file()
+            except Exception as exception:
+                logger.debug('unhandled exception: %s' % exception)
+                raise
+            finally:
+                lock.release()
+        except LockError:
+            logger.debug('unable to obtain lock')
+            pass
+
+    def _check_file(self):
         if self.path:
             try:
                 with open(self.path) as handle:

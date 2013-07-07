@@ -142,6 +142,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.admindocs',
     'south',
+    'lock_manager',
     'data_drivers',
     'main',
 )
