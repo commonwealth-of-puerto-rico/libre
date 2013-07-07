@@ -24,6 +24,7 @@ from model_utils.managers import InheritanceManager
 
 from lock_manager import Lock, LockError
 
+from .exceptions import Http400
 from .literals import DEFAULT_LIMIT, DEFAULT_SHEET
 from .utils import parse_range
 
@@ -214,10 +215,51 @@ class SourceFileBased(models.Model):
             parameters = {}
 
         kwargs = {}
+        post_filters = []
 
         for parameter, value in parameters.items():
-            if not parameter.startswith('_') and '__' not in parameter:
-                kwargs['row__icontains'] = {parameter: value}
+            valid = True
+            # If value is quoted is a string else try to see if it is a number
+            if value[0] == '"' and value[-1] == '"':
+                # Strip quotes
+                value = str(value[1:-1])
+            else:
+                try:
+                    value = int(value)
+                except ValueError:
+                    valid = False
+
+            if valid:
+                if not parameter.startswith('_'):
+                    if '__' not in parameter:
+                        post_filters.append({'key': parameter, 'operation': 'equals', 'value': value})
+                    else:
+                        key, operation = parameter.split('__')
+                        post_filters.append({'key': key, 'operation': operation, 'value': value})
+
+        if post_filters:
+            results = []
+            for post_filter in post_filters:
+                for item in queryset:
+                    try:
+                        real_value = item.row
+                        for part in post_filter['key'].split('.'):
+                            real_value = real_value.get(part)
+                    except AttributeError:
+                        # A dotted attribute is not found
+                        raise Http400('Invalid element: %s' % post_filter['key'])
+                    else:
+                        if post_filter['operation'] == 'icontains':
+                            if value.upper() in real_value.upper():
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'contains':
+                            if value in real_value:
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'equals':
+                            if value == real_value:
+                                results.append(item.pk)
+
+            kwargs['pk__in'] = results
 
         if kwargs:
             queryset = queryset.filter(**kwargs)
