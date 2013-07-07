@@ -23,6 +23,7 @@ Into this!
 INSTALLATION
 ============
 
+    $ sudo apt-get install libgdal-dev -y
     $ git clone https://github.com/commonwealth-of-puerto-rico/libre.git
     $ cd libre
     $ virtualenv venv

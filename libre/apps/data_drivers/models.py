@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
+import json
 import logging
 from multiprocessing import Process
 import string
@@ -15,6 +16,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.template.defaultfilters import slugify
 
+import fiona
 from suds.client import Client
 import jsonfield
 import xlrd
@@ -124,14 +126,11 @@ class WSResultField(models.Model):
         verbose_name_plural = _('result fields')
 
 
-class SourceFileBased(Source):
+class SourceFileBased(models.Model):
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
     url = models.URLField(blank=True, verbose_name=_('URL'), help_text=_('Import a file from an URL.'))
-    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=_('Specify the column names to use. Enclose names with quotes and separate with commas.'))
-    name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=_('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
-    import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
 
     def get_stream_type(self):
         if self.file:
@@ -143,16 +142,6 @@ class SourceFileBased(Source):
         else:
             return _('None')
     get_stream_type.short_description = 'stream type'
-
-    def get_column_names(self):
-        """
-        Split column names by comma but obeying quoted names
-        """
-        if self.column_names:
-            pattern = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
-            return map(lambda x: x.replace('"', '').replace("'", '').strip(), pattern.split(self.column_names)[1::2])
-        else:
-            return string.ascii_uppercase
 
     def check_file(self):
         try:
@@ -186,6 +175,8 @@ class SourceFileBased(Source):
             handle = urllib2.urlopen(self.url)
             new_hash = HASH_FUNCTION(handle.read())
             handle.close()
+
+        logger.debug('new_hash: %s' % new_hash)
 
         try:
             source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
@@ -225,7 +216,7 @@ class SourceFileBased(Source):
         kwargs = {}
 
         for parameter, value in parameters.items():
-            if not parameter.startswith('_'):
+            if not parameter.startswith('_') and '__' not in parameter:
                 kwargs['row__icontains'] = {parameter: value}
 
         if kwargs:
@@ -237,7 +228,26 @@ class SourceFileBased(Source):
         abstract = True
 
 
-class SourceCSV(SourceFileBased):
+class SourceTabularBased(models.Model):
+    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=_('Specify the column names to use. Enclose names with quotes and separate with commas.'))
+    name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=_('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
+    import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
+
+    def get_column_names(self):
+        """
+        Split column names by comma but obeying quoted names
+        """
+        if self.column_names:
+            pattern = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
+            return map(lambda x: x.replace('"', '').replace("'", '').strip(), pattern.split(self.column_names)[1::2])
+        else:
+            return string.ascii_uppercase
+
+    class Meta:
+        abstract = True
+
+
+class SourceCSV(Source, SourceFileBased, SourceTabularBased):
     source_type = _('CSV file')
 
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
@@ -304,7 +314,7 @@ class SourceCSV(SourceFileBased):
         verbose_name_plural = _('CSV sources')
 
 
-class SourceFixedWidth(SourceFileBased):
+class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
     source_type = _('Fixed width column file')
 
     column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'), help_text=_('The column widths separated by a comma.'))
@@ -365,7 +375,7 @@ class SourceFixedWidth(SourceFileBased):
         verbose_name_plural = _('Fixed width sources')
 
 
-class SourceSpreadsheet(SourceFileBased):
+class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
     source_type = _('Spreadsheet file')
 
     sheet = models.CharField(max_length=32, default=DEFAULT_SHEET, verbose_name=_('sheet'), help_text=('Worksheet of the spreadsheet file to use.'))
@@ -454,6 +464,45 @@ class SourceSpreadsheet(SourceFileBased):
     class Meta:
         verbose_name = _('spreadsheet source')
         verbose_name_plural = _('spreadsheet sources')
+
+
+class SourceShape(Source, SourceFileBased):
+    source_type = _('Shapefile')
+
+    @transaction.commit_on_success
+    def import_data(self, source_data_version):
+        # Reload data in case this is executed in another thread
+        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
+        if self.path:
+            self._file_handle = open(self.path)
+        elif self.file:
+            self._file_handle = self.file
+        elif self.url:
+            self._file_handle = urllib2.urlopen(self.url)
+
+        # TODO: only works with paths, fix
+        # TODO: store crs in a special record?
+
+        #crs = None
+        with fiona.collection(self.path, 'r') as source:
+            row_id = 1
+            for feature in source:
+                 SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=json.dumps(feature))
+                 row_id = row_id + 1
+
+            #crs = " ".join("+%s=%s" % (k,v) for k,v in source.crs.items())
+
+        source_data_version.ready = True
+        source_data_version.active = True
+        source_data_version.save()
+
+        if self._file_handle:
+            self._file_handle.close()
+
+    class Meta:
+        verbose_name = _('shape source')
+        verbose_name_plural = _('shape sources')
 
 
 class SourceDataVersion(models.Model):

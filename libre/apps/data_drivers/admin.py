@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput, SuitSplitDateTimeWidget
 
-from .models import (SourceCSV, SourceDataVersion, SourceFixedWidth, SourceSpreadsheet,
+from .models import (SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape, SourceSpreadsheet,
     SourceWS, WSArgument, WSResultField)
 
 
@@ -56,6 +56,16 @@ class SourceWSForm(ModelForm):
         widgets = {
             'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
             'wsdl_url': EnclosedInput(prepend='icon-globe'),
+        }
+
+
+class SourceShapeForm(ModelForm):
+    class Meta:
+        widgets = {
+            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
+            'limit': NumberInput(attrs={'class': 'input-mini'}),
+            'path': EnclosedInput(prepend='icon-folder-open'),
+            'url': EnclosedInput(prepend='icon-globe'),
         }
 
 
@@ -217,7 +227,32 @@ class SourceWSAdmin(admin.ModelAdmin):
     form = SourceWSForm
 
 
+class SourceShapeAdmin(admin.ModelAdmin):
+    suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')))
+
+    fieldsets = (
+        (_('Basic information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('name', 'slug', 'description')
+        }),
+        (_('Result limiting'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('limit',)
+        }),
+        (_('Source data (choose one)'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('path', 'file', 'url')
+        }),
+    )
+
+    list_display = ('name', 'slug', 'description', 'get_stream_type')
+    inlines = [SourceDataVersionInline]
+    actions = [check_updated]
+    form = SourceShapeForm
+
+
 admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
 admin.site.register(SourceCSV, SourceCSVAdmin)
+admin.site.register(SourceShape, SourceShapeAdmin)
 admin.site.register(SourceFixedWidth, SourceFixedWidthAdmin)
 admin.site.register(SourceWS, SourceWSAdmin)

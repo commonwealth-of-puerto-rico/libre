@@ -7,3 +7,4 @@ pytz==2013b
 pyinotify==0.9.4
 suds==0.4
 django-suit==0.2.2
+Fiona==0.16.1
