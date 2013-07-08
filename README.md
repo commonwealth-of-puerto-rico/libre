@@ -13,12 +13,19 @@ The engine that will power the liberation of government data for island of Puert
 ![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/main_diagram.png)
 
 Turn this:
+----------
 
 ![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/before.png)
 
 Into this!
+----------
 
 ![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/after.png)
+
+Query your data afterwards too!
+-------------------------------
+
+![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/math_query.png)
 
 INSTALLATION
 ============
@@ -28,7 +35,7 @@ INSTALLATION
     $ cd libre
     $ virtualenv venv
     $ source venv/bin/activate
-    $ pip install -r libre/requirements/common.txt
+    $ pip install -r libre/requirements.txt
     $ ./manage.py syncdb --migrate
     $ cat <<'EOF' > settings_local.py
     DEBUG=True
@@ -36,4 +43,4 @@ INSTALLATION
     EOF
     $ ./manage.py runserver
 
-Point your browsers to 127.0.0.1:8000
+Point your browser to 127.0.0.1:8000
