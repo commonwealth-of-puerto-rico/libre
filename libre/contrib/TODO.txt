@@ -2,7 +2,6 @@ PENDING
 -------
 * Improve resource navigation template (look and feel)
 * Add Celery support or subprocess
-* Add django-rest-framework support
 * Add compressed file support
 * Parse values
   * Parse dates (using dateutil)
@@ -33,6 +32,9 @@ PENDING
 * Cache Webservices
   * TTL support
 * Documentation
+* Add internal support for open ranges for rows "10-"
+* JSON source descriptor export and import
+* Rename timestamp to version and allow used defined version strings
 
 DONE
 ----
@@ -50,3 +52,4 @@ DONE
 * Out of data context _ids
 * Add support for shape sources
 * return Http Invalid Request on query syntax error
+* Add django-rest-framework support

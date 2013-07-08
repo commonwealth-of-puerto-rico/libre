@@ -1,1 +1,2 @@
-Django==1.5.1
+# Install all of our production dependencies only.
+-r requirements/production.txt

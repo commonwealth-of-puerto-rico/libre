@@ -52,7 +52,7 @@ class Source(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('resource_get_all', [self.slug])
+        return ('source-detail', [self.pk])
 
     class Meta:
         verbose_name = _('source')

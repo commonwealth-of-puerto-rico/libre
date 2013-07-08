@@ -1,2 +1,4 @@
+# requirements/development.txt
+-r common.txt
 Werkzeug==0.9.1
 django-extensions==1.1.1

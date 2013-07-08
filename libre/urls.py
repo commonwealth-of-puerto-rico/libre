@@ -12,7 +12,7 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
 
     url(r'^', include('main.urls')),
-    url(r'^resources/', include('data_drivers.urls')),
+    url(r'^api/', include('data_drivers.urls')),
 )
 
 if settings.DEVELOPMENT:

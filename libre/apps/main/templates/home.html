@@ -6,14 +6,15 @@
         <h2>{% trans 'FOSS data restructuring, versioning and exporting tool' %}</h2>
     </div>
 
-    <a href="{% url 'resource_list' %}">{% trans 'Resources' %}</a>
+    <a href="{% url 'api_root' %}">{% trans 'API' %}</a>
+    <a href="{% url 'admin:index' %}">{% trans 'Admin interface' %}</a>
 
     <hr>
 {% endblock %}
 {% block footer %}
     <div id="footer">
         <div class="block">
-            <p>Copyright &copy; 2013 Roberto Rosario.</p>
+            <p>{% trans 'Copyright &copy; 2013 Roberto Rosario.' %}</p>
         </div>
     </div>
 {% endblock %}
