@@ -35,6 +35,8 @@ PENDING
 * Add internal support for open ranges for rows "10-"
 * JSON source descriptor export and import
 * Rename timestamp to version and allow used defined version strings
+* Add LIBRE API
+  * project version, etc
 
 DONE
 ----
