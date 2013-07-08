@@ -190,8 +190,19 @@ class SourceFileBased(models.Model):
             source_data_version.active = True
             source_data_version.save()
 
-    def get_one(self, id, timestamp=None, parameters=None):
+    def analyze_request(self, parameters):
+        kwargs = {}
+        for i in parameters:
+            if not i.startswith('_'):
+                kwargs[i] = parameters[i]
+
+        timestamp = parameters.get('_timestamp', None)
+
+        return timestamp, parameters
+
+    def get_one(self, id, parameters=None):
         # TODO: return a proper response when no sourcedataversion is found
+        timestamp, parameters = self.analyze_request(parameters)
         if timestamp:
             source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
         else:
@@ -200,7 +211,9 @@ class SourceFileBased(models.Model):
         instance = SourceData.objects.get(source_data_version=source_data_version, row_id=id)
         return dict(instance.row, **{'_id': instance.row_id})
 
-    def get_all(self, timestamp=None, parameters=None):
+    def get_all(self, parameters=None):
+        timestamp, parameters = self.analyze_request(parameters)
+
         try:
             if timestamp:
                 source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)

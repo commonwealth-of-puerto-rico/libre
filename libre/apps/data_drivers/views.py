@@ -32,7 +32,6 @@ class DashboardWelcomeView(TemplateView):
 @api_view(('GET',))
 def api_root(request, format=None):
     return Response({
-        #'users': reverse('user-list', request=request, format=format),
         'sources': reverse('source-list', request=request, format=format)
     })
 
@@ -52,15 +51,8 @@ class SourceGetAll(generics.GenericAPIView):
     renderer_classes = (renderers.BrowsableAPIRenderer, renderers.JSONRenderer)
 
     def get(self, request, *args, **kwargs):
-        parameters = {}
-        for i in request.GET:
-            if not i.startswith('_'):
-                parameters[i] = request.GET[i]
-
-        timestamp = request.GET.get('_timestamp', None)
-
         source = self.get_object()
-        return Response(source.get_all(timestamp=timestamp, parameters=parameters))
+        return Response(source.get_all(parameters=request.GET))
 
 
 class SourceGetOne(generics.GenericAPIView):
@@ -68,12 +60,5 @@ class SourceGetOne(generics.GenericAPIView):
     renderer_classes = (renderers.BrowsableAPIRenderer, renderers.JSONRenderer)
 
     def get(self, request, *args, **kwargs):
-        parameters = {}
-        for i in request.GET:
-            if not i.startswith('_'):
-                parameters[i] = request.GET[i]
-
-        timestamp = request.GET.get('_timestamp', None)
-
         source = self.get_object()
-        return Response(source.get_one(int(kwargs['id']), timestamp=timestamp, parameters=parameters))
+        return Response(source.get_one(int(kwargs['id']), parameters=request.GET))
