@@ -5,7 +5,6 @@ import datetime
 import hashlib
 import json
 import logging
-from multiprocessing import Process
 import string
 import struct
 import re
@@ -25,6 +24,7 @@ from model_utils.managers import InheritanceManager
 from lock_manager import Lock, LockError
 
 from .exceptions import Http400
+from .job_processing import Job
 from .literals import DEFAULT_LIMIT, DEFAULT_SHEET
 from .utils import parse_range
 
@@ -183,9 +183,9 @@ class SourceFileBased(models.Model):
             source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
         except SourceDataVersion.DoesNotExist:
             source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
-            p = Process(target=self.import_data, args=(source_data_version,))
-            p.start()
-            logger.debug('launching subprocess: %s' % p)
+            job = Job(target=self.import_data, args=(source_data_version,))
+            job.submit()
+            logger.debug('launching import job: %s' % job)
         else:
             source_data_version.active = True
             source_data_version.save()
@@ -315,7 +315,7 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
 
-    def _get_items(self):
+    def _get_items(self, file_handle):
         column_names = self.get_column_names()
 
         kwargs = {}
@@ -324,25 +324,31 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
         if self.quote_character:
             kwargs['quotechar'] = str(self.quote_character)
 
-        reader = csv.reader(self._file_handle, **kwargs)
+        reader = csv.reader(file_handle, **kwargs)
 
         if self.name_row:
             for i, row in enumerate(reader):
                 if i == self.name_row - 1:
                     column_names = row
-                    self._file_handle.seek(0)
+                    file_handle.seek(0)
                     break
+
+        logger.debug('column_names: %s' % column_names)
 
         if self.import_rows:
             parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
         else:
             parsed_range = None
 
+        logger.debug('parsed_range: %s' % parsed_range)
+
         for i, row in enumerate(reader):
             if self.name_row and i == self.name_row - 1:
                 pass
             else:
                 if parsed_range and i in parsed_range:
+                    yield dict(zip(column_names, row))
+                else:
                     yield dict(zip(column_names, row))
 
     @transaction.commit_on_success
@@ -351,25 +357,24 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
 
         if self.path:
-            self._file_handle = open(self.path)
+            file_handle = open(self.path)
         elif self.file:
-            self._file_handle = self.file
+            file_handle = self.file
         elif self.url:
-            self._file_handle = urllib2.urlopen(self.url)
+            file_handle = urllib2.urlopen(self.url)
+
+        logger.debug('file_handle: %s' % file_handle)
 
         row_id = 1
-        for row in self._get_items():
+        for row in self._get_items(file_handle):
             SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=row)
             row_id = row_id + 1
 
-        self._file_handle.close()
+        file_handle.close()
 
         source_data_version.ready = True
         source_data_version.active = True
         source_data_version.save()
-
-        if self._file_handle:
-            self._file_handle.close()
 
     class Meta:
         verbose_name = _('CSV source')
