@@ -348,7 +348,7 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
             else:
                 if parsed_range and i in parsed_range:
                     yield dict(zip(column_names, row))
-                else:
+                elif not parsed_range:
                     yield dict(zip(column_names, row))
 
     @transaction.commit_on_success
@@ -410,6 +410,9 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
             else:
                 if parsed_range and i in parsed_range:
                     yield dict(zip(column_names, map(string.strip, parse(row))))
+                elif not parsed_range:
+                    yield dict(zip(column_names, map(string.strip, parse(row))))
+
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
