@@ -34,9 +34,12 @@ PENDING
 * Documentation
 * Add internal support for open ranges for rows "10-"
 * JSON source descriptor export and import
-* Rename timestamp to version and allow used defined version strings
+* Rename timestamp to version and allow user defined version strings
 * Add LIBRE API
   * project version, etc
+* Re-projecting a shapefile during import
+* Control initial map origin and zoom level
+* Remap JSON names
 
 DONE
 ----
