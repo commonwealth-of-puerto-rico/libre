@@ -6,7 +6,8 @@ from django.utils.translation import ugettext_lazy as _
 
 from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput, SuitSplitDateTimeWidget
 
-from .models import (SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape, SourceSpreadsheet,
+from .models import (FixedWidthColumn, CSVColumn, FixedWidthColumn, SourceCSV,
+    SourceDataVersion, SourceFixedWidth, SourceShape, SourceSpreadsheet, SpreadsheetColumn,
     SourceWS, WSArgument, WSResultField)
 
 
@@ -19,7 +20,6 @@ class SourceSpreadsheetForm(ModelForm):
             'url': EnclosedInput(prepend='icon-globe'),
             'sheet': NumberInput(attrs={'class': 'input-mini'}),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-            'column_names': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
             'name_row': NumberInput(attrs={'class': 'input-mini'}),
         }
 
@@ -32,9 +32,7 @@ class SourceFixedWidthForm(ModelForm):
             'path': EnclosedInput(prepend='icon-folder-open'),
             'url': EnclosedInput(prepend='icon-globe'),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-            'column_names': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
             'name_row': NumberInput(attrs={'class': 'input-mini'}),
-            'column_widths': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
         }
 
 
@@ -46,7 +44,6 @@ class SourceCSVForm(ModelForm):
             'path': EnclosedInput(prepend='icon-folder-open'),
             'url': EnclosedInput(prepend='icon-globe'),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-            'column_names': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
             'name_row': NumberInput(attrs={'class': 'input-mini'}),
         }
 
@@ -75,6 +72,25 @@ class SourceDataVersionInline(admin.TabularInline):
     extra = 0
     max_num = 0  # Don't allowing adding new versions by hand
     suit_classes = 'suit-tab suit-tab-versions'
+
+
+class FixedWidthColumnInline(admin.TabularInline):
+    model = FixedWidthColumn
+    extra = 1
+    suit_classes = 'suit-tab suit-tab-configuration'
+
+
+class CSVColumnInline(admin.TabularInline):
+    model = CSVColumn
+    extra = 1
+    suit_classes = 'suit-tab suit-tab-configuration'
+
+
+class SpreadsheetColumnInline(admin.TabularInline):
+    model = SpreadsheetColumn
+    extra = 1
+    suit_classes = 'suit-tab suit-tab-configuration'
+
 
 
 def check_updated(modeladmin, request, queryset):
@@ -121,12 +137,12 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
         }),
         (_('Column identifiers'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('column_names', 'name_row',)
+            'fields': ('name_row',)
         }),
     )
 
     list_display = ('name', 'slug', 'description', 'get_stream_type')
-    inlines = [SourceDataVersionInline]
+    inlines = [SourceDataVersionInline, SpreadsheetColumnInline]
     actions = [check_updated]
     form = SourceSpreadsheetForm
 
@@ -153,7 +169,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
         }),
         (_('Column identifiers'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('column_names', 'name_row',)
+            'fields': ('name_row',)
         }),
         (_('Comma delimited files'), {
             'classes': ('suit-tab suit-tab-configuration',),
@@ -161,7 +177,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
         }),
     )
     list_display = ('name', 'slug', 'description', 'get_stream_type')
-    inlines = [SourceDataVersionInline]
+    inlines = [SourceDataVersionInline, CSVColumnInline]
     actions = [check_updated]
     form = SourceCSVForm
 
@@ -188,11 +204,11 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
         }),
         (_('Column identifiers'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('column_names', 'name_row', 'column_widths',)
+            'fields': ('name_row',)
         }),
     )
     list_display = ('name', 'slug', 'description', 'get_stream_type')
-    inlines = [SourceDataVersionInline]
+    inlines = [SourceDataVersionInline, FixedWidthColumnInline]
     actions = [check_updated]
     form = SourceFixedWidthForm
 

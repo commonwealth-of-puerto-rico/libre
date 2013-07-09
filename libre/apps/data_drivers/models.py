@@ -7,7 +7,6 @@ import json
 import logging
 import string
 import struct
-import re
 import urllib2
 
 from django.db import models, transaction
@@ -25,7 +24,7 @@ from lock_manager import Lock, LockError
 
 from .exceptions import Http400
 from .job_processing import Job
-from .literals import DEFAULT_LIMIT, DEFAULT_SHEET
+from .literals import DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS, DATA_TYPE_NUMBER
 from .utils import parse_range
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
@@ -230,6 +229,8 @@ class SourceFileBased(models.Model):
         post_filters = []
 
         for parameter, value in parameters.items():
+            logger.debug('parameter: %s' % parameter)
+            logger.debug('value: %s' % value)
             valid = True
             # If value is quoted is a string else try to see if it is a number
             try:
@@ -238,7 +239,7 @@ class SourceFileBased(models.Model):
                     value = str(value[1:-1])
                 else:
                     try:
-                        value = int(value)
+                        value = DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](value)
                     except ValueError:
                         valid = False
             except IndexError:
@@ -304,17 +305,12 @@ class SourceFileBased(models.Model):
 
 
 class SourceTabularBased(models.Model):
-    column_names = models.TextField(blank=True, verbose_name=_('column names'), help_text=_('Specify the column names to use. Enclose names with quotes and separate with commas.'))
     name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=_('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
     import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
 
     def get_column_names(self):
-        """
-        Split column names by comma but obeying quoted names
-        """
-        if self.column_names:
-            pattern = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
-            return map(lambda x: x.replace('"', '').replace("'", '').strip(), pattern.split(self.column_names)[1::2])
+        if self.columns.count():
+            return self.columns.all().values_list('name', flat=True)
         else:
             return string.ascii_uppercase
 
@@ -397,18 +393,22 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
 class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
     source_type = _('Fixed width column file')
 
-    column_widths = models.TextField(blank=True, null=True, verbose_name=_('column widths'), help_text=_('The column widths separated by a comma.'))
+    def _get_columns(self, functions, values):
+        return [x(y) for x, y in zip(functions, values)]
 
     def _get_items(self):
         column_names = self.get_column_names()
+        column_widths = self.columns.all().values_list('size', flat=True)
 
-        fmtstring = ''.join('%ds' % f for f in map(int, self.column_widths.split(',')))
+        fmtstring = ''.join('%ds' % f for f in map(int, column_widths))
         parse = struct.Struct(fmtstring).unpack_from
+
+        functions = [DATA_TYPE_FUNCTIONS[i] for i in self.columns.all().values_list('data_type', flat=True)]
 
         if self.name_row:
             for i, row in enumerate(self._file_handle):
                 if i == self.name_row - 1:
-                    column_names = map(string.strip, parse(row))
+                    column_names = map(string.strip, self._get_columns(functions, parse(row)))
                     self._file_handle.seek(0)
                     break
 
@@ -418,14 +418,15 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
             parsed_range = None
 
         for i, row in enumerate(self._file_handle):
-            if self.name_row and i == self.name_row - 1:
-                pass
+            if self.name_row:
+                if i == self.name_row - 1:
+                    pass
             else:
-                if parsed_range and i in parsed_range:
-                    yield dict(zip(column_names, map(string.strip, parse(row))))
-                elif not parsed_range:
-                    yield dict(zip(column_names, map(string.strip, parse(row))))
-
+                if parsed_range:
+                    if i in parsed_range:
+                        yield dict(zip(column_names, self._get_columns(functions, parse(row))))
+                else:
+                    yield dict(zip(column_names, self._get_columns(functions, parse(row))))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -620,3 +621,36 @@ class SourceData(models.Model):
         verbose_name = _('source data')
         verbose_name_plural = _('sources data')
 
+
+class ColumnBase(models.Model):
+    name = models.CharField(max_length=32, verbose_name=_('name'))
+    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
+    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+
+    class Meta:
+        abstract = True
+
+
+class CSVColumn(ColumnBase):
+    source = models.ForeignKey(SourceCSV, verbose_name=_('CSV source'), related_name='columns')
+
+    class Meta:
+        verbose_name = _('CSV column')
+        verbose_name_plural = _('CSV columns')
+
+
+class FixedWidthColumn(ColumnBase):
+    source = models.ForeignKey(SourceFixedWidth, verbose_name=_('fixed width source'), related_name='columns')
+    size = models.PositiveIntegerField(verbose_name=_('size'))
+
+    class Meta:
+        verbose_name = _('fixed width column')
+        verbose_name_plural = _('fixed width columns')
+
+
+class SpreadsheetColumn(ColumnBase):
+    source = models.ForeignKey(SourceSpreadsheet, verbose_name=_('spreadsheet source'), related_name='columns')
+
+    class Meta:
+        verbose_name = _('spreadsheet column')
+        verbose_name_plural = _('spreadsheet columns')
