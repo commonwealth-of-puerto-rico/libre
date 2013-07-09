@@ -37,7 +37,6 @@ PENDING
 * Rename timestamp to version and allow used defined version strings
 * Add LIBRE API
   * project version, etc
-* Per source special data
 
 DONE
 ----
@@ -58,3 +57,4 @@ DONE
 * Add django-rest-framework support
 * Specify format by using "_format" and not the default "format"
 * Remove data type from spreadsheet source
+* Per source special data

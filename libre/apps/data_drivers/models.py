@@ -12,7 +12,7 @@ import urllib2
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
-from django.template.defaultfilters import slugify
+from django.template.defaultfilters import slugify, truncatechars
 
 import fiona
 from suds.client import Client
@@ -546,17 +546,14 @@ class SourceShape(Source, SourceFileBased):
             self._file_handle = urllib2.urlopen(self.url)
 
         # TODO: only works with paths, fix
-        # TODO: store crs in a special record?
 
-        #crs = None
         with fiona.collection(self.path, 'r') as source:
             row_id = 1
             for feature in source:
                  SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=json.dumps(feature))
                  row_id = row_id + 1
 
-            #crs = " ".join("+%s=%s" % (k,v) for k,v in source.crs.items())
-
+            source_data_version.metadata = source.crs
         source_data_version.ready = True
         source_data_version.active = True
         source_data_version.save()
@@ -576,12 +573,16 @@ class SourceDataVersion(models.Model):
     checksum = models.TextField(verbose_name=_('checksum'))
     ready = models.BooleanField(default=False, verbose_name=_('ready'))
     active = models.BooleanField(default=False, verbose_name=_('active'))
+    metadata = jsonfield.JSONField(blank=True, verbose_name=_('metadata'))
 
     def save(self, *args, **kwargs):
         self.timestamp = datetime.datetime.strftime(self.datetime, '%Y%m%d%H%M%S%f')
         if self.active:
             SourceDataVersion.objects.filter(source=self.source).update(active=False)
         super(self.__class__, self).save(*args, **kwargs)
+
+    def truncated_checksum(self):
+        return truncatechars(self.checksum, 10)
 
     class Meta:
         verbose_name = _('source data version')
