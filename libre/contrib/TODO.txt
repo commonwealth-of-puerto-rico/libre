@@ -37,6 +37,9 @@ PENDING
 * Rename timestamp to version and allow used defined version strings
 * Add LIBRE API
   * project version, etc
+* Per source special data
+* Specify format by using "_format" and not the default "format"
+* Remove data type from spreadsheet source
 
 DONE
 ----
