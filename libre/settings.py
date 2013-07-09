@@ -194,6 +194,10 @@ SUIT_CONFIG = {
     ),
 }
 
+REST_FRAMEWORK = {
+    'URL_FORMAT_OVERRIDE': '_format',
+}
+
 try:
     from settings_local import *
 except ImportError:
