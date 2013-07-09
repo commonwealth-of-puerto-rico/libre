@@ -38,8 +38,6 @@ PENDING
 * Add LIBRE API
   * project version, etc
 * Per source special data
-* Specify format by using "_format" and not the default "format"
-* Remove data type from spreadsheet source
 
 DONE
 ----
@@ -58,3 +56,5 @@ DONE
 * Add support for shape sources
 * return Http Invalid Request on query syntax error
 * Add django-rest-framework support
+* Specify format by using "_format" and not the default "format"
+* Remove data type from spreadsheet source
