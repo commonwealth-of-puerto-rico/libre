@@ -266,8 +266,9 @@ class SourceFileBased(models.Model):
                     try:
                         real_value = item.row
                         for part in post_filter['key'].split('.'):
-                            real_value = real_value.get(part)
-                            if not real_value:
+                            try:
+                                real_value = real_value[part]
+                            except KeyError:
                                 raise Http400('Invalid element: %s' % post_filter['key'])
                     except AttributeError:
                         # A dotted attribute is not found
