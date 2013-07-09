@@ -14,6 +14,8 @@ from rest_framework.reverse import reverse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+import main
+
 from .literals import RENDERER_MAPPING
 from .models import Source, SourceDataVersion
 from .serializers import SourceDataVersionSerializer, SourceSerializer
@@ -33,7 +35,8 @@ class DashboardWelcomeView(TemplateView):
 @api_view(('GET',))
 def api_root(request, format=None):
     return Response({
-        'sources': reverse('source-list', request=request, format=format)
+        'sources': reverse('source-list', request=request, format=format),
+        'libre': reverse('libremetadata-list', request=request, format=format)
     })
 
 
@@ -85,3 +88,8 @@ class SourceGetOne(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         source = self.get_object()
         return Response(source.get_one(int(kwargs['id']), parameters=request.GET))
+
+
+class LibreMetadataList(generics.GenericAPIView):
+    def get(self, request, *args, **kwargs):
+        return Response(dict([(i, getattr(main, i)) for i in ['__author__', '__copyright__', '__credits__', '__email__', '__license__', '__maintainer__', '__status__', '__version__', '__version_info__']]))
