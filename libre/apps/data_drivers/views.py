@@ -15,8 +15,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 from .literals import RENDERER_MAPPING
-from .models import Source
-from .serializers import SourceSerializer
+from .models import Source, SourceDataVersion
+from .serializers import SourceDataVersionSerializer, SourceSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,16 @@ class SourceList(generics.ListAPIView):
 class SourceDetail(generics.RetrieveAPIView):
     queryset = Source.objects.all()
     serializer_class = SourceSerializer
+
+
+class SourceDataVersionList(generics.ListAPIView):
+    queryset = SourceDataVersion.objects.all()
+    serializer_class = SourceDataVersionSerializer
+
+
+class SourceDataVersionDetail(generics.RetrieveAPIView):
+    queryset = SourceDataVersion.objects.all()
+    serializer_class = SourceDataVersionSerializer
 
 
 class SourceGetAll(generics.GenericAPIView):
