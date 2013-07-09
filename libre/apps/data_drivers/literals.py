@@ -1,7 +1,7 @@
 from django.utils.translation import ugettext_lazy as _
 
 # Row based
-DEFAULT_LIMIT = 100
+DEFAULT_LIMIT = 50
 
 # Excel
 DEFAULT_SHEET = '0'
