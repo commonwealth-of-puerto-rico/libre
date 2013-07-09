@@ -28,6 +28,10 @@
             L.marker([18.30, -66.60]).addTo(map)
             .bindPopup('<strong>L.I.B.R.E.</strong><br/>API Engine!')
             .openPopup();
+
+            var geoJSONdata = {{ data|safe }};
+
+            L.geoJson(geoJSONdata, {}).addTo(map);
         </script>
     </body>
 </html>
