@@ -280,6 +280,21 @@ class SourceFileBased(models.Model):
                         elif post_filter['operation'] == 'contains':
                             if post_filter['value'] in real_value:
                                 results.append(item.pk)
+                        elif post_filter['operation'] == 'startswith':
+                            if real_value.startswith(post_filter['value']):
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'istartswith':
+                            if real_value.upper().startswith(post_filter['value'].upper()):
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'endswith':
+                            if real_value.endswith(post_filter['value']):
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'iendswith':
+                            if real_value.upper().endswith(post_filter['value'].upper()):
+                                results.append(item.pk)
+                        elif post_filter['operation'] == 'in':
+                            if real_value in post_filter['value'].split(','):
+                                results.append(item.pk)
                         elif post_filter['operation'] == 'equals':
                             if post_filter['value'] == real_value:
                                 results.append(item.pk)
