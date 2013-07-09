@@ -14,6 +14,7 @@ from rest_framework.reverse import reverse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+from .literals import RENDERER_MAPPING
 from .models import Source
 from .serializers import SourceSerializer
 
@@ -48,7 +49,13 @@ class SourceDetail(generics.RetrieveAPIView):
 
 class SourceGetAll(generics.GenericAPIView):
     queryset = Source.objects.all().select_subclasses()
-    renderer_classes = (renderers.BrowsableAPIRenderer, renderers.JSONRenderer)
+
+    def get_renderers(self):
+        """
+        Instantiates and returns the list of renderers that this view can use.
+        """
+        source = self.get_object()
+        return [RENDERER_MAPPING[i]() for i in source.__class__.renderers]
 
     def get(self, request, *args, **kwargs):
         source = self.get_object()
@@ -57,7 +64,13 @@ class SourceGetAll(generics.GenericAPIView):
 
 class SourceGetOne(generics.GenericAPIView):
     queryset = Source.objects.all().select_subclasses()
-    renderer_classes = (renderers.BrowsableAPIRenderer, renderers.JSONRenderer)
+
+    def get_renderers(self):
+        """
+        Instantiates and returns the list of renderers that this view can use.
+        """
+        source = self.get_object()
+        return [RENDERER_MAPPING[i]() for i in source.__class__.renderers]
 
     def get(self, request, *args, **kwargs):
         source = self.get_object()

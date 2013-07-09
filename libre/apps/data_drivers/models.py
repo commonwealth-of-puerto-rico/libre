@@ -24,7 +24,9 @@ from lock_manager import Lock, LockError
 
 from .exceptions import Http400
 from .job_processing import Job
-from .literals import DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS, DATA_TYPE_NUMBER
+from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
+    DATA_TYPE_NUMBER, RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML,
+    RENDERER_LEAFLET)
 from .utils import parse_range
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
@@ -32,6 +34,9 @@ logger = logging.getLogger(__name__)
 
 
 class Source(models.Model):
+    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML,
+    RENDERER_LEAFLET)
+
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
     slug = models.SlugField(blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
     description = models.TextField(blank=True, verbose_name=_('description'))
@@ -526,6 +531,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
 
 class SourceShape(Source, SourceFileBased):
     source_type = _('Shapefile')
+    renderers = (RENDERER_JSON,)
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):

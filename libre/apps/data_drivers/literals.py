@@ -1,4 +1,10 @@
+from __future__ import absolute_import
+
 from django.utils.translation import ugettext_lazy as _
+
+from rest_framework import renderers
+
+from .utils import convert_to_number
 
 # Row based
 DEFAULT_LIMIT = 50
@@ -16,19 +22,21 @@ DATA_TYPE_CHOICES = (
     (DATA_TYPE_NUMBER, _('Number')),
 )
 
-
-def convert_to_number(data):
-    #int(re.sub(r'[^\d-]+', '', data))
-    try:
-        if '.' in data:
-            return float(data.replace(',', '').replace('$', ''))
-        else:
-            return int(data.replace(',', '').replace('$', ''))
-    except Exception:
-        return str(data)
-
-
 DATA_TYPE_FUNCTIONS = {
     DATA_TYPE_STRING: lambda x: str(x).strip(),
     DATA_TYPE_NUMBER: lambda x: convert_to_number(x),
+}
+
+RENDERER_BROWSEABLE_API = 1
+RENDERER_JSON = 2
+RENDERER_XML = 3
+RENDERER_YAML = 4
+RENDERER_LEAFLET = 5
+
+RENDERER_MAPPING = {
+    RENDERER_BROWSEABLE_API: renderers.BrowsableAPIRenderer,
+    RENDERER_JSON: renderers.JSONRenderer,
+    RENDERER_XML: renderers.XMLRenderer,
+    RENDERER_YAML: renderers.YAMLRenderer,
+    RENDERER_LEAFLET: renderers.JSONRenderer,
 }
