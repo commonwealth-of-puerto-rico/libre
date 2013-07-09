@@ -184,7 +184,7 @@ class SourceFileBased(models.Model):
         logger.debug('new_hash: %s' % new_hash)
 
         try:
-            source_data_version = self.sourcedataversion_set.get(checksum=new_hash)
+            source_data_version = self.versions.get(checksum=new_hash)
         except SourceDataVersion.DoesNotExist:
             source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
             job = Job(target=self.import_data, args=(source_data_version,))
@@ -208,9 +208,9 @@ class SourceFileBased(models.Model):
         # TODO: return a proper response when no sourcedataversion is found
         timestamp, parameters = self.analyze_request(parameters)
         if timestamp:
-            source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
+            source_data_version = self.versions.get(timestamp=timestamp)
         else:
-            source_data_version = self.sourcedataversion_set.get(active=True)
+            source_data_version = self.versions.get(active=True)
 
         instance = SourceData.objects.get(source_data_version=source_data_version, row_id=id)
         return dict(instance.row, **{'_id': instance.row_id})
@@ -220,9 +220,9 @@ class SourceFileBased(models.Model):
 
         try:
             if timestamp:
-                source_data_version = self.sourcedataversion_set.get(timestamp=timestamp)
+                source_data_version = self.versions.get(timestamp=timestamp)
             else:
-                source_data_version = self.sourcedataversion_set.get(active=True)
+                source_data_version = self.versions.get(active=True)
         except SourceDataVersion.DoesNotExist:
             return []
 
@@ -584,7 +584,7 @@ class SourceShape(Source, SourceFileBased):
 
 
 class SourceDataVersion(models.Model):
-    source = models.ForeignKey(Source, verbose_name=_('source'))
+    source = models.ForeignKey(Source, verbose_name=_('source'), related_name='versions')
     datetime = models.DateTimeField(default=lambda: now())
     timestamp = models.CharField(blank=True, max_length=20, verbose_name=_('timestamp'))
     checksum = models.TextField(verbose_name=_('checksum'))
@@ -608,7 +608,7 @@ class SourceDataVersion(models.Model):
 
 
 class SourceData(models.Model):
-    source_data_version = models.ForeignKey(SourceDataVersion, verbose_name=_('source data version'))
+    source_data_version = models.ForeignKey(SourceDataVersion, verbose_name=_('source data version'), related_name='data')
     row = jsonfield.JSONField(verbose_name=_('row'))
     row_id = models.PositiveIntegerField(verbose_name=_('row id'), db_index=True)
 
