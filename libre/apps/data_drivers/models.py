@@ -625,7 +625,6 @@ class SourceData(models.Model):
 class ColumnBase(models.Model):
     name = models.CharField(max_length=32, verbose_name=_('name'))
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
-    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
 
     class Meta:
         abstract = True
@@ -633,6 +632,7 @@ class ColumnBase(models.Model):
 
 class CSVColumn(ColumnBase):
     source = models.ForeignKey(SourceCSV, verbose_name=_('CSV source'), related_name='columns')
+    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
 
     class Meta:
         verbose_name = _('CSV column')
@@ -642,6 +642,7 @@ class CSVColumn(ColumnBase):
 class FixedWidthColumn(ColumnBase):
     source = models.ForeignKey(SourceFixedWidth, verbose_name=_('fixed width source'), related_name='columns')
     size = models.PositiveIntegerField(verbose_name=_('size'))
+    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
 
     class Meta:
         verbose_name = _('fixed width column')
