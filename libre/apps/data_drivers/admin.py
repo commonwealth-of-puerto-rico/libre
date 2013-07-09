@@ -20,7 +20,6 @@ class SourceSpreadsheetForm(ModelForm):
             'url': EnclosedInput(prepend='icon-globe'),
             'sheet': NumberInput(attrs={'class': 'input-mini'}),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-            'name_row': NumberInput(attrs={'class': 'input-mini'}),
         }
 
 
@@ -32,7 +31,6 @@ class SourceFixedWidthForm(ModelForm):
             'path': EnclosedInput(prepend='icon-folder-open'),
             'url': EnclosedInput(prepend='icon-globe'),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-            'name_row': NumberInput(attrs={'class': 'input-mini'}),
         }
 
 
@@ -44,7 +42,6 @@ class SourceCSVForm(ModelForm):
             'path': EnclosedInput(prepend='icon-folder-open'),
             'url': EnclosedInput(prepend='icon-globe'),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-            'name_row': NumberInput(attrs={'class': 'input-mini'}),
         }
 
 
@@ -135,10 +132,6 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('import_rows',)
         }),
-        (_('Column identifiers'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name_row',)
-        }),
     )
 
     list_display = ('name', 'slug', 'description', 'get_stream_type')
@@ -166,10 +159,6 @@ class SourceCSVAdmin(admin.ModelAdmin):
         (_('Row related'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('import_rows',)
-        }),
-        (_('Column identifiers'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name_row',)
         }),
         (_('Comma delimited files'), {
             'classes': ('suit-tab suit-tab-configuration',),
@@ -201,10 +190,6 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
         (_('Row related'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('import_rows',)
-        }),
-        (_('Column identifiers'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name_row',)
         }),
     )
     list_display = ('name', 'slug', 'description', 'get_stream_type')

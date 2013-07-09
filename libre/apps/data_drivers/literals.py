@@ -16,7 +16,19 @@ DATA_TYPE_CHOICES = (
     (DATA_TYPE_NUMBER, _('Number')),
 )
 
+
+def convert_to_number(data):
+    #int(re.sub(r'[^\d-]+', '', data))
+    try:
+        if '.' in data:
+            return float(data.replace(',', '').replace('$', ''))
+        else:
+            return int(data.replace(',', '').replace('$', ''))
+    except Exception:
+        return str(data)
+
+
 DATA_TYPE_FUNCTIONS = {
     DATA_TYPE_STRING: lambda x: str(x).strip(),
-    DATA_TYPE_NUMBER: lambda x: float(x.replace(',', '').replace('$', '')) if '.' in x else int(x.replace(',', '').replace('$', ''))
+    DATA_TYPE_NUMBER: lambda x: convert_to_number(x),
 }

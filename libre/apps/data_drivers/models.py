@@ -305,7 +305,6 @@ class SourceFileBased(models.Model):
 
 
 class SourceTabularBased(models.Model):
-    name_row = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('name row'), help_text=_('Use the values of this row as the column names. A typical value is 1, meaning the first row. Leave blank to disable.'))
     import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
 
     def get_column_names(self):
@@ -327,6 +326,8 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
     def _get_items(self, file_handle):
         column_names = self.get_column_names()
 
+        functions = ColumnBase.get_functions_map(self.columns.all())
+
         kwargs = {}
         if self.delimiter:
             kwargs['delimiter'] = str(self.delimiter)
@@ -334,13 +335,6 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
             kwargs['quotechar'] = str(self.quote_character)
 
         reader = csv.reader(file_handle, **kwargs)
-
-        if self.name_row:
-            for i, row in enumerate(reader):
-                if i == self.name_row - 1:
-                    column_names = row
-                    file_handle.seek(0)
-                    break
 
         logger.debug('column_names: %s' % column_names)
 
@@ -352,13 +346,10 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
         logger.debug('parsed_range: %s' % parsed_range)
 
         for i, row in enumerate(reader):
-            if self.name_row and i == self.name_row - 1:
-                pass
-            else:
-                if parsed_range and i in parsed_range:
-                    yield dict(zip(column_names, row))
-                elif not parsed_range:
-                    yield dict(zip(column_names, row))
+            if parsed_range and i in parsed_range:
+                yield dict(zip(column_names, ColumnBase.zip_functions(functions, row)))
+            elif not parsed_range:
+                yield dict(zip(column_names, ColumnBase.zip_functions(functions, row)))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -393,9 +384,6 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
 class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
     source_type = _('Fixed width column file')
 
-    def _get_columns(self, functions, values):
-        return [x(y) for x, y in zip(functions, values)]
-
     def _get_items(self):
         column_names = self.get_column_names()
         column_widths = self.columns.all().values_list('size', flat=True)
@@ -403,14 +391,7 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
         fmtstring = ''.join('%ds' % f for f in map(int, column_widths))
         parse = struct.Struct(fmtstring).unpack_from
 
-        functions = [DATA_TYPE_FUNCTIONS[i] for i in self.columns.all().values_list('data_type', flat=True)]
-
-        if self.name_row:
-            for i, row in enumerate(self._file_handle):
-                if i == self.name_row - 1:
-                    column_names = map(string.strip, self._get_columns(functions, parse(row)))
-                    self._file_handle.seek(0)
-                    break
+        functions = ColumnBase.get_functions_map(self.columns.all())
 
         if self.import_rows:
             parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
@@ -418,15 +399,11 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
             parsed_range = None
 
         for i, row in enumerate(self._file_handle):
-            if self.name_row:
-                if i == self.name_row - 1:
-                    pass
+            if parsed_range:
+                if i in parsed_range:
+                    yield dict(zip(column_names, ColumnBase.zip_functions(functions, parse(row))))
             else:
-                if parsed_range:
-                    if i in parsed_range:
-                        yield dict(zip(column_names, self._get_columns(functions, parse(row))))
-                else:
-                    yield dict(zip(column_names, self._get_columns(functions, parse(row))))
+                yield dict(zip(column_names, ColumnBase.zip_functions(functions, parse(row))))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -488,9 +465,6 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
     def _get_items(self):
         column_names = self.get_column_names()
 
-        if self.name_row:
-            column_names = [cell.value for cell in self._sheet.row(self.name_row - 1)]
-
         logger.debug('column_names: %s' % column_names)
 
         if self.import_rows:
@@ -498,8 +472,8 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         else:
             parsed_range = xrange(0, self._sheet.nrows)
 
-        if self.name_row:
-            parsed_range = (i for i in set(parsed_range) - set([self.name_row - 1]))
+        #if self.name_row:
+        #    parsed_range = (i for i in set(parsed_range) - set([self.name_row - 1]))
 
         for i in parsed_range:
             yield dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
@@ -625,6 +599,14 @@ class SourceData(models.Model):
 class ColumnBase(models.Model):
     name = models.CharField(max_length=32, verbose_name=_('name'))
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
+
+    @staticmethod
+    def get_functions_map(columns):
+        return [DATA_TYPE_FUNCTIONS[i] for i in columns.values_list('data_type', flat=True)]
+
+    @staticmethod
+    def zip_functions(functions, values):
+        return [x(y) for x, y in zip(functions, values)]
 
     class Meta:
         abstract = True
