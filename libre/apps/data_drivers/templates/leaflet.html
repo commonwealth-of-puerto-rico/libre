@@ -1,0 +1,33 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>L.I.B.R.E.</title>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <!-- Leaflet -->
+        <link rel="stylesheet" href="{% static 'packages/Leaflet-0.6.2/dist/leaflet.css' %}" />
+        <!--[if lte IE 8]><link rel="stylesheet" href="{% static 'packages/Leaflet-0.6.2/dist/leaflet.ie.css' %}" /><![endif]-->
+        <script src="{% static 'packages/Leaflet-0.6.2/dist/leaflet.js' %}"></script>
+    </head>
+    <body>
+        <div id="map" style="height: 400px; position: relative;" tabindex="0"></div>
+        <script>
+            // create a map in the "map" div, set the view to a given place and zoom
+            var map = L.map('map').setView([18.30, -66.60], 10);
+
+            // add an OpenStreetMap tile layer
+            L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright"></a>OpenStreetMap & contributors'
+            }).addTo(map);
+
+            // add a marker in the given location, attach some popup content to it and open the popup
+            L.marker([18.30, -66.60]).addTo(map)
+            .bindPopup('<strong>L.I.B.R.E.</strong><br/>API Engine!')
+            .openPopup();
+        </script>
+    </body>
+</html>

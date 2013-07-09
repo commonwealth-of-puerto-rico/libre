@@ -531,7 +531,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
 
 class SourceShape(Source, SourceFileBased):
     source_type = _('Shapefile')
-    renderers = (RENDERER_JSON,)
+    renderers = (RENDERER_JSON, RENDERER_LEAFLET)
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
