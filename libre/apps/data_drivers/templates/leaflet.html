@@ -21,17 +21,17 @@
 
             // add an OpenStreetMap tile layer
             L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="http://osm.org/copyright"></a>OpenStreetMap & contributors'
+                attribution: '&copy; <a href="http://osm.org/copyright"></a>OpenStreetMap & contributors'
             }).addTo(map);
-
-            // add a marker in the given location, attach some popup content to it and open the popup
-            L.marker([18.30, -66.60]).addTo(map)
-            .bindPopup('<strong>L.I.B.R.E.</strong><br/>API Engine!')
-            .openPopup();
 
             var geoJSONdata = {{ data|safe }};
 
-            L.geoJson(geoJSONdata, {}).addTo(map);
+            L.geoJson(geoJSONdata, {
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup(feature.properties.popup);
+                }
+            }).addTo(map);
+
         </script>
     </body>
 </html>

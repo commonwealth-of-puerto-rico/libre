@@ -57,6 +57,7 @@ class SourceShapeForm(ModelForm):
     class Meta:
         widgets = {
             'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
+            'popup_template': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
             'limit': NumberInput(attrs={'class': 'input-mini'}),
             'path': EnclosedInput(prepend='icon-folder-open'),
             'url': EnclosedInput(prepend='icon-globe'),
@@ -245,6 +246,10 @@ class SourceShapeAdmin(admin.ModelAdmin):
             'classes': ('suit-tab suit-tab-configuration',),
             #'fields': ('path', 'file', 'url') #Disables until file handle support is added
             'fields': ('path',)
+        }),
+        (_('Map rendering'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('popup_template',)
         }),
     )
 

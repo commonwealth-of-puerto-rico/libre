@@ -532,6 +532,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
 class SourceShape(Source, SourceFileBased):
     source_type = _('Shapefile')
     renderers = (RENDERER_JSON, RENDERER_LEAFLET)
+    popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):

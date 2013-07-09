@@ -3,14 +3,24 @@ from __future__ import absolute_import
 import logging
 import json
 
+from django.template import Context, Template, TemplateSyntaxError
+
 from rest_framework import renderers
 
 
 class LeafletRenderer(renderers.TemplateHTMLRenderer):
     template_name = 'leaflet.html'
-    format = 'leaflet'
+    format = 'map_leaflet'
+
+    def _process_feature(self, feature, template):
+        new_feature = {"type": "Feature"}
+        new_feature.update(feature)
+        new_feature['properties']['popup'] = template.render(Context(feature['properties']))
+        return new_feature
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
+
+
         """
         Renders data to HTML, using Django's standard template rendering.
 
@@ -32,5 +42,32 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
             template = self.resolve_template(template_names)
 
         context = self.resolve_context(data, request, response)
-        context.update({'data': json.dumps(data)})
+
+        new_data = {
+            # TODO: place version CRS from version's metadata
+
+            #"crs": {
+            #    "type": "name", "properties": {
+            #        "name": "epsg:900913"
+            #     }
+            #},
+            "type": "FeatureCollection",
+        }
+
+        features = []
+
+        try:
+            popup_template = Template(view.get_object().popup_template)
+        except TemplateSyntaxError as exception:
+            popup_template = Template(exception)
+
+        if type(data) == type({}):
+            features.append(self._process_feature(data, popup_template))
+        else:
+            for feature in data:
+                features.append(self._process_feature(feature, popup_template))
+
+        new_data['features'] = features
+
+        context.update({'data': json.dumps(new_data)})
         return template.render(context)
