@@ -5,6 +5,7 @@ import datetime
 import hashlib
 import json
 import logging
+from operator import itemgetter
 import string
 import struct
 import urllib2
@@ -266,8 +267,8 @@ class SourceFileBased(models.Model):
                             join_type = JOIN_TYPE_OR
 
         kwargs = {}
+        query_results = set()
         if post_filters:
-            query_results = set()
             for post_filter in post_filters:
                 filter_results = []
                 for item in queryset:
@@ -284,40 +285,40 @@ class SourceFileBased(models.Model):
                     else:
                         if post_filter['operation'] == 'icontains':
                             if post_filter['value'].upper() in real_value.upper():
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'contains':
                             if post_filter['value'] in real_value:
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'startswith':
                             if real_value.startswith(post_filter['value']):
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'istartswith':
                             if real_value.upper().startswith(post_filter['value'].upper()):
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'endswith':
                             if real_value.endswith(post_filter['value']):
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'iendswith':
                             if real_value.upper().endswith(post_filter['value'].upper()):
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'in':
                             if real_value in post_filter['value'].split(','):
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'equals':
                             if post_filter['value'] == real_value:
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'lt':
                             if real_value < post_filter['value']:
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'lte':
                             if real_value <= post_filter['value']:
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'gt':
                             if real_value > post_filter['value']:
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'gte':
                             if real_value >= post_filter['value']:
-                                filter_results.append(item.pk)
+                                filter_results.append(item.row_id - 1)
                 if query_results:
                     if join_type == JOIN_TYPE_AND:
                         query_results &= set(filter_results)
@@ -325,15 +326,11 @@ class SourceFileBased(models.Model):
                         query_results |= set(filter_results)
                 else:
                     query_results = set(filter_results)
-            # TODO: convert to Q objects
-            # TODO: query terms are inclusive, move to chain filtering
-            # TODO: implement _join=OR modifier
-            kwargs['pk__in'] = query_results
 
-        if kwargs:
-            queryset = queryset.filter(**kwargs)
-
-        return [dict(item.row, **{'_id': item.row_id}) for item in queryset[0:self.limit]]
+        if query_results:
+            return [dict(item.row, **{'_id': item.row_id}) for item in itemgetter(*list(query_results))(queryset)[0:self.limit]]
+        else:
+            return [dict(item.row, **{'_id': item.row_id}) for item in queryset[0:self.limit]]
 
     class Meta:
         abstract = True
