@@ -26,8 +26,8 @@ from lock_manager import Lock, LockError
 from .exceptions import Http400
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
-    DATA_TYPE_NUMBER, JOIN_TYPE_AND, JOIN_TYPE_OR, RENDERER_BROWSEABLE_API, RENDERER_JSON,
-    RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
+    DATA_TYPE_NUMBER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPE_OR, LQL_DELIMITER,
+    RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 from .utils import parse_range
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
@@ -233,39 +233,57 @@ class SourceFileBased(models.Model):
             parameters = {}
 
         post_filters = []
+        join_type = JOIN_TYPE_AND
+        DOUBLE_DELIMITER = LQL_DELIMITER + LQL_DELIMITER
 
         for parameter, value in parameters.items():
             logger.debug('parameter: %s' % parameter)
             logger.debug('value: %s' % value)
             valid = True
             # If value is quoted is a string else try to see if it is a number
+            # TODO: clean up this mess!
             try:
                 if value[0] == '"' and value[-1] == '"':
                     # Strip quotes
                     value = str(value[1:-1])
                 else:
-                    try:
-                        value = DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](value)
-                    except ValueError:
-                        valid = False
+                    if ',' in value:
+                        result = []
+                        value = value.split(',')
+                        # List
+                        for n in value:
+                            if n[0] == '"' and n[-1] == '"':
+                                # Strip quotes
+                                result.append(str(n[1:-1]))
+                            else:
+                                try:
+                                    result.append(DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](n))
+                                except ValueError:
+                                    raise Http400('Invalid value')
+
+                        value = result
+                    else:
+                        try:
+                            value = DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](value)
+                        except ValueError:
+                            raise Http400('Invalid value')
             except IndexError:
                 raise Http400('Malformed query')
 
-            join_type = JOIN_TYPE_AND
-
             if valid:
-                if not parameter.startswith('_'):
-                    if '__' not in parameter:
+                if not parameter.startswith(LQL_DELIMITER):
+                    if DOUBLE_DELIMITER not in parameter:
                         post_filters.append({'key': parameter, 'operation': 'equals', 'value': value})
                     else:
-                        key, operation = parameter.split('__')
+                        key, operation = parameter.split(DOUBLE_DELIMITER)
                         post_filters.append({'key': key, 'operation': operation, 'value': value})
                 else:
                     # Determine query join type
-                    if parameter == '_join':
+                    if parameter == LQL_DELIMITER + 'join':
                         if value.upper() == 'OR':
                             join_type = JOIN_TYPE_OR
 
+        logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
         kwargs = {}
         query_results = set()
         if post_filters:
@@ -302,8 +320,13 @@ class SourceFileBased(models.Model):
                             if real_value.upper().endswith(post_filter['value'].upper()):
                                 filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'in':
-                            if real_value in post_filter['value'].split(','):
-                                filter_results.append(item.row_id - 1)
+                            try:
+                                if real_value in post_filter['value']:
+                                    filter_results.append(item.row_id - 1)
+                            except TypeError:
+                                # Asking for in, with a non list value
+                                if real_value in [post_filter['value']]:
+                                    filter_results.append(item.row_id - 1)
                         elif post_filter['operation'] == 'equals':
                             if post_filter['value'] == real_value:
                                 filter_results.append(item.row_id - 1)
@@ -328,7 +351,11 @@ class SourceFileBased(models.Model):
                     query_results = set(filter_results)
 
         if query_results:
-            return [dict(item.row, **{'_id': item.row_id}) for item in itemgetter(*list(query_results))(queryset)[0:self.limit]]
+            if len(query_results) == 1:
+                # Special case because itemgetter doesn't returns a list but a value
+                return [dict(item.row, **{'_id': item.row_id}) for item in [itemgetter(*list(query_results))(queryset)]]
+            else:
+                return [dict(item.row, **{'_id': item.row_id}) for item in itemgetter(*list(query_results))(queryset)[0:self.limit]]
         else:
             return [dict(item.row, **{'_id': item.row_id}) for item in queryset[0:self.limit]]
 
