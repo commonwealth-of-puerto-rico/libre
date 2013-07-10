@@ -25,8 +25,8 @@ from lock_manager import Lock, LockError
 from .exceptions import Http400
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
-    DATA_TYPE_NUMBER, RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML,
-    RENDERER_LEAFLET)
+    DATA_TYPE_NUMBER, JOIN_TYPE_AND, JOIN_TYPE_OR, RENDERER_BROWSEABLE_API, RENDERER_JSON,
+    RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 from .utils import parse_range
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
@@ -250,6 +250,8 @@ class SourceFileBased(models.Model):
             except IndexError:
                 raise Http400('Malformed query')
 
+            join_type = JOIN_TYPE_AND
+
             if valid:
                 if not parameter.startswith('_'):
                     if '__' not in parameter:
@@ -257,11 +259,17 @@ class SourceFileBased(models.Model):
                     else:
                         key, operation = parameter.split('__')
                         post_filters.append({'key': key, 'operation': operation, 'value': value})
+                else:
+                    # Determine query join type
+                    if parameter == '_join':
+                        if value.upper() == 'OR':
+                            join_type = JOIN_TYPE_OR
 
         kwargs = {}
         if post_filters:
-            results = []
+            query_results = set()
             for post_filter in post_filters:
+                filter_results = []
                 for item in queryset:
                     try:
                         real_value = item.row
@@ -276,45 +284,51 @@ class SourceFileBased(models.Model):
                     else:
                         if post_filter['operation'] == 'icontains':
                             if post_filter['value'].upper() in real_value.upper():
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'contains':
                             if post_filter['value'] in real_value:
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'startswith':
                             if real_value.startswith(post_filter['value']):
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'istartswith':
                             if real_value.upper().startswith(post_filter['value'].upper()):
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'endswith':
                             if real_value.endswith(post_filter['value']):
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'iendswith':
                             if real_value.upper().endswith(post_filter['value'].upper()):
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'in':
                             if real_value in post_filter['value'].split(','):
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'equals':
                             if post_filter['value'] == real_value:
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'lt':
                             if real_value < post_filter['value']:
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'lte':
                             if real_value <= post_filter['value']:
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'gt':
                             if real_value > post_filter['value']:
-                                results.append(item.pk)
+                                filter_results.append(item.pk)
                         elif post_filter['operation'] == 'gte':
                             if real_value >= post_filter['value']:
-                                results.append(item.pk)
-
+                                filter_results.append(item.pk)
+                if query_results:
+                    if join_type == JOIN_TYPE_AND:
+                        query_results &= set(filter_results)
+                    else:
+                        query_results |= set(filter_results)
+                else:
+                    query_results = set(filter_results)
             # TODO: convert to Q objects
             # TODO: query terms are inclusive, move to chain filtering
             # TODO: implement _join=OR modifier
-            kwargs['pk__in'] = results
+            kwargs['pk__in'] = query_results
 
         if kwargs:
             queryset = queryset.filter(**kwargs)

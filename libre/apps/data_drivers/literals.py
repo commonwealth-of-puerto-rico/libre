@@ -41,3 +41,6 @@ RENDERER_MAPPING = {
     RENDERER_YAML: renderers.YAMLRenderer,
     RENDERER_LEAFLET: LeafletRenderer,
 }
+
+JOIN_TYPE_OR = 1
+JOIN_TYPE_AND = 2
