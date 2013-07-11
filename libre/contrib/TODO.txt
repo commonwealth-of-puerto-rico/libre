@@ -39,6 +39,8 @@ PENDING
 * Control initial map origin and zoom level
 * Remap JSON names
 * Add row number exclusion support during import
+* LQL based pagination (size and page number) (Andres Colón)
+* Document LQL (Andres Colón)
 
 DONE
 ----
