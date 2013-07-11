@@ -289,7 +289,7 @@ class SourceFileBased(models.Model):
         if post_filters:
             for post_filter in post_filters:
                 filter_results = []
-                for item in queryset:
+                for row_id, item in enumerate(queryset):
                     try:
                         real_value = item.row
                         for part in post_filter['key'].split('.'):
@@ -303,45 +303,45 @@ class SourceFileBased(models.Model):
                     else:
                         if post_filter['operation'] == 'icontains':
                             if post_filter['value'].upper() in real_value.upper():
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'contains':
                             if post_filter['value'] in real_value:
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'startswith':
                             if real_value.startswith(post_filter['value']):
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'istartswith':
                             if real_value.upper().startswith(post_filter['value'].upper()):
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'endswith':
                             if real_value.endswith(post_filter['value']):
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'iendswith':
                             if real_value.upper().endswith(post_filter['value'].upper()):
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'in':
                             try:
                                 if real_value in post_filter['value']:
-                                    filter_results.append(item.row_id - 1)
+                                    filter_results.append(row_id)
                             except TypeError:
                                 # Asking for in, with a non list value
                                 if real_value in [post_filter['value']]:
-                                    filter_results.append(item.row_id - 1)
+                                    filter_results.append(row_id)
                         elif post_filter['operation'] == 'equals':
                             if post_filter['value'] == real_value:
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'lt':
                             if real_value < post_filter['value']:
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'lte':
                             if real_value <= post_filter['value']:
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'gt':
                             if real_value > post_filter['value']:
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                         elif post_filter['operation'] == 'gte':
                             if real_value >= post_filter['value']:
-                                filter_results.append(item.row_id - 1)
+                                filter_results.append(row_id)
                 if query_results:
                     if join_type == JOIN_TYPE_AND:
                         query_results &= set(filter_results)
