@@ -24,7 +24,7 @@ DATA_TYPE_CHOICES = (
 )
 
 DATA_TYPE_FUNCTIONS = {
-    DATA_TYPE_STRING: lambda x: str(x).strip(),
+    DATA_TYPE_STRING: lambda x: unicode(x).strip(),
     DATA_TYPE_NUMBER: lambda x: convert_to_number(x),
 }
 
@@ -50,4 +50,4 @@ JOIN_TYPE_CHOICES = {
     JOIN_TYPE_AND: 'AND'
 }
 
-LQL_DELIMITER = '%'
+LQL_DELIMITER = '_'

@@ -245,7 +245,7 @@ class SourceFileBased(models.Model):
             try:
                 if value[0] == '"' and value[-1] == '"':
                     # Strip quotes
-                    value = str(value[1:-1])
+                    value = unicode(value[1:-1])
                 else:
                     if ',' in value:
                         result = []
@@ -254,7 +254,7 @@ class SourceFileBased(models.Model):
                         for n in value:
                             if n[0] == '"' and n[-1] == '"':
                                 # Strip quotes
-                                result.append(str(n[1:-1]))
+                                result.append(unicode(n[1:-1]))
                             else:
                                 try:
                                     result.append(DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](n))
@@ -350,10 +350,12 @@ class SourceFileBased(models.Model):
                 else:
                     query_results = set(filter_results)
 
-        if query_results:
+        if post_filter:
             if len(query_results) == 1:
                 # Special case because itemgetter doesn't returns a list but a value
                 return [dict(item.row, **{'_id': item.row_id}) for item in [itemgetter(*list(query_results))(queryset)]]
+            elif len(query_results) == 0:
+                return []
             else:
                 return [dict(item.row, **{'_id': item.row_id}) for item in itemgetter(*list(query_results))(queryset)[0:self.limit]]
         else:
