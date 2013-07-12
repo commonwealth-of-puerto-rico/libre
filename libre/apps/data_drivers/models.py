@@ -11,6 +11,7 @@ import struct
 import urllib2
 
 from django.db import models, transaction
+from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
@@ -213,6 +214,10 @@ class SourceFileBased(models.Model):
         return timestamp, parameters
 
     def get_one(self, id, parameters=None):
+        # ID are all base 1
+        if id == 0:
+            raise Http400('Invalid ID; IDs are base 1')
+
         # TODO: return a proper response when no sourcedataversion is found
         timestamp, parameters = self.analyze_request(parameters)
         if timestamp:
@@ -220,7 +225,10 @@ class SourceFileBased(models.Model):
         else:
             source_data_version = self.versions.get(active=True)
 
-        return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
+        try:
+            return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
+        except SourceData.DoesNotExist:
+            raise Http404
 
     def get_all(self, parameters=None):
         timestamp, parameters = self.analyze_request(parameters)
