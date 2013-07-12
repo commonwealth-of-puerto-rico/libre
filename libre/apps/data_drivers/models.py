@@ -86,7 +86,7 @@ class SourceWS(Source):
     def get_one(self, id, timestamp=None, parameters=None):
         # ID are all base 1
         if id == 0:
-            raise Http404  # TODO: may be return HTTP INVALID REQUEST?
+            raise Http400('Invalid ID; IDs are base 1')
 
         return self.get_all(timestamp, parameters)[id-1]
 
