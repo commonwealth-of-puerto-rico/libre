@@ -65,3 +65,4 @@ DONE
 * Improve resource navigation template (look and feel)
 * Add REST query language
   * https://github.com/edmund-huber/jsonq
+* Handle Unicode on query string
