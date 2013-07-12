@@ -23,7 +23,6 @@ PENDING
 * Add instructions to sources, per source type
 * Skip blank lines?
 * Switch from column widths to column ranges
-* Move insertion of _id to the import phase from the retrieval phase
 * Data translation
 * Stored JSON data index support
 * Add software version
@@ -33,14 +32,13 @@ PENDING
 * Add internal support for open ranges for rows "10-"
 * JSON source descriptor export and import
 * Rename timestamp to version and allow user defined version strings
-* Add LIBRE API
-  * project version, etc
 * Re-projecting a shapefile during import
 * Control initial map origin and zoom level
 * Remap JSON names
 * Add row number exclusion support during import
 * LQL based pagination (size and page number) (Andres Colón)
 * Document LQL (Andres Colón)
+* Empty but valid queries should return HTTP404 or HTTP200 with '{"status": "Not found"}'
 
 DONE
 ----
@@ -66,3 +64,6 @@ DONE
 * Add REST query language
   * https://github.com/edmund-huber/jsonq
 * Handle Unicode on query string
+* Move insertion of _id to the import phase from the retrieval phase
+* Add LIBRE API
+  * project version, etc
