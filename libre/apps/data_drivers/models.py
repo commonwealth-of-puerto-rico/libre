@@ -44,6 +44,10 @@ class Source(models.Model):
 
     objects = InheritanceManager()
 
+    @staticmethod
+    def add_row_id(row, id):
+        return dict(row, **{'_id': id})
+
     def get_type(self):
         return self.__class__.source_type
 
@@ -195,11 +199,14 @@ class SourceFileBased(models.Model):
             source_data_version.active = True
             source_data_version.save()
 
-    def analyze_request(self, parameters):
+    def analyze_request(self, parameters=None):
         kwargs = {}
-        for i in parameters:
-            if not i.startswith('_'):
-                kwargs[i] = parameters[i]
+        if not parameters:
+            parameters = {}
+        else:
+            for i in parameters:
+                if not i.startswith('_'):
+                    kwargs[i] = parameters[i]
 
         timestamp = parameters.get('_timestamp', None)
 
@@ -213,8 +220,7 @@ class SourceFileBased(models.Model):
         else:
             source_data_version = self.versions.get(active=True)
 
-        instance = SourceData.objects.get(source_data_version=source_data_version, row_id=id)
-        return dict(instance.row, **{'_id': instance.row_id})
+        return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
 
     def get_all(self, parameters=None):
         timestamp, parameters = self.analyze_request(parameters)
@@ -350,16 +356,16 @@ class SourceFileBased(models.Model):
                 else:
                     query_results = set(filter_results)
 
-        if post_filter:
+        if post_filters:
             if len(query_results) == 1:
                 # Special case because itemgetter doesn't returns a list but a value
-                return [dict(item.row, **{'_id': item.row_id}) for item in [itemgetter(*list(query_results))(queryset)]]
+                return [item.row for item in [itemgetter(*list(query_results))(queryset)]]
             elif len(query_results) == 0:
                 return []
             else:
-                return [dict(item.row, **{'_id': item.row_id}) for item in itemgetter(*list(query_results))(queryset)[0:self.limit]]
+                return [item.row for item in itemgetter(*list(query_results))(queryset)[0:self.limit]]
         else:
-            return [dict(item.row, **{'_id': item.row_id}) for item in queryset[0:self.limit]]
+            return [item.row for item in queryset[0:self.limit]]
 
     class Meta:
         abstract = True
@@ -428,7 +434,7 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
 
         row_id = 1
         for row in self._get_items(file_handle):
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=row)
+            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
             row_id = row_id + 1
 
         file_handle.close()
@@ -480,7 +486,7 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
 
         row_id = 1
         for row in self._get_items():
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=row)
+            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
             row_id = row_id + 1
 
         self._file_handle.close()
@@ -564,7 +570,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         logger.debug('importing rows')
         row_id = 1
         for row in self._get_items():
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=row)
+            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
             row_id = row_id + 1
 
         if file_handle:
@@ -607,8 +613,9 @@ class SourceShape(Source, SourceFileBased):
         with fiona.collection(self.path, 'r') as source:
             row_id = 1
             for feature in source:
-                 SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=json.dumps(feature))
-                 row_id = row_id + 1
+                feature['properties'] = Source.add_row_id(feature.get('properties', {}), row_id)
+                SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=json.dumps(feature))
+                row_id = row_id + 1
 
             source_data_version.metadata = source.crs
         source_data_version.ready = True
