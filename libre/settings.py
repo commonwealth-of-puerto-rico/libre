@@ -198,6 +198,8 @@ REST_FRAMEWORK = {
     'URL_FORMAT_OVERRIDE': '_format',
 }
 
+JOB_PROCESSING_MODE_IMMEDIATE = False
+
 try:
     from settings_local import *
 except ImportError:
