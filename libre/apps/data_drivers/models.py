@@ -154,6 +154,10 @@ class SourceFileBased(models.Model):
             return _('None')
     get_stream_type.short_description = 'stream type'
 
+    def clear_versions(self):
+        for version in self.versions.all():
+            version.delete()
+
     def check_file(self):
         try:
             lock_id = u'check_file-%d' % self.pk

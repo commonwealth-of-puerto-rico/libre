@@ -91,7 +91,6 @@ class SpreadsheetColumnInline(admin.TabularInline):
     suit_classes = 'suit-tab suit-tab-configuration'
 
 
-
 def check_updated(modeladmin, request, queryset):
     count = 0
     for source in queryset:
@@ -108,6 +107,24 @@ def check_updated(modeladmin, request, queryset):
         message_bit = '%s sources were checked for update.' % len(queryset)
     modeladmin.message_user(request, message_bit)
 check_updated.short_description = _('Check for updated source file')
+
+
+def clear_versions(modeladmin, request, queryset):
+    count = 0
+    for source in queryset:
+        try:
+            source.clear_versions()
+        except IOError:
+            messages.error(request, _('Error opening file for source: %s') % source)
+        else:
+            count += 1
+
+    if len(queryset) == 1:
+        message_bit = 'Source versions were deleted.'
+    else:
+        message_bit = '%s sources versions were deleted.' % len(queryset)
+    modeladmin.message_user(request, message_bit)
+clear_versions.short_description = _('Clear all source versions')
 
 
 class SourceSpreadsheetAdmin(admin.ModelAdmin):
@@ -138,7 +155,7 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
 
     list_display = ('name', 'slug', 'description', 'get_stream_type')
     inlines = [SourceDataVersionInline, SpreadsheetColumnInline]
-    actions = [check_updated]
+    actions = [check_updated, clear_versions]
     form = SourceSpreadsheetForm
 
 
@@ -169,7 +186,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
     )
     list_display = ('name', 'slug', 'description', 'get_stream_type')
     inlines = [SourceDataVersionInline, CSVColumnInline]
-    actions = [check_updated]
+    actions = [check_updated, clear_versions]
     form = SourceCSVForm
 
 
@@ -196,7 +213,7 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
     )
     list_display = ('name', 'slug', 'description', 'get_stream_type')
     inlines = [SourceDataVersionInline, FixedWidthColumnInline]
-    actions = [check_updated]
+    actions = [check_updated, clear_versions]
     form = SourceFixedWidthForm
 
 
@@ -255,7 +272,7 @@ class SourceShapeAdmin(admin.ModelAdmin):
 
     list_display = ('name', 'slug', 'description', 'get_stream_type')
     inlines = [SourceDataVersionInline]
-    actions = [check_updated]
+    actions = [check_updated, clear_versions]
     form = SourceShapeForm
 
 
