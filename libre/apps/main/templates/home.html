@@ -1,20 +1,30 @@
+{% extends 'base.html' %}
+
 {% load i18n %}
+{% load staticfiles %}
+
 {% block content %}
-    <div class="content tc">
-        <h1>LIBRE</h1>
-        <img src="{{ STATIC_URL }}images/libre_logo.png" />
-        <h2>{% trans 'FOSS data restructuring, versioning and exporting tool' %}</h2>
-    </div>
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li class="active"><a href="{% url 'home' %}">{% trans 'Home' %}</a></li>
+        </ul>
+        <h3 class="muted">{% trans 'LIBRE' %}</h3>
+      </div>
 
-    <a href="{% url 'api_root' %}">{% trans 'API' %}</a>
-    <a href="{% url 'admin:index' %}">{% trans 'Admin interface' %}</a>
+      <hr>
 
-    <hr>
+      <div class="jumbotron">
+        <img src="{% static 'images/libre_logo.png' %}" />
+        <h1>{% trans 'L.I.B.R.E.' %}</h1>
+        <h5>{% trans '(Large Information Batch Restructuring Engine)' %}</h5>
+        <p class="lead">{% trans 'FOSS data restructuring, versioning and exporting tool' %}</p>
+        <a class="btn btn-large btn-success" href="{% url 'api_root' %}">{% trans 'API' %}</a>
+        <a class="btn btn-large btn-success" href="{% url 'admin:index' %}">{% trans 'Admin interface' %}</a>
+      </div>
 {% endblock %}
+
 {% block footer %}
-    <div id="footer">
-        <div class="block">
-            <p>{% trans 'Copyright &copy; 2013 Roberto Rosario.' %}</p>
-        </div>
-    </div>
+      <div class="footer">
+        <p>{% trans 'Copyright &copy; 2013 Roberto Rosario.' %}</p>
+      </div>
 {% endblock %}
