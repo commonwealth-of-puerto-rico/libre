@@ -646,7 +646,8 @@ class SourceDataVersion(models.Model):
     source = models.ForeignKey(Source, verbose_name=_('source'), related_name='versions')
     datetime = models.DateTimeField(default=lambda: now())
     timestamp = models.CharField(blank=True, max_length=20, verbose_name=_('timestamp'))
-    checksum = models.TextField(verbose_name=_('checksum'))
+    # MySQL doesn't like BLOB/TEXT columns used in key specification without a key length; DatabaseError 1170
+    checksum = models.CharField(max_length=64, verbose_name=_('checksum'))
     ready = models.BooleanField(default=False, verbose_name=_('ready'))
     active = models.BooleanField(default=False, verbose_name=_('active'))
     metadata = jsonfield.JSONField(blank=True, verbose_name=_('metadata'))
