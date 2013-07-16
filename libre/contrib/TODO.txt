@@ -1,44 +1,65 @@
 PENDING
 -------
-* Add Celery support or subprocess
-* Add compressed file support
-* Parse values
-  * Parse dates (using dateutil) - DONE
-  * True values, False values
-* Improve output logging - INPROGRES
-* Toggable auto update via inotify, polling or python-watchdog
-* Specify number of versions to keep, deleting old ones
-* Add support for generating output formats other than JSON
-  * Shapefiles
-  * GeoJSON - DONE
-  * CSV
-  * Excel
-  * XML - DONE
-  * NIEM
-  * Fixed width
-* Add better sample source files
-* Add caching support to WS Sources
-* Add DB Source support
-* Add Relationship support
-* Add instructions to sources, per source type
-* Skip blank lines?
-* Switch from column widths to column ranges
-* Data translation
-* Stored JSON data index support
-* Add software version
-* Cache Webservices
-  * TTL support
+* Filebased sources
+  * Add compressed file support
+  * Skip blank lines?
+  * Add row number exclusion support during import
+  * Switch from column widths to column ranges
+  * Toggable auto update via inotify, polling or python-watchdog
+  * Add internal support for open ranges for rows "10-"
+
+* Database sources
+  * Add DB Source support
+    * Pony ORM
+
 * Documentation
-* Add internal support for open ranges for rows "10-"
-* JSON source descriptor export and import
-* Rename timestamp to version and allow user defined version strings
-* Re-projecting a shapefile during import
-* Control initial map origin and zoom level
-* Remap JSON names
-* Add row number exclusion support during import
-* LQL based pagination (size and page number) (Andres Colón)
-* Document LQL (Andres Colón)
-* Empty but valid queries should return HTTP404 or HTTP200 with '{"status": "Not found"}'
+  * Release notes
+  * Getting started
+  * Add better sample source files
+  * Examples using existing public data
+
+* General
+  * Parse values
+    * Parse dates (using dateutil) - DONE
+    * True values, False values
+  * Add Relationship support
+  * Specify number of versions to keep, deleting old ones
+  * Add instructions to sources, per source type
+  * Add row number exclusion support during import
+  * Stored JSON data index support
+  * JSON source descriptor export and import
+  * Rename timestamp to version and allow user defined version strings
+  * Data translation
+  * Remap JSON names
+
+* Geographical sources
+  * Re-projecting a shapefile during import
+
+* Job processing
+  * Add Celery support or subprocess
+
+* LQL
+  * LQL based pagination (size and page number) (Andres Colón)
+  * Document LQL (Andres Colón)
+
+* Output
+  * Add support for generating output formats other than JSON
+    * Shapefiles
+    * GeoJSON - DONE
+    * CSV
+    * Excel
+    * XML - DONE
+    * NIEM
+    * Fixed width
+  * Control initial map origin and zoom level
+
+* Web services sources
+  * Add caching support to WS Sources
+    * TTL support
+
+* Unsorted
+  * Improve output logging - INPROGRES
+  * Empty but valid queries should return HTTP404 or HTTP200 with '{"status": "Not found"}'
 
 DONE
 ----
@@ -67,3 +88,4 @@ DONE
 * Move insertion of _id to the import phase from the retrieval phase
 * Add LIBRE API
   * project version, etc
+* Add software version
