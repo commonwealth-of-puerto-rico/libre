@@ -108,6 +108,20 @@ Return the elements whose field values are greater than or equal than the specif
 Example: ``month_sales__gte=200000``
 
 
+year=<number>
+------------
+Return the elements whose field values's years are the same as the specified number.
+
+Example: ``crimes__year=2012``
+
+
+month=<number>
+------------
+Return the elements whose field values's months are the same as the specified number.
+
+Example: ``travels__month=3``
+
+
 Directives
 ==========
 All directive are prepended by the underscore delimiter '_'.
@@ -128,3 +142,6 @@ Coming soon
 * Subqueries
 * Sorting
 * Geospatial filtering
+* Grouping
+* Sum
+* Pagination
