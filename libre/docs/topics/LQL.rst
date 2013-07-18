@@ -110,10 +110,18 @@ Example: ``month_sales__gte=200000``
 
 Directives
 ==========
+All directive are prepended by the underscore delimiter '_'.
+
 
 join=<OR | AND>
 ---------------
 When multiple filters are specified per query the results of each filter are ``ANDed`` by default, this directive changes that behaviour so that results are ``ORed`` together.
+
+
+fields=<list of fields to return>
+---------------------------------
+Return only the fields specified. Works only for single level element collections (multilevel dot and index notations not yet supported).
+
 
 Coming soon
 ===========

@@ -56,8 +56,7 @@ PENDING
 * LQL
 
   * LQL based pagination (size and page number) (Andres Colón)
-  * Document LQL (Andres Colón)
-  * Specify which fields to retrieve
+  * Expand the _fields directive to support dot and index notations
   * Sorting
 
 * Output

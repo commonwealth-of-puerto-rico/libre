@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
+from itertools import izip
 import json
 import logging
 from operator import itemgetter
@@ -253,6 +254,8 @@ class SourceFileBased(models.Model):
         post_filters = []
         join_type = JOIN_TYPE_AND
         DOUBLE_DELIMITER = LQL_DELIMITER + LQL_DELIMITER
+        fields_to_return = []
+        get_all_fields = True
 
         for parameter, value in parameters.items():
             logger.debug('parameter: %s' % parameter)
@@ -260,6 +263,7 @@ class SourceFileBased(models.Model):
             valid = True
             # If value is quoted is a string else try to see if it is a number
             # TODO: clean up this mess!
+            # Only interpret values for filters
             try:
                 if value[0] == '"' and value[-1] == '"':
                     # Strip quotes
@@ -300,6 +304,15 @@ class SourceFileBased(models.Model):
                     if parameter == LQL_DELIMITER + 'join':
                         if value.upper() == 'OR':
                             join_type = JOIN_TYPE_OR
+                    # Determine fields to return
+                    elif parameter == LQL_DELIMITER + 'fields':
+                        try:
+                            fields_to_return = value.split(',')
+                        except AttributeError:
+                            # Already a list
+                            fields_to_return = value
+
+                        get_all_fields = False
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
         kwargs = {}
@@ -368,19 +381,44 @@ class SourceFileBased(models.Model):
                 else:
                     query_results = set(filter_results)
 
+        if get_all_fields:
+            fields_lambda = lambda x: x
+        else:
+            fields_lambda = self.__class__.make_fields_filter(fields_to_return)
+
         if post_filters:
             if len(query_results) == 1:
                 # Special case because itemgetter doesn't returns a list but a value
-                return [item.row for item in [itemgetter(*list(query_results))(queryset)]]
+                return (fields_lambda(item.row) for item in [itemgetter(*list(query_results))(queryset)])
             elif len(query_results) == 0:
                 return []
             else:
-                return [item.row for item in itemgetter(*list(query_results))(queryset)[0:self.limit]]
+                return (fields_lambda(item.row) for item in itemgetter(*list(query_results))(queryset)[0:self.limit])
         else:
-            return [item.row for item in queryset[0:self.limit]]
+            return (fields_lambda(item.row) for item in queryset[0:self.limit])
 
     class Meta:
         abstract = True
+
+    @staticmethod
+    def make_fields_filter(fields_to_return):
+        """
+        Fabricate a function tailored made to return a number of fields
+        for each row.
+        """
+        # TODO: support multilevel dot '.', and index '[]' notation
+        if len(fields_to_return) == 1:
+            # Special because itemgetter with a single element doesn't return a list
+            field_extract_lambda = lambda x: [itemgetter(*fields_to_return)(x)]
+        else:
+            field_extract_lambda = lambda x: itemgetter(*fields_to_return)(x)
+
+        def _function(row):
+            try:
+                return dict(izip(fields_to_return, field_extract_lambda(row)))
+            except KeyError as exception:
+                raise Http400('Could not find a field named in the current row: %s' % exception)
+        return _function
 
 
 class SourceTabularBased(models.Model):
