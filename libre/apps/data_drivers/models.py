@@ -16,6 +16,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
 
+from dateutil.parser import parse
 import fiona
 from suds.client import Client
 import jsonfield
@@ -373,6 +374,22 @@ class SourceFileBased(models.Model):
                         elif post_filter['operation'] == 'gte':
                             if real_value >= post_filter['value']:
                                 filter_results.append(row_id)
+
+                        # Date
+
+                        elif post_filter['operation'] == 'year':
+                            try:
+                                if parse(real_value).year == post_filter['value']:
+                                    filter_results.append(row_id)
+                            except (ValueError, AttributeError):
+                                raise Http400('field: %s, is not a date or time field' % post_filter['key'])
+                        elif post_filter['operation'] == 'month':
+                            try:
+                                if parse(real_value).month == post_filter['value']:
+                                    filter_results.append(row_id)
+                            except (ValueError, AttributeError):
+                                raise Http400('field: %s, is not a date or time field' % post_filter['key'])
+
                 if query_results:
                     if join_type == JOIN_TYPE_AND:
                         query_results &= set(filter_results)
