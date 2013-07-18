@@ -7,3 +7,5 @@ Introductions to all the key parts of LIBRE you'll need to know:
    :maxdepth: 1
 
    LQL
+   contributos
+   TODO

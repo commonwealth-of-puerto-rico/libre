@@ -1,6 +1,7 @@
 PENDING
 -------
 * Filebased sources
+
   * Add compressed file support
   * Skip blank lines?
   * Add row number exclusion support during import
@@ -8,20 +9,29 @@ PENDING
   * Toggable auto update via inotify, polling or python-watchdog
   * Add internal support for open ranges for rows "10-"
 
+
 * Database sources
+
   * Add DB Source support
+
     * Pony ORM
 
+
 * Documentation
+
   * Release notes
   * Getting started
   * Add better sample source files
   * Examples using existing public data
 
+
 * General
+
   * Parse values
+
     * Parse dates (using dateutil) - DONE
     * True values, False values
+
   * Add Relationship support
   * Specify number of versions to keep, deleting old ones
   * Add instructions to sources, per source type
@@ -32,18 +42,28 @@ PENDING
   * Data translation
   * Remap JSON names
 
+
 * Geographical sources
+
   * Re-projecting a shapefile during import
 
+
 * Job processing
+
   * Add Celery support or subprocess
 
+
 * LQL
+
   * LQL based pagination (size and page number) (Andres Colón)
   * Document LQL (Andres Colón)
+  * Specify which fields to retrieve
+  * Sorting
 
 * Output
+
   * Add support for generating output formats other than JSON
+
     * Shapefiles
     * GeoJSON - DONE
     * CSV
@@ -51,41 +71,22 @@ PENDING
     * XML - DONE
     * NIEM
     * Fixed width
+
   * Control initial map origin and zoom level
 
 * Web services sources
+
   * Add caching support to WS Sources
+
     * TTL support
 
 * Unsorted
+
   * Improve output logging - INPROGRES
   * Empty but valid queries should return HTTP404 or HTTP200 with '{"status": "Not found"}'
-
-DONE
-----
-* Fix file uploads
-* Enable custom column names
-* Take column names for an arbitrary row not just the first one
-* Row ranges to import
-* Take column names from an arbitrary row
-* Copy WSDL file or use suds caching features - NOT NEEDED; suds caches the WSDL by default for 1 day
-* Add description field to sources
-* Close file handles
-* Import files from URLs
-* Improve custom column names parsing
-* Add locking
-* Out of data context _ids
-* Add support for shape sources
-* return Http Invalid Request on query syntax error
-* Add django-rest-framework support
-* Specify format by using "_format" and not the default "format"
-* Remove data type from spreadsheet source
-* Per source special data
-* Improve resource navigation template (look and feel)
-* Add REST query language
-  * https://github.com/edmund-huber/jsonq
-* Handle Unicode on query string
-* Move insertion of _id to the import phase from the retrieval phase
-* Add LIBRE API
-  * project version, etc
-* Add software version
+  * Show required argument for WS
+  * Interpret WS arguments
+  * Result count
+  * Fix upload_to
+  * Publish/unpublish a source
+  * Allow skiping/importing rows that match a regex per field

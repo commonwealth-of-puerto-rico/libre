@@ -34,74 +34,85 @@ Multiple filters can be specified on a single query.
 contains=<string>
 -----------------
 Return the elements whose field values includes the specified string.
-Example: first_name__contains="John"
+
+Example: ``first_name__contains="John"``
 
 
 icontains=<string>
 ------------------
 Return the elements whose field values includes the specified string. Matches upper and lower cases.
-Example: last_name__icontains="smith"
+
+Example: ``last_name__icontains="smith"``
 
 
 startswith=<string>
 -------------------
 Return the elements whose field values start with the specified string.
-Example: state__startswith="North"
+
+Example: ``state__startswith="North"``
 
 
 istartswith=<string>
 --------------------
 Return the elements whose field values start with the specified string. Matches upper and lower cases.
-Example: city__istartswith="John"
+
+Example: ``city__istartswith="John"``
 
 
 endswith=<string>
 -----------------
 Return the elements whose field values end with the specified string.
-Example: state__startswith="Carolina"
+
+Example: ``state__startswith="Carolina"``
 
 
 iendswith=<string>
 ------------------
 Return the elements whose field values end with the specified string. Matches upper and lower cases.
-Example: company_name__iendswith="corp"
+
+Example: ``company_name__iendswith="corp"``
 
 
 in=<list of strings or numbers>
 -------------------------------
 Return the elements whose field values match one entry in the specified list of strings or numbers.
-Example: crime_type__in=1,4,8
+
+Example: ``crime_type__in=1,4,8``
 
 
 lt=<number>
 -----------
 Return the elements whose field values are less than the specified number.
-Example: ytd_sales__lt=1000000
+
+Example: ``ytd_sales__lt=1000000``
 
 
 lte=<number>
 ------------
 Return the elements whose field values are less than or equal than the specified number.
-Example: employees_count__lte=1000
+
+Example: ``employees_count__lte=1000``
 
 
 gt=<number>
 -----------
 Return the elements whose field values are greater than the specified number.
-Example: spare_rooms__gt=3
+
+Example: ``spare_rooms__gt=3``
 
 
 gte=<number>
 ------------
 Return the elements whose field values are greater than or equal than the specified number.
-Example: month_sales__gte=200000
+
+Example: ``month_sales__gte=200000``
 
 
 Directives
 ==========
 
-join={OR, AND}
---------------
+join=<OR | AND>
+---------------
 When multiple filters are specified per query the results of each filter are ``ANDed`` by default, this directive changes that behaviour so that results are ``ORed`` together.
 
 Coming soon
