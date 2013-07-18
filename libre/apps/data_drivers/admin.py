@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput, SuitSplitDateTimeWidget
 
-from .models import (FixedWidthColumn, CSVColumn, FixedWidthColumn, SourceCSV,
+from .models import (FixedWidthColumn, CSVColumn, FixedWidthColumn, ShapefileColumn, SourceCSV,
     SourceDataVersion, SourceFixedWidth, SourceShape, SourceSpreadsheet, SpreadsheetColumn,
     SourceWS, WSArgument, WSResultField)
 
@@ -87,6 +87,12 @@ class CSVColumnInline(admin.TabularInline):
 
 class SpreadsheetColumnInline(admin.TabularInline):
     model = SpreadsheetColumn
+    extra = 1
+    suit_classes = 'suit-tab suit-tab-configuration'
+
+
+class ShapefileColumnInline(admin.TabularInline):
+    model = ShapefileColumn
     extra = 1
     suit_classes = 'suit-tab suit-tab-configuration'
 
@@ -275,7 +281,7 @@ class SourceShapeAdmin(admin.ModelAdmin):
     )
 
     list_display = ('name', 'slug', 'description', 'get_stream_type')
-    inlines = [SourceDataVersionInline]
+    inlines = [SourceDataVersionInline, ShapefileColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceShapeForm
 

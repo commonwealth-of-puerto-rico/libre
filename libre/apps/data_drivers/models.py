@@ -4,7 +4,6 @@ import csv
 import datetime
 import hashlib
 from itertools import izip
-import json
 import logging
 from operator import itemgetter
 import string
@@ -709,10 +708,10 @@ class SourceShape(Source, SourceFileBased):
 
             row_id = 1
             for feature in source:
-                feature['properties'] = Source.add_row_id(feature.get('properties', {}), row_id)
+                feature['properties'] = Source.add_row_id(self.apply_datatypes(feature.get('properties', {})), row_id)
                 if new_projection:
                     feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
-                SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=json.dumps(feature))
+                SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=feature)
                 row_id = row_id + 1
 
         source_data_version.ready = True
@@ -721,6 +720,22 @@ class SourceShape(Source, SourceFileBased):
 
         if self._file_handle:
             self._file_handle.close()
+
+    def get_functions_map(self):
+        return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
+
+    def apply_datatypes(self, properties):
+        functions_map = self.get_functions_map()
+        result = {}
+
+        for key, value in properties.items():
+            if key in functions_map:
+                result[key] = functions_map[key](value)
+            else:
+                result[key] = value
+
+        return result
+        #return [functions_map(key)(value) for key, value in properties.items() if key in functions_map else value]
 
     class Meta:
         verbose_name = _('shape source')
@@ -770,6 +785,7 @@ class ColumnBase(models.Model):
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
 
     @staticmethod
+    # TODO: rename to get_funtions_list
     def get_functions_map(columns):
         return [DATA_TYPE_FUNCTIONS[i] for i in columns.values_list('data_type', flat=True)]
 
@@ -806,3 +822,12 @@ class SpreadsheetColumn(ColumnBase):
     class Meta:
         verbose_name = _('spreadsheet column')
         verbose_name_plural = _('spreadsheet columns')
+
+
+class ShapefileColumn(ColumnBase):
+    source = models.ForeignKey(SourceShape, verbose_name=_('shapefile source'), related_name='columns')
+    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+
+    class Meta:
+        verbose_name = _('shapefile column')
+        verbose_name_plural = _('shapefile columns')

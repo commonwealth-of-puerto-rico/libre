@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import renderers
+from dateutil.parser import parse
 
 from .renderers import LeafletRenderer
 from .utils import convert_to_number
@@ -15,17 +16,20 @@ DEFAULT_SHEET = '0'
 
 DATA_TYPE_STRING = 1
 DATA_TYPE_NUMBER = 2
+DATA_TYPE_DATETIME = 3
 # TODO: DATA_TYPE_AUTO = 3
 # TODO: Boolean
 
 DATA_TYPE_CHOICES = (
     (DATA_TYPE_STRING, _('String')),
     (DATA_TYPE_NUMBER, _('Number')),
+    (DATA_TYPE_DATETIME, _('Date & time')),
 )
 
 DATA_TYPE_FUNCTIONS = {
     DATA_TYPE_STRING: lambda x: unicode(x).strip(),
     DATA_TYPE_NUMBER: lambda x: convert_to_number(x),
+    DATA_TYPE_DATETIME: lambda x: parse(x),
 }
 
 RENDERER_BROWSEABLE_API = 1
