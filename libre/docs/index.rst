@@ -11,7 +11,8 @@ On the Web
 ==========
 
 * Source: https://github.com/commonwealth-of-puerto-rico/libre
-* Video: www.youtube.com/watch?v=pbY_dKlniHM
+* Video: http://www.youtube.com/watch?v=pbY_dKlniHM
+* Documentation: https://libre.readthedocs.org/en/latest/
 
 Looking for specific information? Try the :doc:`detailed table of contents <contents>` otherwise below are the different part of the documentation.
 
