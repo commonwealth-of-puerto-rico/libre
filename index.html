@@ -1,0 +1,105 @@
+<!doctype html>
+<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
+<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen"/>
+  <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script type="text/javascript" src="javascripts/script.js"></script>
+
+  <title>Libre</title>
+  <meta name="description" content="LIBRE = Libre Information Batch Restructuring Engine. The engine that will power the liberation of government data for the island of Puerto Rico">
+
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+</head>
+
+<body>
+
+  <div class="wrapper">
+    <header>
+      <h1 class="title">Libre</h1>
+    </header>
+    <div id="container">
+      <p class="tagline">LIBRE = Libre Information Batch Restructuring Engine. The engine that will power the liberation of government data for the island of Puerto Rico</p>
+      <div id="main" role="main">
+        <div class="download-bar">
+        <div class="inner">
+          <a href="https://github.com/commonwealth-of-puerto-rico/libre/tarball/master" class="download-button tar"><span>Download</span></a>
+          <a href="https://github.com/commonwealth-of-puerto-rico/libre/zipball/master" class="download-button zip"><span>Download</span></a>
+          <a href="https://github.com/commonwealth-of-puerto-rico/libre" class="code">View Libre on GitHub</a>
+        </div>
+        <span class="blc"></span><span class="trc"></span>
+        </div>
+        <article class="markdown-body">
+          <p><img src="https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/libre_logo.png" alt="Logo"></p>
+
+<h1>
+<a name="libre" class="anchor" href="#libre"><span class="octicon octicon-link"></span></a>LIBRE</h1>
+
+<p>LIBRE = Libre Information Batch Restructuring Engine</p>
+
+<p>The engine that will power the liberation of government data for island of Puerto Rico.</p>
+
+<p><img src="https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/main_diagram.png" alt="Logo"></p>
+
+<h2>
+<a name="turn-this" class="anchor" href="#turn-this"><span class="octicon octicon-link"></span></a>Turn this:</h2>
+
+<p><img src="https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/before.png" alt="Logo"></p>
+
+<h2>
+<a name="into-this" class="anchor" href="#into-this"><span class="octicon octicon-link"></span></a>Into this!</h2>
+
+<p><img src="https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/after.png" alt="Logo"></p>
+
+<h2>
+<a name="query-your-data-afterwards-too" class="anchor" href="#query-your-data-afterwards-too"><span class="octicon octicon-link"></span></a>Query your data afterwards too!</h2>
+
+<p><img src="https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/math_query.png" alt="Logo"></p>
+
+<h1>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>INSTALLATION</h1>
+
+<pre><code>$ sudo apt-get install libgdal-dev -y
+$ git clone https://github.com/commonwealth-of-puerto-rico/libre.git
+$ cd libre
+$ virtualenv venv
+$ source venv/bin/activate
+$ pip install -r libre/requirements.txt
+$ ./manage.py syncdb --migrate
+$ cat &lt;&lt;'EOF' &gt; settings_local.py
+DEBUG=True
+DEVELOPMENT=True
+EOF
+$ ./manage.py runserver
+</code></pre>
+
+<p>Point your browser to 127.0.0.1:8000</p>
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="owner">
+      <p><a href="https://github.com/commonwealth-of-puerto-rico" class="avatar"><img src="https://secure.gravatar.com/avatar/f62833b5a8fafe09244c366321d5f585?s=30&amp;d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-user-420.png" width="48" height="48"/></a> <a href="https://github.com/commonwealth-of-puerto-rico">commonwealth-of-puerto-rico</a> maintains <a href="https://github.com/commonwealth-of-puerto-rico/libre">Libre</a></p>
+
+
+      </div>
+      <div class="creds">
+        <small>This page generated using <a href="https://pages.github.com/">GitHub Pages</a><br/>theme by <a href="https://twitter.com/jonrohan/">Jon Rohan</a></small>
+      </div>
+    </footer>
+  </div>
+  <div class="current-section">
+    <a href="#top">Scroll to top</a>
+    <a href="https://github.com/commonwealth-of-puerto-rico/libre/tarball/master" class="tar">tar</a><a href="https://github.com/commonwealth-of-puerto-rico/libre/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
+    <p class="name"></p>
+  </div>
+
+  
+</body>
+</html>
