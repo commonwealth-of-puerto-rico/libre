@@ -45,7 +45,7 @@ PENDING
 
 * Geographical sources
 
-  * Re-projecting a shapefile during import
+  * Add Re-projection support for the rest of geometry types
 
 
 * Job processing
@@ -89,3 +89,6 @@ PENDING
   * Fix upload_to
   * Publish/unpublish a source
   * Allow skiping/importing rows that match a regex per field
+  * Calculate geometries area, size, lenghts in pin template
+
+    * Support full geometries properties mapping in template

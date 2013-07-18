@@ -264,6 +264,10 @@ class SourceShapeAdmin(admin.ModelAdmin):
             #'fields': ('path', 'file', 'url') #Disables until file handle support is added
             'fields': ('path',)
         }),
+        (_('Source data transformation'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('new_projection',)
+        }),
         (_('Map rendering'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('popup_template',)

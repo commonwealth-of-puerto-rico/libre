@@ -22,6 +22,7 @@ from suds.client import Client
 import jsonfield
 import xlrd
 from model_utils.managers import InheritanceManager
+from pyproj import Proj, transform
 
 from lock_manager import Lock, LockError
 
@@ -645,6 +646,44 @@ class SourceShape(Source, SourceFileBased):
     source_type = _('Shapefile')
     renderers = (RENDERER_JSON, RENDERER_LEAFLET)
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
+    new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
+
+    @staticmethod
+    def transform(old_projection, new_projection, geometry):
+        # TODO: Support all types
+        # Point (A single (x, y) tuple) - DONE
+        # LineString (A list of (x, y) tuple vertices) - DONE
+        # Polygon (A list of rings (each a list of (x, y) tuples)) - DONE
+        # MultiPoint (A list of points (each a single (x, y) tuple))
+        # MultiLineString (A list of lines (each a list of (x, y) tuples))
+        # MultiPolygon (A list of polygons (see above))
+        # GeometryCollection
+        # 3D Point
+        # 3D LineString
+        # 3D Polygon
+        # 3D MultiPoint
+        # 3D MultiLineString
+        # 3D MultiPolygon
+        # 3D GeometryCollection
+
+        if geometry['type'] == 'Point':
+            return transform(old_projection, new_projection, *geometry['coordinates'])
+        elif geometry['type'] == 'LineString':
+            result = []
+            for x, y in geometry['coordinates']:
+                result.append(transform(old_projection, new_projection, x, y))
+            return result
+        elif geometry['type'] == 'Polygon':
+            result = []
+            for ring in geometry['coordinates']:
+                element_result = []
+                for x, y in ring:
+                    element_result.append(transform(old_projection, new_projection, x, y))
+                result.append(element_result)
+            return result
+        else:
+            # Unsuported geometry type, return coordinates as is
+            return geometry['coordinates']
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -661,13 +700,21 @@ class SourceShape(Source, SourceFileBased):
         # TODO: only works with paths, fix
 
         with fiona.collection(self.path, 'r') as source:
+            source_data_version.metadata = source.crs
+            if self.new_projection:
+                new_projection = Proj(init='epsg:%s' % self.new_projection)
+                old_projection = Proj(**source.crs)
+            else:
+                new_projection = False
+
             row_id = 1
             for feature in source:
                 feature['properties'] = Source.add_row_id(feature.get('properties', {}), row_id)
+                if new_projection:
+                    feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
                 SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=json.dumps(feature))
                 row_id = row_id + 1
 
-            source_data_version.metadata = source.crs
         source_data_version.ready = True
         source_data_version.active = True
         source_data_version.save()
