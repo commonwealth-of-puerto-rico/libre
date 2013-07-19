@@ -12,3 +12,4 @@ djangorestframework==2.3.6
 PyYAML==3.10
 pyproj==1.9.3
 python-dateutil==2.1
+Shapely==1.2.17
