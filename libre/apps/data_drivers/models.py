@@ -274,7 +274,17 @@ class SourceFileBased(models.Model):
                     if value.startswith('Point'):
                         # Is a point geometry data type
                         x, y = value.replace(' ', '').replace('Point(', '').replace(')', '').split(',')
+
+                        # Check if the Point data type is also specifing a buffer
+                        buffer_size = None
+                        if '.buffer(' in y:
+                            y, buffer_size = y.split('.buffer(')
+
                         value = geometry.Point(float(x), float(y))
+
+                        if buffer_size:
+                            value = value.buffer(float(buffer_size))
+
                     elif ',' in value:
                         result = []
                         value = value.split(',')
@@ -338,6 +348,9 @@ class SourceFileBased(models.Model):
                         # A dotted attribute is not found
                         raise Http400('Invalid element: %s' % post_filter['key'])
                     else:
+
+                        # String
+
                         if post_filter['operation'] == 'icontains':
                             if post_filter['value'].upper() in real_value.upper():
                                 filter_results.append(row_id)
@@ -356,17 +369,9 @@ class SourceFileBased(models.Model):
                         elif post_filter['operation'] == 'iendswith':
                             if real_value.upper().endswith(post_filter['value'].upper()):
                                 filter_results.append(row_id)
-                        elif post_filter['operation'] == 'in':
-                            try:
-                                if real_value in post_filter['value']:
-                                    filter_results.append(row_id)
-                            except TypeError:
-                                # Asking for in, with a non list value
-                                if real_value in [post_filter['value']]:
-                                    filter_results.append(row_id)
-                        elif post_filter['operation'] == 'equals':
-                            if post_filter['value'] == real_value:
-                                filter_results.append(row_id)
+
+                        # Number
+
                         elif post_filter['operation'] == 'lt':
                             if real_value < post_filter['value']:
                                 filter_results.append(row_id)
@@ -378,6 +383,20 @@ class SourceFileBased(models.Model):
                                 filter_results.append(row_id)
                         elif post_filter['operation'] == 'gte':
                             if real_value >= post_filter['value']:
+                                filter_results.append(row_id)
+
+                        # Other
+
+                        elif post_filter['operation'] == 'in':
+                            try:
+                                if real_value in post_filter['value']:
+                                    filter_results.append(row_id)
+                            except TypeError:
+                                # Asking for in, with a non list value
+                                if real_value in [post_filter['value']]:
+                                    filter_results.append(row_id)
+                        elif post_filter['operation'] == 'equals':
+                            if post_filter['value'] == real_value:
                                 filter_results.append(row_id)
 
                         # Date
@@ -402,6 +421,15 @@ class SourceFileBased(models.Model):
                                 filter_results.append(row_id)
                         elif post_filter['operation'] == 'gdisjoint':
                             if geometry.shape(real_value).disjoint(post_filter['value']):
+                                filter_results.append(row_id)
+                        elif post_filter['operation'] == 'gintersects':
+                            if geometry.shape(real_value).intersects(post_filter['value']):
+                                filter_results.append(row_id)
+                        elif post_filter['operation'] == 'gtouches':
+                            if geometry.shape(real_value).touches(post_filter['value']):
+                                filter_results.append(row_id)
+                        elif post_filter['operation'] == 'gwithin':
+                            if geometry.shape(real_value).within(post_filter['value']):
                                 filter_results.append(row_id)
 
                 if query_results:

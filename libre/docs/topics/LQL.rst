@@ -140,6 +140,31 @@ Return the elements whose boundary and interior geometry do not intersect at all
 
 Example: ``country__gdisjoint=Point(-66.16918303705927,18.40250894588894)``
 
+
+gintersects=<geometry>
+----------------------
+Return the elements whose boundary and interior geometry intersects the geometry specified in any way.
+
+Example: ``county__gintersects=Point(-66.16918303705927,18.40250894588894).buffer(0.5)``
+
+
+gtouches=<geometry>
+-------------------
+Return the elements who have at least one point in common with and whose interiors do not intersect with the geometry specified.
+
+Example: ``river__gtouches=LineString([-66.16918303705927,18.40250894588894])``
+
+
+gwithin=<geometry>
+------------------
+boundary and interior intersect only with the interior of the other (not its boundary or exterior).
+
+Return the elements whose boundary and interior intersect only with the interior of the specified geometry (not its boundary or exterior).
+
+Example: ``crime__gwithin=Polygon([[-66.16918303705927,18.40250894588894]])``
+
+
+
 Other filters
 ~~~~~~~~~~~~~
 
