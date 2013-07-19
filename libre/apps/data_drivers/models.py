@@ -679,14 +679,14 @@ class SourceShape(Source, SourceFileBased):
     new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
 
     @staticmethod
-    def transform(old_projection, new_projection, geometry):
+    def transform(old_projection, new_projection, geometry, geometry_type=None):
         # TODO: Support all types
         # Point (A single (x, y) tuple) - DONE
         # LineString (A list of (x, y) tuple vertices) - DONE
         # Polygon (A list of rings (each a list of (x, y) tuples)) - DONE
-        # MultiPoint (A list of points (each a single (x, y) tuple))
-        # MultiLineString (A list of lines (each a list of (x, y) tuples))
-        # MultiPolygon (A list of polygons (see above))
+        # MultiPoint (A list of points (each a single (x, y) tuple))- DONE
+        # MultiLineString (A list of lines (each a list of (x, y) tuples)) - DONE
+        # MultiPolygon (A list of polygons (see above)) - DONE
         # GeometryCollection
         # 3D Point
         # 3D LineString
@@ -695,21 +695,40 @@ class SourceShape(Source, SourceFileBased):
         # 3D MultiLineString
         # 3D MultiPolygon
         # 3D GeometryCollection
+        if geometry_type:
+            coordinates = geometry
+        else:
+            coordinates = geometry['coordinates']
 
-        if geometry['type'] == 'Point':
-            return transform(old_projection, new_projection, *geometry['coordinates'])
-        elif geometry['type'] == 'LineString':
+        if geometry_type == 'Point' or (not geometry_type and geometry['type'] == 'Point'):
+            return transform(old_projection, new_projection, *coordinates)
+        elif geometry_type == 'LineString' or (not geometry_type and geometry['type'] == 'LineString'):
             result = []
-            for x, y in geometry['coordinates']:
+            for x, y in coordinates:
                 result.append(transform(old_projection, new_projection, x, y))
             return result
-        elif geometry['type'] == 'Polygon':
+        elif geometry_type == 'Polygon' or (not geometry_type and geometry['type'] == 'Polygon'):
             result = []
-            for ring in geometry['coordinates']:
+            for ring in coordinates:
                 element_result = []
                 for x, y in ring:
                     element_result.append(transform(old_projection, new_projection, x, y))
                 result.append(element_result)
+            return result
+        elif geometry['type'] == 'MultiPolygon':
+            result = []
+            for polygon in coordinates:
+                result.append(SourceShape.transform(old_projection, new_projection, polygon, geometry_type='Polygon'))
+            return result
+        elif geometry['type'] == 'MultiPoint':
+            result = []
+            for point in coordinates:
+                result.append(SourceShape.transform(old_projection, new_projection, point, geometry_type='Point'))
+            return result
+        elif geometry['type'] == 'MultiLineString':
+            result = []
+            for line in coordinates:
+                result.append(SourceShape.transform(old_projection, new_projection, line, geometry_type='LineString'))
             return result
         else:
             # Unsuported geometry type, return coordinates as is

@@ -48,7 +48,7 @@ PENDING
 
 * Geographical sources
 
-  * Add Re-projection support for the rest of geometry types
+  * No task remains
 
 
 * Job processing
