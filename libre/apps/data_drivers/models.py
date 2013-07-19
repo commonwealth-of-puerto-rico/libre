@@ -424,6 +424,12 @@ class SourceFileBased(models.Model):
                                     filter_results.append(row_id)
                             except (ValueError, AttributeError):
                                 raise Http400('field: %s, is not a date or time field' % post_filter['key'])
+                        elif post_filter['operation'] == 'day':
+                            try:
+                                if parse(real_value).day == post_filter['value']:
+                                    filter_results.append(row_id)
+                            except (ValueError, AttributeError):
+                                raise Http400('field: %s, is not a date or time field' % post_filter['key'])
                         elif post_filter['operation'] == 'range':
                             if len(post_filter['value']) != 2:
                                 raise Http400('date range filter needs a list of 2 dates')

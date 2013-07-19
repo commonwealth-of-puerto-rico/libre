@@ -173,6 +173,16 @@ Return the elements whose field values's months are the same as the specified nu
 Example: ``travels__month=3``
 
 
+day
+---
+
+``day=<number>``
+
+Return the elements whose field values's day are the same as the specified number.
+
+Example: ``party__day=1``
+
+
 range
 -----
 
