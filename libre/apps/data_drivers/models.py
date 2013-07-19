@@ -340,6 +340,16 @@ class SourceFileBased(models.Model):
                     try:
                         real_value = item.row
                         for part in post_filter['key'].split('.'):
+                            if part == '_length':
+                                real_value = geometry.shape(real_value).length
+                                break
+                            elif part == '_area':
+                                real_value = geometry.shape(real_value).area
+                                break
+                            elif part == '_type':
+                                real_value = geometry.shape(real_value).geom_type
+                                break
+
                             try:
                                 real_value = real_value[part]
                             except KeyError:
