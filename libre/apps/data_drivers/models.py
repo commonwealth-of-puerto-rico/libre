@@ -427,20 +427,35 @@ class SourceFileBased(models.Model):
                         # Spatial
 
                         elif post_filter['operation'] == 'gcontains':
-                            if geometry.shape(real_value).contains(post_filter['value']):
-                                filter_results.append(row_id)
+                            try:
+                                if geometry.shape(real_value).contains(post_filter['value']):
+                                    filter_results.append(row_id)
+                            except AttributeError:
+                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
                         elif post_filter['operation'] == 'gdisjoint':
-                            if geometry.shape(real_value).disjoint(post_filter['value']):
-                                filter_results.append(row_id)
+                            try:
+                                if geometry.shape(real_value).disjoint(post_filter['value']):
+                                    filter_results.append(row_id)
+                            except AttributeError:
+                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
                         elif post_filter['operation'] == 'gintersects':
-                            if geometry.shape(real_value).intersects(post_filter['value']):
-                                filter_results.append(row_id)
+                            try:
+                                if geometry.shape(real_value).intersects(post_filter['value']):
+                                    filter_results.append(row_id)
+                            except AttributeError:
+                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
                         elif post_filter['operation'] == 'gtouches':
-                            if geometry.shape(real_value).touches(post_filter['value']):
-                                filter_results.append(row_id)
+                            try:
+                                if geometry.shape(real_value).touches(post_filter['value']):
+                                    filter_results.append(row_id)
+                            except AttributeError:
+                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
                         elif post_filter['operation'] == 'gwithin':
-                            if geometry.shape(real_value).within(post_filter['value']):
-                                filter_results.append(row_id)
+                            try:
+                                if geometry.shape(real_value).within(post_filter['value']):
+                                    filter_results.append(row_id)
+                            except AttributeError:
+                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
 
                 if query_results:
                     if join_type == JOIN_TYPE_AND:
