@@ -44,13 +44,6 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         context = self.resolve_context(data, request, response)
 
         new_data = {
-            # TODO: place version CRS from version's metadata
-
-            #"crs": {
-            #    "type": "name", "properties": {
-            #        "name": "epsg:900913"
-            #     }
-            #},
             "type": "FeatureCollection",
         }
 
