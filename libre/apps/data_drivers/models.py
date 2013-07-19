@@ -285,9 +285,10 @@ class SourceFileBased(models.Model):
                         if buffer_size:
                             value = value.buffer(float(buffer_size))
 
-                    elif ',' in value:
+                    elif value[0] == '[' and value[-1] == ']':
+                        logger.debug('Is a list')
                         result = []
-                        value = value.split(',')
+                        value = value.replace('[', '').replace(']', '').split(',')
                         # List
                         for n in value:
                             if n[0] == '"' and n[-1] == '"':
@@ -423,6 +424,25 @@ class SourceFileBased(models.Model):
                                     filter_results.append(row_id)
                             except (ValueError, AttributeError):
                                 raise Http400('field: %s, is not a date or time field' % post_filter['key'])
+                        elif post_filter['operation'] == 'range':
+                            if len(post_filter['value']) != 2:
+                                raise Http400('date range filter needs a list of 2 dates')
+
+                            try:
+                                start_date = parse(post_filter['value'][0])
+                            except ValueError as exception:
+                                raise Http400('start date error; %s' % exception)
+
+                            try:
+                                end_date = parse(post_filter['value'][1])
+                            except ValueError as exception:
+                                raise Http400('end date error; %s' % exception)
+
+                            try:
+                                if parse(real_value) >= start_date and parse(real_value) <= end_date:
+                                    filter_results.append(row_id)
+                            except AttributeError as exception:
+                                raise Http400('field: %s is not a date' % post_filter['key'])
 
                         # Spatial
 

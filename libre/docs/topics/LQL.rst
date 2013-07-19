@@ -3,14 +3,25 @@ LQL LIBRE Query Language
 ========================
 
 Draft 1.0 of the LIBRE Query Language specification.
-LQL is a mixture of SQL, Django's ORM and geospatial queries constructs using the URL Query string to create a RESTful query language.
+LQL is a mixture of SQL, Django's ORM, Python's syntax and geospatial queries constructs using the URL query strings to create a RESTful query language.
 
 
 Values
 ======
-LQL accepts as input, strings, numbers and geometries. Any value enclosed in double quotes will be interpreted as a string, a value or set of values enclosed in the geometry specifier Point is interpreted as a point geometry, otherwise it will be parsed as a number.
+LQL accepts as input, strings, numbers, lists and geometries. Any value enclosed in double quotes will be interpreted as a string, a value or set of values enclosed in the geometry specifier Point is interpreted as a point geometry, otherwise it will be parsed as a number.
 The only exception to this convention are special query directive values, such as those of the **join** directive, which are specified unquoted.
 Geospacial geometries also have special attributes which can be accesed and used for filtering, these are: _length, _area and _type
+
+Examples:
+
+A string: ``"hello word"``
+
+A number: ``42``
+
+A list: ``['hello', 'world']`` or ``[1, 2, 3]``
+
+A geometry: ``Point(longitude, laitude)``
+
 
 
 Addressing fields
@@ -162,6 +173,16 @@ Return the elements whose field values's months are the same as the specified nu
 Example: ``travels__month=3``
 
 
+range
+-----
+
+``range=<list or 2 dates>``
+
+Return the elements whose field values's months are the same as the specified number.
+
+Example: ``purchases__range=["2013-01-01", "2013-03-01"]``
+
+
 Spatial filters
 ~~~~~~~~~~~~~~~
 
@@ -229,7 +250,7 @@ in
 
 Return the elements whose field values match one entry in the specified list of strings or numbers.
 
-Example: ``crime_type__in=1,4,8``
+Example: ``crime_type__in=[1,4,8]``
 
 
 Directives
@@ -250,7 +271,9 @@ fields
 
 ``fields=<list of fields to return>``
 
-Return only the fields specified. Works only for single level element collections (multilevel dot and index notations not yet supported).
+Return only the fields specified.
+
+**Note**: Works only for single level element collections (multilevel dot and index notations not yet supported).
 
 
 Coming soon
