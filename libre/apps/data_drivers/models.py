@@ -460,7 +460,7 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
     def _get_items(self, file_handle):
         column_names = self.get_column_names()
 
-        functions = ColumnBase.get_functions_map(self.columns.all())
+        functions = ColumnBase.get_functions_list(self.columns.all())
 
         kwargs = {}
         if self.delimiter:
@@ -525,7 +525,7 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
         fmtstring = ''.join('%ds' % f for f in map(int, column_widths))
         parse = struct.Struct(fmtstring).unpack_from
 
-        functions = ColumnBase.get_functions_map(self.columns.all())
+        functions = ColumnBase.get_functions_list(self.columns.all())
 
         if self.import_rows:
             parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
@@ -802,8 +802,7 @@ class ColumnBase(models.Model):
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
 
     @staticmethod
-    # TODO: rename to get_funtions_list
-    def get_functions_map(columns):
+    def get_functions_list(columns):
         return [DATA_TYPE_FUNCTIONS[i] for i in columns.values_list('data_type', flat=True)]
 
     @staticmethod
