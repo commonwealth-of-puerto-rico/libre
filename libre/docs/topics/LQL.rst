@@ -10,6 +10,7 @@ Values
 ======
 LQL accepts as input, strings, numbers and geometries. Any value enclosed in double quotes will be interpreted as a string, a value or set of values enclosed in the geometry specifier Point is interpreted as a point geometry, otherwise it will be parsed as a number.
 The only exception to this convention are special query directive values, such as those of the **join** directive, which are specified unquoted.
+Geospacial geometries also have special attributes which can be accesed and used for filtering, these are: _length, _area and _type
 
 
 Addressing fields
@@ -127,41 +128,41 @@ Example: ``travels__month=3``
 Spatial filters
 ~~~~~~~~~~~~~~~
 
-gcontains=<geometry>
+has=<geometry>
 --------------------
 Return the elements whose interior geometry contains the boundary and interior of the geometry specified, and their boundaries do not touch at all.
 
-Example: ``city__gcontains=Point(-66.16918303705927,18.40250894588894)``
+Example: ``city__has=Point(-66.16918303705927,18.40250894588894)``
 
 
-gdisjoint=<geometry>
+disjoint=<geometry>
 --------------------
 Return the elements whose boundary and interior geometry do not intersect at all with the geometry specified.
 
-Example: ``country__gdisjoint=Point(-66.16918303705927,18.40250894588894)``
+Example: ``country__disjoint=Point(-66.16918303705927,18.40250894588894)``
 
 
-gintersects=<geometry>
+intersects=<geometry>
 ----------------------
 Return the elements whose boundary and interior geometry intersects the geometry specified in any way.
 
-Example: ``county__gintersects=Point(-66.16918303705927,18.40250894588894).buffer(0.5)``
+Example: ``county__intersects=Point(-66.16918303705927,18.40250894588894).buffer(0.5)``
 
 
-gtouches=<geometry>
+touches=<geometry>
 -------------------
 Return the elements who have at least one point in common with and whose interiors do not intersect with the geometry specified.
 
-Example: ``river__gtouches=LineString([-66.16918303705927,18.40250894588894])``
+Example: ``river__touches=LineString([-66.16918303705927,18.40250894588894])``
 
 
-gwithin=<geometry>
+within=<geometry>
 ------------------
 boundary and interior intersect only with the interior of the other (not its boundary or exterior).
 
 Return the elements whose boundary and interior intersect only with the interior of the specified geometry (not its boundary or exterior).
 
-Example: ``crime__gwithin=Polygon([[-66.16918303705927,18.40250894588894]])``
+Example: ``crime__within=Polygon([[-66.16918303705927,18.40250894588894]])``
 
 
 
