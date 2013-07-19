@@ -13,9 +13,9 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
     format = 'map_leaflet'
 
     def _process_feature(self, feature, template):
-        new_feature = {"type": "Feature"}
+        new_feature = {'type': 'Feature'}
         new_feature.update(feature)
-        new_feature['properties']['popup'] = template.render(Context(feature['properties']))
+        new_feature['properties']['popup'] = template.render(Context(feature))
         return new_feature
 
     def render(self, data, accepted_media_type=None, renderer_context=None):

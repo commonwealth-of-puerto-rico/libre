@@ -93,5 +93,3 @@ PENDING
   * Publish/unpublish a source
   * Allow skiping/importing rows that match a regex per field
   * Calculate geometries area, size, lenghts in pin template
-
-    * Support full geometries properties mapping in template
