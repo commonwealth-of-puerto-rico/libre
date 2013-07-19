@@ -48,7 +48,7 @@ PENDING
 
 * Geographical sources
 
-  * No task remains
+  * <No task remains>
 
 
 * Job processing

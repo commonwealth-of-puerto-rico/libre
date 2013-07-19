@@ -35,91 +35,128 @@ Multiple filters can be specified on a single query.
 Strings filters
 ~~~~~~~~~~~~~~~
 
-contains=<string>
------------------
+contains
+--------
+
+``contains=<string>``
+
 Return the elements whose field values includes the specified string.
 
 Example: ``first_name__contains="John"``
 
 
-icontains=<string>
-------------------
+icontains
+---------
+``icontains=<string>``
+
 Return the elements whose field values includes the specified string. Matches upper and lower cases.
 
 Example: ``last_name__icontains="smith"``
 
 
-startswith=<string>
--------------------
+startswith
+----------
+
+``startswith=<string>``
+
 Return the elements whose field values start with the specified string.
 
 Example: ``state__startswith="North"``
 
 
-istartswith=<string>
---------------------
+istartswith
+-----------
+
+``istartswith=<string>``
+
 Return the elements whose field values start with the specified string. Matches upper and lower cases.
 
 Example: ``city__istartswith="John"``
 
 
-endswith=<string>
------------------
+endswith
+--------
+
+``endswith=<string>``
+
 Return the elements whose field values end with the specified string.
 
 Example: ``state__startswith="Carolina"``
 
 
-iendswith=<string>
-------------------
+iendswith
+---------
+
+``iendswith=<string>``
+
 Return the elements whose field values end with the specified string. Matches upper and lower cases.
 
 Example: ``company_name__iendswith="corp"``
 
 
-lt=<number>
------------
+
+Number filters
+~~~~~~~~~~~~~~
+
+
+lt
+--
+
+``lt=<number>``
+
 Return the elements whose field values are less than the specified number.
 
 Example: ``ytd_sales__lt=1000000``
 
 
-Number filters
-~~~~~~~~~~~~~~
+lte
+---
 
-lte=<number>
-------------
+``lte=<number>``
+
 Return the elements whose field values are less than or equal than the specified number.
 
 Example: ``employees_count__lte=1000``
 
 
-gt=<number>
------------
+gt
+--
+
+``gt=<number>``
+
 Return the elements whose field values are greater than the specified number.
 
 Example: ``spare_rooms__gt=3``
 
 
-gte=<number>
-------------
+gte
+---
+
+``gte=<number>``
+
 Return the elements whose field values are greater than or equal than the specified number.
 
 Example: ``month_sales__gte=200000``
 
 
 Date filters
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
-year=<number>
-------------
+year
+----
+
+``year=<number>``
+
 Return the elements whose field values's years are the same as the specified number.
 
 Example: ``crimes__year=2012``
 
 
-month=<number>
-------------
+month
+-----
+
+``month=<number>``
+
 Return the elements whose field values's months are the same as the specified number.
 
 Example: ``travels__month=3``
@@ -128,36 +165,51 @@ Example: ``travels__month=3``
 Spatial filters
 ~~~~~~~~~~~~~~~
 
-has=<geometry>
---------------------
+has
+---
+
+``has=<geometry>``
+
 Return the elements whose interior geometry contains the boundary and interior of the geometry specified, and their boundaries do not touch at all.
 
 Example: ``city__has=Point(-66.16918303705927,18.40250894588894)``
 
 
-disjoint=<geometry>
---------------------
+disjoint
+--------
+
+``disjoint=<geometry>``
+
 Return the elements whose boundary and interior geometry do not intersect at all with the geometry specified.
 
 Example: ``country__disjoint=Point(-66.16918303705927,18.40250894588894)``
 
 
-intersects=<geometry>
-----------------------
+intersects
+----------
+
+``intersects=<geometry>``
+
 Return the elements whose boundary and interior geometry intersects the geometry specified in any way.
 
 Example: ``county__intersects=Point(-66.16918303705927,18.40250894588894).buffer(0.5)``
 
 
-touches=<geometry>
--------------------
+touches
+-------
+
+``touches=<geometry>``
+
 Return the elements who have at least one point in common with and whose interiors do not intersect with the geometry specified.
 
 Example: ``river__touches=LineString([-66.16918303705927,18.40250894588894])``
 
 
-within=<geometry>
-------------------
+within
+------
+
+``within=<geometry>``
+
 boundary and interior intersect only with the interior of the other (not its boundary or exterior).
 
 Return the elements whose boundary and interior intersect only with the interior of the specified geometry (not its boundary or exterior).
@@ -170,25 +222,34 @@ Other filters
 ~~~~~~~~~~~~~
 
 
-in=<list of strings or numbers>
--------------------------------
+in
+--
+
+``in=<list of strings or numbers>``
+
 Return the elements whose field values match one entry in the specified list of strings or numbers.
 
 Example: ``crime_type__in=1,4,8``
 
 
 Directives
-==========
+~~~~~~~~~~
 All directive are prepended by the underscore delimiter '_'.
 
 
-join=<OR | AND>
----------------
+join
+----
+
+``join=<OR | AND>``
+
 When multiple filters are specified per query the results of each filter are ``ANDed`` by default, this directive changes that behaviour so that results are ``ORed`` together.
 
 
-fields=<list of fields to return>
----------------------------------
+fields
+------
+
+``fields=<list of fields to return>``
+
 Return only the fields specified. Works only for single level element collections (multilevel dot and index notations not yet supported).
 
 
