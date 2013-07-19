@@ -23,6 +23,7 @@ import jsonfield
 import xlrd
 from model_utils.managers import InheritanceManager
 from pyproj import Proj, transform
+from shapely import geometry
 
 from lock_manager import Lock, LockError
 
@@ -270,7 +271,11 @@ class SourceFileBased(models.Model):
                     # Strip quotes
                     value = unicode(value[1:-1])
                 else:
-                    if ',' in value:
+                    if value.startswith('Point'):
+                        # Is a point geometry data type
+                        x, y = value.replace(' ', '').replace('Point(', '').replace(')', '').split(',')
+                        value = geometry.Point(float(x), float(y))
+                    elif ',' in value:
                         result = []
                         value = value.split(',')
                         # List
@@ -389,6 +394,15 @@ class SourceFileBased(models.Model):
                                     filter_results.append(row_id)
                             except (ValueError, AttributeError):
                                 raise Http400('field: %s, is not a date or time field' % post_filter['key'])
+
+                        # Spatial
+
+                        elif post_filter['operation'] == 'gcontains':
+                            if geometry.shape(real_value).contains(post_filter['value']):
+                                filter_results.append(row_id)
+                        elif post_filter['operation'] == 'gdisjoint':
+                            if geometry.shape(real_value).disjoint(post_filter['value']):
+                                filter_results.append(row_id)
 
                 if query_results:
                     if join_type == JOIN_TYPE_AND:

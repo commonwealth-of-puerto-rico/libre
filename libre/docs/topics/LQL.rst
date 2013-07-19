@@ -8,7 +8,7 @@ LQL is a mixture of SQL, Django's ORM and geospatial queries constructs using th
 
 Values
 ======
-LQL accepts as input, strings and numbers. Any value enclosed in double quotes will be interpreted as a string, otherwise it will be parsed as a number.
+LQL accepts as input, strings, numbers and geometries. Any value enclosed in double quotes will be interpreted as a string, a value or set of values enclosed in the geometry specifier Point is interpreted as a point geometry, otherwise it will be parsed as a number.
 The only exception to this convention are special query directive values, such as those of the **join** directive, which are specified unquoted.
 
 
@@ -30,6 +30,9 @@ Filtering
 =========
 To filter a collection by a field, specify the field name appending a double underscore '__' (or the specified delimiter if overrided) appending again one of the following filters.
 Multiple filters can be specified on a single query.
+
+Strings filters
+~~~~~~~~~~~~~~~
 
 contains=<string>
 -----------------
@@ -73,19 +76,15 @@ Return the elements whose field values end with the specified string. Matches up
 Example: ``company_name__iendswith="corp"``
 
 
-in=<list of strings or numbers>
--------------------------------
-Return the elements whose field values match one entry in the specified list of strings or numbers.
-
-Example: ``crime_type__in=1,4,8``
-
-
 lt=<number>
 -----------
 Return the elements whose field values are less than the specified number.
 
 Example: ``ytd_sales__lt=1000000``
 
+
+Number filters
+~~~~~~~~~~~~~~
 
 lte=<number>
 ------------
@@ -108,6 +107,9 @@ Return the elements whose field values are greater than or equal than the specif
 Example: ``month_sales__gte=200000``
 
 
+Date filters
+~~~~~~~~~~~~~~
+
 year=<number>
 ------------
 Return the elements whose field values's years are the same as the specified number.
@@ -120,6 +122,33 @@ month=<number>
 Return the elements whose field values's months are the same as the specified number.
 
 Example: ``travels__month=3``
+
+
+Spatial filters
+~~~~~~~~~~~~~~~
+
+gcontains=<geometry>
+--------------------
+Return the elements whose interior geometry contains the boundary and interior of the geometry specified, and their boundaries do not touch at all.
+
+Example: ``city__gcontains=Point(-66.16918303705927,18.40250894588894)``
+
+
+gdisjoint=<geometry>
+--------------------
+Return the elements whose boundary and interior geometry do not intersect at all with the geometry specified.
+
+Example: ``country__gdisjoint=Point(-66.16918303705927,18.40250894588894)``
+
+Other filters
+~~~~~~~~~~~~~
+
+
+in=<list of strings or numbers>
+-------------------------------
+Return the elements whose field values match one entry in the specified list of strings or numbers.
+
+Example: ``crime_type__in=1,4,8``
 
 
 Directives
@@ -141,7 +170,6 @@ Coming soon
 ===========
 * Subqueries
 * Sorting
-* Geospatial filtering
 * Grouping
 * Sum
 * Pagination
