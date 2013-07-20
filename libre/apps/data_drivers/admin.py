@@ -139,7 +139,7 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
     fieldsets = (
         (_('Basic information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description')
+            'fields': ('name', 'slug', 'description', 'published')
         }),
         (_('Result limiting'), {
             'classes': ('suit-tab suit-tab-configuration',),
@@ -159,7 +159,8 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
         }),
     )
 
-    list_display = ('name', 'slug', 'description', 'get_stream_type')
+    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
+    list_editable = ('published',)
     inlines = [SourceDataVersionInline, SpreadsheetColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceSpreadsheetForm
@@ -171,7 +172,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
     fieldsets = (
         (_('Basic information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description')
+            'fields': ('name', 'slug', 'description', 'published')
         }),
         (_('Result limiting'), {
             'classes': ('suit-tab suit-tab-configuration',),
@@ -190,7 +191,8 @@ class SourceCSVAdmin(admin.ModelAdmin):
             'fields': ('delimiter', 'quote_character',)
         }),
     )
-    list_display = ('name', 'slug', 'description', 'get_stream_type')
+    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
+    list_editable = ('published',)
     inlines = [SourceDataVersionInline, CSVColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceCSVForm
@@ -202,7 +204,7 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
     fieldsets = (
         (_('Basic information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description')
+            'fields': ('name', 'slug', 'description', 'published')
         }),
         (_('Result limiting'), {
             'classes': ('suit-tab suit-tab-configuration',),
@@ -217,7 +219,8 @@ class SourceFixedWidthAdmin(admin.ModelAdmin):
             'fields': ('import_rows',)
         }),
     )
-    list_display = ('name', 'slug', 'description', 'get_stream_type')
+    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
+    list_editable = ('published',)
     inlines = [SourceDataVersionInline, FixedWidthColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceFixedWidthForm
@@ -241,14 +244,15 @@ class SourceWSAdmin(admin.ModelAdmin):
     fieldsets = (
         (_('Basic information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description')
+            'fields': ('name', 'slug', 'description', 'published')
         }),
         (_('Source data'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('wsdl_url', 'endpoint')
         }),
     )
-    list_display = ('name', 'slug', 'wsdl_url', 'endpoint')
+    list_display = ('name', 'slug', 'wsdl_url', 'endpoint', 'published')
+    list_editable = ('published',)
     inlines = [WSArgumentInline, WSResultFieldInline]
     form = SourceWSForm
 
@@ -259,7 +263,7 @@ class SourceShapeAdmin(admin.ModelAdmin):
     fieldsets = (
         (_('Basic information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description')
+            'fields': ('name', 'slug', 'description', 'published')
         }),
         (_('Result limiting'), {
             'classes': ('suit-tab suit-tab-configuration',),
@@ -280,7 +284,8 @@ class SourceShapeAdmin(admin.ModelAdmin):
         }),
     )
 
-    list_display = ('name', 'slug', 'description', 'get_stream_type')
+    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
+    list_editable = ('published',)
     inlines = [SourceDataVersionInline, ShapefileColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceShapeForm

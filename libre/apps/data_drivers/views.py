@@ -41,27 +41,27 @@ def api_root(request, format=None):
 
 
 class SourceList(generics.ListAPIView):
-    queryset = Source.objects.all()
+    queryset = Source.objects.filter(published=True)
     serializer_class = SourceSerializer
 
 
 class SourceDetail(generics.RetrieveAPIView):
-    queryset = Source.objects.all()
+    queryset = Source.objects.filter(published=True)
     serializer_class = SourceSerializer
 
 
 class SourceDataVersionList(generics.ListAPIView):
-    queryset = SourceDataVersion.objects.all()
+    queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
 
 
 class SourceDataVersionDetail(generics.RetrieveAPIView):
-    queryset = SourceDataVersion.objects.all()
+    queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
 
 
 class SourceGetAll(generics.GenericAPIView):
-    queryset = Source.objects.all().select_subclasses()
+    queryset = Source.objects.filter(published=True).select_subclasses()
 
     def get_renderers(self):
         """
@@ -76,7 +76,7 @@ class SourceGetAll(generics.GenericAPIView):
 
 
 class SourceGetOne(generics.GenericAPIView):
-    queryset = Source.objects.all().select_subclasses()
+    queryset = Source.objects.filter(published=True).select_subclasses()
 
     def get_renderers(self):
         """
