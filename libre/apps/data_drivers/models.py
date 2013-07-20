@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 import csv
@@ -6,6 +7,7 @@ import hashlib
 from itertools import izip
 import logging
 from operator import itemgetter
+import re
 import string
 import struct
 import urllib2
@@ -535,6 +537,31 @@ class SourceFileBased(models.Model):
 class SourceTabularBased(models.Model):
     import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
 
+    class AlwaysFalseSearch(object):
+        def search(self, string):
+            return False
+
+    class AlwaysTrueSearch(object):
+        def search(self, string):
+            return True
+
+    def get_regex_maps(self):
+        skip_result_map = {}
+        for name, skip_regex in self.columns.values_list('name', 'skip_regex'):
+            if skip_regex:
+                skip_result_map[name] = re.compile(skip_regex)
+            else:
+                skip_result_map[name] = self.__class__.AlwaysFalseSearch()
+
+        import_result_map = {}
+        for name, import_regex in self.columns.values_list('name', 'import_regex'):
+            if import_regex:
+                import_result_map[name] = re.compile(import_regex)
+            else:
+                import_result_map[name] = self.__class__.AlwaysTrueSearch()
+
+        return skip_result_map, import_result_map
+
     def get_column_names(self):
         if self.columns.count():
             return self.columns.all().values_list('name', flat=True)
@@ -700,11 +727,13 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         else:
             parsed_range = xrange(0, self._sheet.nrows)
 
-        #if self.name_row:
-        #    parsed_range = (i for i in set(parsed_range) - set([self.name_row - 1]))
-
         for i in parsed_range:
-            yield dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
+            converted_row = dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
+            skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items()]
+            import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items()]
+
+            if all(cell_skip == False for cell_skip in skip_result) and all(import_result):
+                yield converted_row
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -728,11 +757,11 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         except xlrd.XLRDError:
             self._sheet = self._book.sheet_by_index(int(self.sheet))
 
+        self.skip_regex_map, self.import_regex_map = self.get_regex_maps()
+
         logger.debug('importing rows')
-        row_id = 1
-        for row in self._get_items():
+        for row_id, row in enumerate(self._get_items(), 1):
             SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
-            row_id = row_id + 1
 
         if file_handle:
             file_handle.close()
@@ -947,6 +976,8 @@ class FixedWidthColumn(ColumnBase):
 
 class SpreadsheetColumn(ColumnBase):
     source = models.ForeignKey(SourceSpreadsheet, verbose_name=_('spreadsheet source'), related_name='columns')
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
 
     class Meta:
         verbose_name = _('spreadsheet column')
