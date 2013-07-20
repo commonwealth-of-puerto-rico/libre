@@ -90,6 +90,5 @@ PENDING
   * Interpret WS arguments
   * Result count
   * Fix upload_to
-  * Publish/unpublish a source
   * Allow skiping/importing rows that match a regex per field
   * Calculate geometries area, size, lenghts in pin template
