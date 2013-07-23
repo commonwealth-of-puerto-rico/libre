@@ -92,3 +92,6 @@ PENDING
   * Fix upload_to
   * Allow skiping/importing rows that match a regex per field
   * Calculate geometries area, size, lenghts in pin template
+  * Delete stored source files when a source is deleted
+  * Delete stored source files when a new file is uploaded
+  * Fix JsonField not returning dates or times only datetimes

@@ -159,6 +159,23 @@ class SourceFileBased(models.Model):
             return _('None')
     get_stream_type.short_description = 'stream type'
 
+    def get_functions_map(self):
+        return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
+
+    def apply_datatypes(self, properties, functions_map):
+        result = {}
+
+        for key, value in properties.items():
+            try:
+                if key in functions_map:
+                    result[key] = functions_map[key](value)
+                else:
+                    result[key] = value
+            except ValueError:
+                result[key] = value
+
+        return result
+
     def clear_versions(self):
         for version in self.versions.all():
             version.delete()
@@ -268,11 +285,21 @@ class SourceFileBased(models.Model):
             for string in strings:
                 result.append(SourceFileBased.parse_string(string))
             return result
+        elif string.startswith('DateTime'):
+            # Is a datetime
+            logger.debug('Is a datetime')
+            date_string = string.replace('DateTime(', '').replace(')', '')
+            return parse(date_string)
         elif string.startswith('Date'):
             # Is a date
             logger.debug('Is a date')
-            date_string = string.replace('Date', '').replace(')', '')
-            return parse(date_string)
+            date_string = string.replace('Date(', '').replace(')', '')
+            return parse(date_string).date()
+        elif string.startswith('Time'):
+            # Is a time
+            logger.debug('Is a time')
+            date_string = string.replace('Time(', '').replace(')', '')
+            return parse(date_string).time()
         else:
             logger.debug('Is a number')
             try:
@@ -339,9 +366,14 @@ class SourceFileBased(models.Model):
         if post_filters:
             for post_filter in post_filters:
                 filter_results = []
+
+                filter_value = post_filter['value']
+                filter_operation = post_filter['operation']
+
                 for row_id, item in enumerate(queryset):
                     try:
                         real_value = item.row
+
                         for part in post_filter['key'].split('.'):
                             if part == '_length':
                                 real_value = geometry.shape(real_value).length
@@ -364,75 +396,99 @@ class SourceFileBased(models.Model):
 
                         # String
 
-                        if post_filter['operation'] == 'icontains':
-                            if post_filter['value'].upper() in real_value.upper():
-                                filter_results.append(row_id)
-                        elif post_filter['operation'] == 'contains':
-                            if post_filter['value'] in real_value:
-                                filter_results.append(row_id)
-                        elif post_filter['operation'] == 'startswith':
-                            if real_value.startswith(post_filter['value']):
-                                filter_results.append(row_id)
-                        elif post_filter['operation'] == 'istartswith':
-                            if real_value.upper().startswith(post_filter['value'].upper()):
-                                filter_results.append(row_id)
-                        elif post_filter['operation'] == 'endswith':
-                            if real_value.endswith(post_filter['value']):
-                                filter_results.append(row_id)
-                        elif post_filter['operation'] == 'iendswith':
-                            if real_value.upper().endswith(post_filter['value'].upper()):
-                                filter_results.append(row_id)
+                        if filter_operation == 'icontains':
+                            try:
+                                if filter_value.upper() in real_value.upper():
+                                    filter_results.append(row_id)
+                            except (TypeError, AttributeError):
+                                if not isinstance(filter_value, basestring):
+                                    raise Http400('This filter is meant to be used with string data type values.')
+                        elif filter_operation == 'contains':
+                            try:
+                                if filter_value in real_value:
+                                    filter_results.append(row_id)
+                            except TypeError:
+                                if not isinstance(filter_value, basestring):
+                                    raise Http400('This filter is meant to be used with string data type values.')
+                        elif filter_operation == 'startswith':
+                            try:
+                                if real_value.startswith(filter_value):
+                                    filter_results.append(row_id)
+                            except TypeError:
+                                if not isinstance(filter_value, basestring):
+                                    raise Http400('This filter is meant to be used with string data type values.')
+                        elif filter_operation == 'istartswith':
+                            try:
+                                if real_value.upper().startswith(filter_value.upper()):
+                                    filter_results.append(row_id)
+                            except (TypeError, AttributeError):
+                                if not isinstance(filter_value, basestring):
+                                    raise Http400('This filter is meant to be used with string data type values.')
+                        elif filter_operation == 'endswith':
+                            try:
+                                if real_value.endswith(filter_value):
+                                    filter_results.append(row_id)
+                            except TypeError:
+                                if not isinstance(filter_value, basestring):
+                                    raise Http400('This filter is meant to be used with string data type values.')
+                        elif filter_operation == 'iendswith':
+                            try:
+                                if real_value.upper().endswith(filter_value.upper()):
+                                    filter_results.append(row_id)
+                            except (TypeError, AttributeError):
+                                if not isinstance(filter_value, basestring):
+                                    raise Http400('This filter is meant to be used with string data type values.')
 
                         # Number
 
-                        elif post_filter['operation'] == 'lt':
-                            if real_value < post_filter['value']:
+                        elif filter_operation == 'lt':
+                            if real_value < filter_value:
                                 filter_results.append(row_id)
-                        elif post_filter['operation'] == 'lte':
-                            if real_value <= post_filter['value']:
+                        elif filter_operation == 'lte':
+                            if real_value <= filter_value:
                                 filter_results.append(row_id)
-                        elif post_filter['operation'] == 'gt':
-                            if real_value > post_filter['value']:
+                        elif filter_operation == 'gt':
+                            if real_value > filter_value:
                                 filter_results.append(row_id)
-                        elif post_filter['operation'] == 'gte':
-                            if real_value >= post_filter['value']:
+                        elif filter_operation == 'gte':
+                            if real_value >= filter_value:
                                 filter_results.append(row_id)
 
                         # Other
 
-                        elif post_filter['operation'] == 'in':
+                        elif filter_operation == 'in':
                             try:
-                                if real_value in post_filter['value']:
+                                if real_value in filter_value:
                                     filter_results.append(row_id)
                             except TypeError:
                                 raise Http400('Invalid value type for specified filter or field.')
-                        elif post_filter['operation'] == 'equals':
-                            if post_filter['value'] == real_value:
+                        elif filter_operation == 'equals':
+                            if filter_value == real_value:
                                 filter_results.append(row_id)
 
                         # Date
 
-                        elif post_filter['operation'] == 'year':
+                        elif filter_operation == 'year':
                             try:
-                                if parse(real_value).year == post_filter['value']:
+                                if parse(real_value).year == filter_value:
                                     filter_results.append(row_id)
                             except (ValueError, AttributeError):
                                 raise Http400('field: %s, is not a date or time field' % post_filter['key'])
-                        elif post_filter['operation'] == 'month':
+                        elif filter_operation == 'month':
                             try:
-                                if parse(real_value).month == post_filter['value']:
+                                if parse(real_value).month == filter_value:
                                     filter_results.append(row_id)
                             except (ValueError, AttributeError):
                                 raise Http400('field: %s, is not a date or time field' % post_filter['key'])
-                        elif post_filter['operation'] == 'day':
+                        elif filter_operation == 'day':
                             try:
-                                if parse(real_value).day == post_filter['value']:
+                                if parse(real_value).day == filter_value:
                                     filter_results.append(row_id)
                             except (ValueError, AttributeError):
                                 raise Http400('field: %s, is not a date or time field' % post_filter['key'])
-                        elif post_filter['operation'] == 'range':
+                        elif filter_operation == 'range':
                             try:
-                                if parse(real_value) >= post_filter['value'][0] and parse(real_value) <= post_filter['value'][1]:
+                                if parse(real_value) >= filter_value[0] and parse(real_value) <= filter_value[1]:
                                     filter_results.append(row_id)
                             except AttributeError as exception:
                                 raise Http400('field: %s is not a date' % post_filter['key'])
@@ -441,33 +497,33 @@ class SourceFileBased(models.Model):
 
                         # Spatial
 
-                        elif post_filter['operation'] == 'gcontains':
+                        elif filter_operation == 'gcontains':
                             try:
-                                if geometry.shape(real_value).contains(post_filter['value']):
+                                if geometry.shape(real_value).contains(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif post_filter['operation'] == 'gdisjoint':
+                        elif filter_operation == 'gdisjoint':
                             try:
-                                if geometry.shape(real_value).disjoint(post_filter['value']):
+                                if geometry.shape(real_value).disjoint(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif post_filter['operation'] == 'gintersects':
+                        elif filter_operation == 'gintersects':
                             try:
-                                if geometry.shape(real_value).intersects(post_filter['value']):
+                                if geometry.shape(real_value).intersects(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif post_filter['operation'] == 'gtouches':
+                        elif filter_operation == 'gtouches':
                             try:
-                                if geometry.shape(real_value).touches(post_filter['value']):
+                                if geometry.shape(real_value).touches(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif post_filter['operation'] == 'gwithin':
+                        elif filter_operation == 'gwithin':
                             try:
-                                if geometry.shape(real_value).within(post_filter['value']):
+                                if geometry.shape(real_value).within(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
@@ -568,7 +624,7 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
     def _get_items(self, file_handle):
         column_names = self.get_column_names()
 
-        functions = ColumnBase.get_functions_list(self.columns.all())
+        functions_map = self.get_functions_map()
 
         kwargs = {}
         if self.delimiter:
@@ -587,11 +643,14 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
 
         logger.debug('parsed_range: %s' % parsed_range)
 
-        for i, row in enumerate(reader):
-            if parsed_range and i in parsed_range:
-                yield dict(zip(column_names, ColumnBase.zip_functions(functions, row)))
-            elif not parsed_range:
-                yield dict(zip(column_names, ColumnBase.zip_functions(functions, row)))
+        for row_id, row in enumerate(reader, 1):
+            if parsed_range:
+                if row_id in parsed_range:
+                    row_dict = dict(zip(column_names, row))
+                    yield self.apply_datatypes(row_dict, functions_map)
+            else:
+                row_dict = dict(zip(column_names, row))
+                yield self.apply_datatypes(row_dict, functions_map)
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -607,10 +666,8 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
 
         logger.debug('file_handle: %s' % file_handle)
 
-        row_id = 1
-        for row in self._get_items(file_handle):
+        for row_id, row in enumerate(self._get_items(file_handle), 1):
             SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
-            row_id = row_id + 1
 
         file_handle.close()
 
@@ -633,19 +690,21 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
         fmtstring = ''.join('%ds' % f for f in map(int, column_widths))
         parse = struct.Struct(fmtstring).unpack_from
 
-        functions = ColumnBase.get_functions_list(self.columns.all())
-
         if self.import_rows:
             parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
         else:
             parsed_range = None
 
-        for i, row in enumerate(self._file_handle):
+        functions_map = self.get_functions_map()
+
+        for row_id, row in enumerate(self._file_handle):
             if parsed_range:
-                if i in parsed_range:
-                    yield dict(zip(column_names, ColumnBase.zip_functions(functions, parse(row))))
+                if row_id in parsed_range:
+                    row_dict = dict(zip(column_names, parse(row)))
+                    yield self.apply_datatypes(row_dict, functions_map)
             else:
-                yield dict(zip(column_names, ColumnBase.zip_functions(functions, parse(row))))
+                row_dict = dict(zip(column_names, parse(row)))
+                yield self.apply_datatypes(row_dict, functions_map)
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -659,10 +718,8 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
         elif self.url:
             self._file_handle = urllib2.urlopen(self.url)
 
-        row_id = 1
-        for row in self._get_items():
+        for row_id, row in enumerate(self._get_items(), 1):
             SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
-            row_id = row_id + 1
 
         self._file_handle.close()
 
@@ -852,13 +909,15 @@ class SourceShape(Source, SourceFileBased):
             else:
                 new_projection = False
 
-            row_id = 1
-            for feature in source:
-                feature['properties'] = Source.add_row_id(self.apply_datatypes(feature.get('properties', {})), row_id)
+            functions_map = self.get_functions_map()
+
+            for row_id, feature in enumerate(source, 1):
+                feature['properties'] = Source.add_row_id(self.apply_datatypes(feature.get('properties', {}), functions_map), row_id)
+
                 if new_projection:
                     feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
+
                 SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=feature)
-                row_id = row_id + 1
 
         source_data_version.ready = True
         source_data_version.active = True
@@ -866,22 +925,6 @@ class SourceShape(Source, SourceFileBased):
 
         if self._file_handle:
             self._file_handle.close()
-
-    def get_functions_map(self):
-        return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
-
-    def apply_datatypes(self, properties):
-        functions_map = self.get_functions_map()
-        result = {}
-
-        for key, value in properties.items():
-            if key in functions_map:
-                result[key] = functions_map[key](value)
-            else:
-                result[key] = value
-
-        return result
-        #return [functions_map(key)(value) for key, value in properties.items() if key in functions_map else value]
 
     class Meta:
         verbose_name = _('shape source')
@@ -929,14 +972,6 @@ class SourceData(models.Model):
 class ColumnBase(models.Model):
     name = models.CharField(max_length=32, verbose_name=_('name'))
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
-
-    @staticmethod
-    def get_functions_list(columns):
-        return [DATA_TYPE_FUNCTIONS[i] for i in columns.values_list('data_type', flat=True)]
-
-    @staticmethod
-    def zip_functions(functions, values):
-        return [x(y) for x, y in zip(functions, values)]
 
     class Meta:
         abstract = True

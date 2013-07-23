@@ -22,6 +22,11 @@ A list: ``['hello', 'world']`` or ``[1, 2, 3]``
 
 A geometry: ``Point(longitude, laitude)``
 
+A date: ``Date(2013-01-01)``
+
+A time: ``Time(10:00pm)`` or ``Time(22:00)``
+
+A date and time: ``DateTime(2013-01-01 1:00pm)``
 
 
 Addressing fields
@@ -183,15 +188,6 @@ Return the elements whose field values's day are the same as the specified numbe
 Example: ``party__day=1``
 
 
-range
------
-
-``range=<list or 2 dates>``
-
-Return the elements whose field values's months are the same as the specified number.
-
-Example: ``purchases__range=["2013-01-01", "2013-03-01"]``
-
 
 Spatial filters
 ~~~~~~~~~~~~~~~
@@ -260,7 +256,17 @@ in
 
 Return the elements whose field values match one entry in the specified list of strings or numbers.
 
-Example: ``crime_type__in=[1,4,8]``
+Example: ``crime_type_id__in=[1,4,8]``
+
+
+range
+-----
+
+``range=<list of two dates, two times, two date and times, two numbers or two strings>``
+
+Return the elements whose field values's months are within the the specified values.
+
+Example: ``purchases_date__range=[Date(2013-01-01), Date(2013-03-01)]``
 
 
 Directives
