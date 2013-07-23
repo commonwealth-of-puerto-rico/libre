@@ -240,6 +240,42 @@ class SourceFileBased(models.Model):
         except SourceData.DoesNotExist:
             raise Http404
 
+    @staticmethod
+    def parse_string(string):
+        logger.debug('parsing: %s' % string)
+        if string[0] == '"' and string[-1] == '"':
+            # Strip quotes
+            return unicode(string[1:-1])
+        elif string.startswith('Point'):
+            # Is a point geometry data type
+            x, y = string.replace(' ', '').replace('Point(', '').replace(')', '').split(',')
+
+            # Check if the Point data type is also specifing a buffer
+            buffer_size = None
+            if '.buffer(' in y:
+                y, buffer_size = y.split('.buffer(')
+
+            value = geometry.Point(float(x), float(y))
+
+            if buffer_size:
+                value = value.buffer(float(buffer_size))
+
+            return value
+        elif string[0] == '[' and string[-1] == ']':
+            # Is a list of values
+            logger.debug('Is a list')
+            result = []
+            strings = string.replace('[', '').replace(']', '').split(',')
+            for string in strings:
+                result.append(SourceFileBased.parse_string(string))
+            return result
+        else:
+            logger.debug('Is a number')
+            try:
+                return DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](string)
+            except ValueError:
+                raise Http400('Invalid value')
+
     def get_all(self, parameters=None):
         timestamp, parameters = self.analyze_request(parameters)
 
@@ -270,45 +306,7 @@ class SourceFileBased(models.Model):
             # TODO: clean up this mess!
             # Only interpret values for filters
             try:
-                if value[0] == '"' and value[-1] == '"':
-                    # Strip quotes
-                    value = unicode(value[1:-1])
-                else:
-                    if value.startswith('Point'):
-                        # Is a point geometry data type
-                        x, y = value.replace(' ', '').replace('Point(', '').replace(')', '').split(',')
-
-                        # Check if the Point data type is also specifing a buffer
-                        buffer_size = None
-                        if '.buffer(' in y:
-                            y, buffer_size = y.split('.buffer(')
-
-                        value = geometry.Point(float(x), float(y))
-
-                        if buffer_size:
-                            value = value.buffer(float(buffer_size))
-
-                    elif value[0] == '[' and value[-1] == ']':
-                        logger.debug('Is a list')
-                        result = []
-                        value = value.replace('[', '').replace(']', '').split(',')
-                        # List
-                        for n in value:
-                            if n[0] == '"' and n[-1] == '"':
-                                # Strip quotes
-                                result.append(unicode(n[1:-1]))
-                            else:
-                                try:
-                                    result.append(DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](n))
-                                except ValueError:
-                                    raise Http400('Invalid value')
-
-                        value = result
-                    else:
-                        try:
-                            value = DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](value)
-                        except ValueError:
-                            raise Http400('Invalid value')
+                value = self.__class__.parse_string(value)
             except IndexError:
                 raise Http400('Malformed query')
 
@@ -406,9 +404,7 @@ class SourceFileBased(models.Model):
                                 if real_value in post_filter['value']:
                                     filter_results.append(row_id)
                             except TypeError:
-                                # Asking for in, with a non list value
-                                if real_value in [post_filter['value']]:
-                                    filter_results.append(row_id)
+                                raise Http400('Invalid value type for specified filter or field.')
                         elif post_filter['operation'] == 'equals':
                             if post_filter['value'] == real_value:
                                 filter_results.append(row_id)

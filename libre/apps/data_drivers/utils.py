@@ -9,10 +9,7 @@ def parse_range(astr):
 
 def convert_to_number(data):
     #int(re.sub(r'[^\d-]+', '', data))
-    try:
-        if '.' in data:
-            return float(data.replace(',', '').replace('$', ''))
-        else:
-            return int(data.replace(',', '').replace('$', ''))
-    except Exception:
-        return str(data)
+    if '.' in data:
+        return float(data.replace(',', '').replace('$', ''))
+    else:
+        return int(data.replace(',', '').replace('$', ''))
