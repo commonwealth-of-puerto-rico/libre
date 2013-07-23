@@ -242,7 +242,7 @@ class SourceFileBased(models.Model):
     @staticmethod
     def parse_string(string):
         logger.debug('parsing: %s' % string)
-        if string.replace(' ', '')[0] == '"' and string.replace(' ', '')[-1] == '"':
+        if string[0] == '"' and string[-1] == '"':
             # Strip quotes
             return unicode(string[1:-1])
         elif string.startswith('Point'):
@@ -268,6 +268,11 @@ class SourceFileBased(models.Model):
             for string in strings:
                 result.append(SourceFileBased.parse_string(string))
             return result
+        elif string.startswith('Date'):
+            # Is a date
+            logger.debug('Is a date')
+            date_string = string.replace('Date', '').replace(')', '')
+            return parse(date_string)
         else:
             logger.debug('Is a number')
             try:
@@ -426,24 +431,13 @@ class SourceFileBased(models.Model):
                             except (ValueError, AttributeError):
                                 raise Http400('field: %s, is not a date or time field' % post_filter['key'])
                         elif post_filter['operation'] == 'range':
-                            if len(post_filter['value']) != 2:
-                                raise Http400('date range filter needs a list of 2 dates')
-
                             try:
-                                start_date = parse(post_filter['value'][0])
-                            except ValueError as exception:
-                                raise Http400('start date error; %s' % exception)
-
-                            try:
-                                end_date = parse(post_filter['value'][1])
-                            except ValueError as exception:
-                                raise Http400('end date error; %s' % exception)
-
-                            try:
-                                if parse(real_value) >= start_date and parse(real_value) <= end_date:
+                                if parse(real_value) >= post_filter['value'][0] and parse(real_value) <= post_filter['value'][1]:
                                     filter_results.append(row_id)
                             except AttributeError as exception:
                                 raise Http400('field: %s is not a date' % post_filter['key'])
+                            except (TypeError, IndexError) as exception:
+                                raise Http400('Range filter value must be a list of 2 dates.')
 
                         # Spatial
 
