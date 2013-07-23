@@ -497,31 +497,31 @@ class SourceFileBased(models.Model):
 
                         # Spatial
 
-                        elif filter_operation == 'gcontains':
+                        elif filter_operation == 'has':
                             try:
                                 if geometry.shape(real_value).contains(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif filter_operation == 'gdisjoint':
+                        elif filter_operation == 'disjoint':
                             try:
                                 if geometry.shape(real_value).disjoint(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif filter_operation == 'gintersects':
+                        elif filter_operation == 'intersects':
                             try:
                                 if geometry.shape(real_value).intersects(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif filter_operation == 'gtouches':
+                        elif filter_operation == 'touches':
                             try:
                                 if geometry.shape(real_value).touches(filter_value):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif filter_operation == 'gwithin':
+                        elif filter_operation == 'within':
                             try:
                                 if geometry.shape(real_value).within(filter_value):
                                     filter_results.append(row_id)
