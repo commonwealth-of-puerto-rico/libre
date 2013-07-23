@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 import csv
@@ -243,7 +242,7 @@ class SourceFileBased(models.Model):
     @staticmethod
     def parse_string(string):
         logger.debug('parsing: %s' % string)
-        if string[0] == '"' and string[-1] == '"':
+        if string.replace(' ', '')[0] == '"' and string.replace(' ', '')[-1] == '"':
             # Strip quotes
             return unicode(string[1:-1])
         elif string.startswith('Point'):
@@ -277,6 +276,7 @@ class SourceFileBased(models.Model):
                 raise Http400('Invalid value')
 
     def get_all(self, parameters=None):
+        initial_datetime = datetime.datetime.now()
         timestamp, parameters = self.analyze_request(parameters)
 
         try:
@@ -301,39 +301,35 @@ class SourceFileBased(models.Model):
         for parameter, value in parameters.items():
             logger.debug('parameter: %s' % parameter)
             logger.debug('value: %s' % value)
-            valid = True
-            # If value is quoted is a string else try to see if it is a number
-            # TODO: clean up this mess!
-            # Only interpret values for filters
-            try:
-                value = self.__class__.parse_string(value)
-            except IndexError:
-                raise Http400('Malformed query')
 
-            if valid:
+            if not parameter.startswith(LQL_DELIMITER):
+                try:
+                    value = self.__class__.parse_string(value)
+                except IndexError:
+                    raise Http400('Malformed query')
+
                 if not parameter.startswith(LQL_DELIMITER):
                     if DOUBLE_DELIMITER not in parameter:
                         post_filters.append({'key': parameter, 'operation': 'equals', 'value': value})
                     else:
                         key, operation = parameter.split(DOUBLE_DELIMITER)
                         post_filters.append({'key': key, 'operation': operation, 'value': value})
-                else:
-                    # Determine query join type
-                    if parameter == LQL_DELIMITER + 'join':
-                        if value.upper() == 'OR':
-                            join_type = JOIN_TYPE_OR
-                    # Determine fields to return
-                    elif parameter == LQL_DELIMITER + 'fields':
-                        try:
-                            fields_to_return = value.split(',')
-                        except AttributeError:
-                            # Already a list
-                            fields_to_return = value
+            else:
+                # Determine query join type
+                if parameter == LQL_DELIMITER + 'join':
+                    if value.upper() == 'OR':
+                        join_type = JOIN_TYPE_OR
+                # Determine fields to return
+                elif parameter == LQL_DELIMITER + 'fields':
+                    try:
+                        fields_to_return = value.split(',')
+                    except AttributeError:
+                        # Already a list
+                        fields_to_return = value
 
-                        get_all_fields = False
+                    get_all_fields = False
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
-        kwargs = {}
         query_results = set()
         if post_filters:
             for post_filter in post_filters:
@@ -495,6 +491,7 @@ class SourceFileBased(models.Model):
         else:
             fields_lambda = self.__class__.make_fields_filter(fields_to_return)
 
+        logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
         if post_filters:
             if len(query_results) == 1:
                 # Special case because itemgetter doesn't returns a list but a value
