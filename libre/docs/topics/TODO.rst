@@ -95,3 +95,5 @@ PENDING
   * Delete stored source files when a source is deleted
   * Delete stored source files when a new file is uploaded
   * Fix JsonField not returning dates or times only datetimes
+  * Return a {'status': } dictionary with error message
+  * Fullscreen map
