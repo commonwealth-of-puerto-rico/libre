@@ -6,18 +6,32 @@
         <title>L.I.B.R.E.</title>
 
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
         <!-- Leaflet -->
         <link rel="stylesheet" href="{% static 'packages/leaflet-0.6.3/leaflet.css' %}" />
         <!--[if lte IE 8]><link rel="stylesheet" href="{% static 'packages/leaflet-0.6.3/leaflet.ie.css' %}" /><![endif]-->
         <script src="{% static 'packages/leaflet-0.6.3/leaflet.js' %}"></script>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        html, body, #map {
+            height: 100%;
+        }
+    </style>
     </head>
     <body>
-        <div id="map" style="width: 100%; height: 100%; margin: 0; top: 0; left: 0; position: absolute;" tabindex="0"></div>
+        <div id="map"></div>
         <script>
             // create a map in the "map" div, set the view to a given place and zoom
-            var map = L.map('map').setView([18.30, -66.60], 10);
+            var map = L.map('map')
+            {% if template_extra_context.latitude and template_extra_context.longitude %}
+                map.setView([{{ template_extra_context.latitude|default:18.30 }}, {{ template_extra_context.longitude|default:-66.60 }}], {{ template_extra_context.zoom_level|default:10 }});
+            {% else %}
+                map.locate({setView: true, maxZoom: {{ template_extra_context.zoom_level|default:10 }}});
+            {% endif %}
 
             // add an OpenStreetMap tile layer
             L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {

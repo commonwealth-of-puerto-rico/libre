@@ -292,6 +292,20 @@ Return only the fields specified.
 **Note**: Works only for single level element collections (multilevel dot and index notations not yet supported).
 
 
+renderer
+--------
+
+``renderer={'zoom_level':13,'longitude':-66.116079,'latitude':18.464386}``
+
+Pass renderer specific key value pairs.
+
+Values for the map_leaflet renderer:
+
+* zoom_level
+* longitude
+* latitude
+
+
 Coming soon
 ===========
 * Subqueries
