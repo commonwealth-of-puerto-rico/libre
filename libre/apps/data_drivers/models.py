@@ -329,8 +329,14 @@ class SourceFileBased(models.Model):
                     if DOUBLE_DELIMITER not in parameter:
                         filters.append({'key': parameter, 'operation': 'equals', 'value': value})
                     else:
-                        key, operation = parameter.split(DOUBLE_DELIMITER)
-                        filters.append({'key': key, 'operation': operation, 'value': value})
+                        try:
+                            key, operation = parameter.split(DOUBLE_DELIMITER)
+                        except ValueError:
+                            # Trying more than one filter per field
+                            # This could be supported eventually, for now it's an error
+                            raise Http400('Only one filter per field is supported')
+                        else:
+                            filters.append({'key': key, 'operation': operation, 'value': value})
             else:
                 if parameter == LQL_DELIMITER + 'join':
                 # Determine query join type
@@ -537,187 +543,51 @@ class SourceFileBased(models.Model):
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
 
         query_results = set()
-        if filters:
-            for post_filter in filters_function_map:
-                filter_results = []
+        for post_filter in filters_function_map:
+            filter_results = []
 
-                filter_value = post_filter['value']
-                filter_operation = post_filter['operation']
+            filter_value = post_filter['value']
+            filter_operation = post_filter['operation']
 
-                for row_id, item in enumerate(queryset):
-                    try:
-                        real_value = item.row
+            for row_id, item in enumerate(queryset):
+                try:
+                    real_value = item.row
 
-                        for index, part in enumerate(post_filter['key'].split('.')):
-                            if part == '_length':
-                                real_value = geometry.shape(real_value).length
-                            elif part == '_area':
-                                real_value = geometry.shape(real_value).area
-                            elif part == '_type':
-                                real_value = geometry.shape(real_value).geom_type
-                            else:
-                                try:
-                                    real_value = real_value[part]
-                                except KeyError:
-                                    if index == 0:
-                                        if part != self.slug:
-                                            try:
-                                                source = Source.objects.get_subclass(slug=part)
-                                            except Source.DoesNotExist:
-                                                raise Http400('Unknown source: %s' % part)
-                                            else:
-                                                return source.get_all(parameters=parameters)
-                                    else:
-                                        raise Http400('Invalid element: %s' % post_filter['key'])
-                    except AttributeError:
-                        # A dotted attribute is not found
-                        raise Http400('Invalid element: %s' % post_filter['key'])
-                    else:
-                        if filter_operation(post_filter['key'], real_value, filter_value):
-                            filter_results.append(row_id)
-
-                        '''
-                        # String
-
-                        if filter_operation == 'icontains':
+                    for index, part in enumerate(post_filter['key'].split('.')):
+                        if part == '_length':
+                            real_value = geometry.shape(real_value).length
+                        elif part == '_area':
+                            real_value = geometry.shape(real_value).area
+                        elif part == '_type':
+                            real_value = geometry.shape(real_value).geom_type
+                        else:
                             try:
-                                if filter_value.upper() in real_value.upper():
-                                    filter_results.append(row_id)
-                            except (TypeError, AttributeError):
-                                if not isinstance(filter_value, basestring):
-                                    raise Http400('This filter is meant to be used with string data type values.')
-                        elif filter_operation == 'contains':
-                            try:
-                                if filter_value in real_value:
-                                    filter_results.append(row_id)
-                            except TypeError:
-                                if not isinstance(filter_value, basestring):
-                                    raise Http400('This filter is meant to be used with string data type values.')
-                        elif filter_operation == 'startswith':
-                            try:
-                                if real_value.startswith(filter_value):
-                                    filter_results.append(row_id)
-                            except TypeError:
-                                if not isinstance(filter_value, basestring):
-                                    raise Http400('This filter is meant to be used with string data type values.')
-                        elif filter_operation == 'istartswith':
-                            try:
-                                if real_value.upper().startswith(filter_value.upper()):
-                                    filter_results.append(row_id)
-                            except (TypeError, AttributeError):
-                                if not isinstance(filter_value, basestring):
-                                    raise Http400('This filter is meant to be used with string data type values.')
-                        elif filter_operation == 'endswith':
-                            try:
-                                if real_value.endswith(filter_value):
-                                    filter_results.append(row_id)
-                            except TypeError:
-                                if not isinstance(filter_value, basestring):
-                                    raise Http400('This filter is meant to be used with string data type values.')
-                        elif filter_operation == 'iendswith':
-                            try:
-                                if real_value.upper().endswith(filter_value.upper()):
-                                    filter_results.append(row_id)
-                            except (TypeError, AttributeError):
-                                if not isinstance(filter_value, basestring):
-                                    raise Http400('This filter is meant to be used with string data type values.')
-
-                        # Number
-
-                        elif filter_operation == 'lt':
-                            if real_value < filter_value:
-                                filter_results.append(row_id)
-                        elif filter_operation == 'lte':
-                            if real_value <= filter_value:
-                                filter_results.append(row_id)
-                        elif filter_operation == 'gt':
-                            if real_value > filter_value:
-                                filter_results.append(row_id)
-                        elif filter_operation == 'gte':
-                            if real_value >= filter_value:
-                                filter_results.append(row_id)
-
-                        # Other
-
-                        elif filter_operation == 'in':
-                            try:
-                                if real_value in filter_value:
-                                    filter_results.append(row_id)
-                            except TypeError:
-                                raise Http400('Invalid value type for specified filter or field.')
-                        elif filter_operation == 'equals':
-                            if filter_value == real_value:
-                                filter_results.append(row_id)
-
-                        # Date
-
-                        elif filter_operation == 'year':
-                            try:
-                                if parse(real_value).year == filter_value:
-                                    filter_results.append(row_id)
-                            except (ValueError, AttributeError):
-                                raise Http400('field: %s, is not a date or time field' % post_filter['key'])
-                        elif filter_operation == 'month':
-                            try:
-                                if parse(real_value).month == filter_value:
-                                    filter_results.append(row_id)
-                            except (ValueError, AttributeError):
-                                raise Http400('field: %s, is not a date or time field' % post_filter['key'])
-                        elif filter_operation == 'day':
-                            try:
-                                if parse(real_value).day == filter_value:
-                                    filter_results.append(row_id)
-                            except (ValueError, AttributeError):
-                                raise Http400('field: %s, is not a date or time field' % post_filter['key'])
-                        elif filter_operation == 'range':
-                            try:
-                                if parse(real_value) >= filter_value[0] and parse(real_value) <= filter_value[1]:
-                                    filter_results.append(row_id)
-                            except AttributeError as exception:
-                                raise Http400('field: %s is not a date' % post_filter['key'])
-                            except (TypeError, IndexError) as exception:
-                                raise Http400('Range filter value must be a list of 2 dates.')
-
-                        # Spatial
-
-                        elif filter_operation == 'has':
-                            try:
-                                if geometry.shape(real_value).contains(filter_value):
-                                    filter_results.append(row_id)
-                            except AttributeError:
-                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif filter_operation == 'disjoint':
-                            try:
-                                if geometry.shape(real_value).disjoint(filter_value):
-                                    filter_results.append(row_id)
-                            except AttributeError:
-                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif filter_operation == 'intersects':
-                            try:
-                                if geometry.shape(real_value).intersects(filter_value):
-                                    filter_results.append(row_id)
-                            except AttributeError:
-                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif filter_operation == 'touches':
-                            try:
-                                if geometry.shape(real_value).touches(filter_value):
-                                    filter_results.append(row_id)
-                            except AttributeError:
-                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        elif filter_operation == 'within':
-                            try:
-                                if geometry.shape(real_value).within(filter_value):
-                                    filter_results.append(row_id)
-                            except AttributeError:
-                                raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                        '''
-                if query_results:
-                    if join_type == JOIN_TYPE_AND:
-                        query_results &= set(filter_results)
-                    else:
-                        query_results |= set(filter_results)
+                                real_value = real_value[part]
+                            except KeyError:
+                                if index == 0:
+                                    if part != self.slug:
+                                        try:
+                                            source = Source.objects.get_subclass(slug=part)
+                                        except Source.DoesNotExist:
+                                            raise Http400('Unknown source: %s' % part)
+                                        else:
+                                            return source.get_all(parameters=parameters)
+                                else:
+                                    raise Http400('Invalid element: %s' % post_filter['key'])
+                except (AttributeError, TypeError):
+                    # A dotted attribute is not found
+                    raise Http400('Invalid element: %s' % post_filter['key'])
                 else:
-                    query_results = set(filter_results)
+                    if filter_operation(post_filter['key'], real_value, filter_value):
+                        filter_results.append(row_id)
+
+            if query_results:
+                if join_type == JOIN_TYPE_AND:
+                    query_results &= set(filter_results)
+                else:
+                    query_results |= set(filter_results)
+            else:
+                query_results = set(filter_results)
 
         if get_all_fields:
             fields_lambda = lambda x: x
