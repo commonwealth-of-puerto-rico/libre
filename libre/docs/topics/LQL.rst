@@ -34,14 +34,14 @@ Addressing fields
 Field names are prepended by a namespace and separated by dots on each new child element.
 Example: ``properties.City``
 
-When referencing data from a separate endpoint the namespace will be the name of the endpoint following a dot and the string "data".
-Example: ``dataset-25.data.properties.City``
+When referencing data from a separate endpoint the namespace will be the name of the endpoint following a dot.
+Example: ``dataset-25.properties.City``
 
 To address a specific element from a collection the Python list addressing notation is used, that is, the index number inside open and closed brackets.
 Example: ``[10]``
 All indexes are 1 based, meaning that the first element in an endpoint collection is element number 1 and not number 0.
 
-So to address the ``last_name`` property of the **25th** element in an endpoint collection called ``employees`` the syntax would be: ``employees.data[25].last_name``
+So to address the ``last_name`` property of the **25th** element in an endpoint collection called ``employees`` the syntax would be: ``employees.[25].last_name``
 
 Filtering
 =========
