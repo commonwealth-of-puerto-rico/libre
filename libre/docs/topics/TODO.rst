@@ -101,3 +101,5 @@ PENDING
   * Return a {'status': } dictionary with error message
   * Fix XML renderer
   * Move _renderer and _fields parsing to allow being parsed on get_one method
+  * Optimize AND type join
+  * Use islice

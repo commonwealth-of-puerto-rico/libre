@@ -308,6 +308,7 @@ class SourceFileBased(models.Model):
                 raise Http400('Invalid value')
 
     def get_parse_parameters(self, parameters):
+        aggregates = []
         fields_to_return = []
         get_all_fields = True
         filters = []
@@ -351,8 +352,13 @@ class SourceFileBased(models.Model):
                         fields_to_return = value
 
                     get_all_fields = False
+                elif parameter == LQL_DELIMITER + 'aggregate':
+                    for element in value.strip()[1:-1].split(','):
+                        name, aggregate_string = element.split(':')
+                        if aggregate_string == 'Count()':
+                            aggregates.append({'name': name.strip()[1:-1], 'function': lambda x: len(list(x))})
 
-        return filters, get_all_fields, fields_to_return, join_type
+        return filters, get_all_fields, fields_to_return, join_type, aggregates
 
     def get_filter_functions_map(self, filter_names):
         result = []
@@ -517,8 +523,23 @@ class SourceFileBased(models.Model):
                     except AttributeError:
                         raise Http400('field: %s, is not a geometry' % post_filter['key'])
                 post_filter['operation'] = _function
+            else:
+                # Unknown filter name, remove from list of parsed filters
+                filter_names.remove(post_filter)
 
         return filter_names
+
+    def get_data(self, queryset, filters, query_results, fields_lambda):
+        if filters:
+            if len(query_results) == 1:
+                # Special case because itemgetter doesn't returns a list but a value
+                return (fields_lambda(item.row) for item in [itemgetter(*list(query_results))(queryset)])
+            elif len(query_results) == 0:
+                return []
+            else:
+                return (fields_lambda(item.row) for item in itemgetter(*list(query_results))(queryset)[0:self.limit])
+        else:
+            return (fields_lambda(item.row) for item in queryset[0:self.limit])
 
     def get_all(self, parameters=None):
         initial_datetime = datetime.datetime.now()
@@ -537,7 +558,7 @@ class SourceFileBased(models.Model):
         if not parameters:
             parameters = {}
 
-        filters, get_all_fields, fields_to_return, join_type = self.get_parse_parameters(parameters)
+        filters, get_all_fields, fields_to_return, join_type, aggregates = self.get_parse_parameters(parameters)
         filters_function_map = self.get_filter_functions_map(filters)
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
@@ -598,16 +619,17 @@ class SourceFileBased(models.Model):
             fields_lambda = self.__class__.make_fields_filter(fields_to_return)
 
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
-        if filters:
-            if len(query_results) == 1:
-                # Special case because itemgetter doesn't returns a list but a value
-                return (fields_lambda(item.row) for item in [itemgetter(*list(query_results))(queryset)])
-            elif len(query_results) == 0:
-                return []
-            else:
-                return (fields_lambda(item.row) for item in itemgetter(*list(query_results))(queryset)[0:self.limit])
+
+        data = self.get_data(queryset, filters, query_results, fields_lambda)
+
+        if aggregates:
+            result = {}
+            for aggregate in aggregates:
+                result[aggregate['name']] = aggregate['function'](data)
         else:
-            return (fields_lambda(item.row) for item in queryset[0:self.limit])
+            result = data
+
+        return result
 
     class Meta:
         abstract = True
