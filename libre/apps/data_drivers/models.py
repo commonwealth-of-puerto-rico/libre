@@ -327,16 +327,16 @@ class SourceFileBased(models.Model):
 
                 if not parameter.startswith(LQL_DELIMITER):
                     if DOUBLE_DELIMITER not in parameter:
-                        filters.append({'key': parameter, 'operation': 'equals', 'value': value})
+                        filters.append({'field': parameter, 'operation': 'equals', 'value': value})
                     else:
                         try:
-                            key, operation = parameter.split(DOUBLE_DELIMITER)
+                            field, operation = parameter.split(DOUBLE_DELIMITER)
                         except ValueError:
                             # Trying more than one filter per field
                             # This could be supported eventually, for now it's an error
                             raise Http400('Only one filter per field is supported')
                         else:
-                            filters.append({'key': key, 'operation': operation, 'value': value})
+                            filters.append({'field': field, 'operation': operation, 'value': value})
             else:
                 if parameter == LQL_DELIMITER + 'join':
                 # Determine query join type
@@ -548,22 +548,25 @@ class SourceFileBased(models.Model):
 
             filter_value = post_filter['value']
             filter_operation = post_filter['operation']
+            filter_field = post_filter['field']
 
             for row_id, item in enumerate(queryset):
                 try:
-                    real_value = item.row
+                    value = item.row
 
-                    for index, part in enumerate(post_filter['key'].split('.')):
+                    for index, part in enumerate(post_filter['field'].split('.')):
                         if part == '_length':
-                            real_value = geometry.shape(real_value).length
+                            value = geometry.shape(value).length
                         elif part == '_area':
-                            real_value = geometry.shape(real_value).area
+                            value = geometry.shape(value).area
                         elif part == '_type':
-                            real_value = geometry.shape(real_value).geom_type
+                            value = geometry.shape(value).geom_type
                         else:
                             try:
-                                real_value = real_value[part]
+                                value = value[part]
                             except KeyError:
+                                # Error in the first part of the field name
+                                # Check to see if it is a source slug reference
                                 if index == 0:
                                     if part != self.slug:
                                         try:
@@ -573,12 +576,12 @@ class SourceFileBased(models.Model):
                                         else:
                                             return source.get_all(parameters=parameters)
                                 else:
-                                    raise Http400('Invalid element: %s' % post_filter['key'])
+                                    raise Http400('Invalid element: %s' % post_filter['field'])
                 except (AttributeError, TypeError):
                     # A dotted attribute is not found
-                    raise Http400('Invalid element: %s' % post_filter['key'])
+                    raise Http400('Invalid element: %s' % post_filter['field'])
                 else:
-                    if filter_operation(post_filter['key'], real_value, filter_value):
+                    if filter_operation(post_filter['field'], value, post_filter['value']):
                         filter_results.append(row_id)
 
             if query_results:
