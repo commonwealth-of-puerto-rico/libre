@@ -307,6 +307,213 @@ class SourceFileBased(models.Model):
             except ValueError:
                 raise Http400('Invalid value')
 
+    def get_parse_parameters(self, parameters):
+        fields_to_return = []
+        get_all_fields = True
+        filters = []
+
+        join_type = JOIN_TYPE_AND
+        DOUBLE_DELIMITER = LQL_DELIMITER + LQL_DELIMITER
+
+        for parameter, value in parameters.items():
+            logger.debug('parameter: %s' % parameter)
+            logger.debug('value: %s' % value)
+
+            if not parameter.startswith(LQL_DELIMITER):
+                try:
+                    value = self.__class__.parse_string(value)
+                except IndexError:
+                    raise Http400('Malformed query')
+
+                if not parameter.startswith(LQL_DELIMITER):
+                    if DOUBLE_DELIMITER not in parameter:
+                        filters.append({'key': parameter, 'operation': 'equals', 'value': value})
+                    else:
+                        key, operation = parameter.split(DOUBLE_DELIMITER)
+                        filters.append({'key': key, 'operation': operation, 'value': value})
+            else:
+                if parameter == LQL_DELIMITER + 'join':
+                # Determine query join type
+                    if value.upper() == 'OR':
+                        join_type = JOIN_TYPE_OR
+                elif parameter == LQL_DELIMITER + 'fields':
+                # Determine fields to return
+                    try:
+                        fields_to_return = value.split(',')
+                    except AttributeError:
+                        # Already a list
+                        fields_to_return = value
+
+                    get_all_fields = False
+
+        return filters, get_all_fields, fields_to_return, join_type
+
+    def get_filter_functions_map(self, filter_names):
+        result = []
+        for post_filter in filter_names:
+            filter_results = []
+
+            filter_value = post_filter['value']
+            filter_operation = post_filter['operation']
+
+            # String
+
+            if filter_operation == 'icontains':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return filter_value.upper() in real_value.upper()
+                    except (TypeError, AttributeError):
+                        if not isinstance(filter_value, basestring):
+                            raise Http400('This filter is meant to be used with string data type values.')
+                post_filter['operation'] = _function
+            elif filter_operation == 'contains':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return filter_value in real_value
+                    except TypeError:
+                        if not isinstance(filter_value, basestring):
+                            raise Http400('This filter is meant to be used with string data type values.')
+                post_filter['operation'] = _function
+            elif filter_operation == 'startswith':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return real_value.startswith(filter_value)
+                    except TypeError:
+                        if not isinstance(filter_value, basestring):
+                            raise Http400('This filter is meant to be used with string data type values.')
+                post_filter['operation'] = _function
+            elif filter_operation == 'istartswith':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return real_value.upper().startswith(filter_value.upper())
+                    except (TypeError, AttributeError):
+                        if not isinstance(filter_value, basestring):
+                            raise Http400('This filter is meant to be used with string data type values.')
+                post_filter['operation'] = _function
+            elif filter_operation == 'endswith':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return real_value.endswith(filter_value)
+                    except TypeError:
+                        if not isinstance(filter_value, basestring):
+                            raise Http400('This filter is meant to be used with string data type values.')
+                post_filter['operation'] = _function
+            elif filter_operation == 'iendswith':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return real_value.upper().endswith(filter_value.upper())
+                    except (TypeError, AttributeError):
+                        if not isinstance(filter_value, basestring):
+                            raise Http400('This filter is meant to be used with string data type values.')
+                post_filter['operation'] = _function
+
+            # Number
+
+            elif filter_operation == 'lt':
+                def _function(field, real_value, filter_value):
+                    return real_value < filter_value
+                post_filter['operation'] = _function
+            elif filter_operation == 'lte':
+                def _function(field, real_value, filter_value):
+                    return real_value <= filter_value
+                post_filter['operation'] = _function
+            elif filter_operation == 'gt':
+                def _function(field, real_value, filter_value):
+                    return real_value > filter_value
+                post_filter['operation'] = _function
+            elif filter_operation == 'gte':
+                def _function(field, real_value, filter_value):
+                    return real_value >= filter_value
+                post_filter['operation'] = _function
+
+            # Other
+
+            elif filter_operation == 'in':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return real_value in filter_value
+                    except TypeError:
+                        raise Http400('Invalid value type for specified filter or field.')
+                post_filter['operation'] = _function
+
+            elif filter_operation == 'equals':
+                def _function(field, real_value, filter_value):
+                    return filter_value == real_value
+                post_filter['operation'] = _function
+
+            # Date
+
+            elif filter_operation == 'year':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return parse(real_value).year == filter_value
+                    except (ValueError, AttributeError):
+                        raise Http400('field: %s, is not a date or time field' % field)
+                post_filter['operation'] = _function
+            elif filter_operation == 'month':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return parse(real_value).month == filter_value
+                    except (ValueError, AttributeError):
+                        raise Http400('field: %s, is not a date or time field' % field)
+                post_filter['operation'] = _function
+            elif filter_operation == 'day':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return parse(real_value).day == filter_value
+                    except (ValueError, AttributeError):
+                        raise Http400('field: %s, is not a date or time field' % field)
+                post_filter['operation'] = _function
+            elif filter_operation == 'range':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return parse(real_value) >= filter_value[0] and parse(real_value) <= filter_value[1]
+                    except AttributeError as exception:
+                        raise Http400('field: %s is not a date' % field)
+                    except (TypeError, IndexError) as exception:
+                        raise Http400('Range filter value must be a list of 2 dates.')
+                post_filter['operation'] = _function
+
+            # Spatial
+
+            elif filter_operation == 'has':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return geometry.shape(real_value).contains(filter_value)
+                    except AttributeError:
+                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
+                post_filter['operation'] = _function
+            elif filter_operation == 'disjoint':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return geometry.shape(real_value).disjoint(filter_value)
+                    except AttributeError:
+                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
+                post_filter['operation'] = _function
+            elif filter_operation == 'intersects':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return geometry.shape(real_value).intersects(filter_value)
+                    except AttributeError:
+                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
+                post_filter['operation'] = _function
+            elif filter_operation == 'touches':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return geometry.shape(real_value).touches(filter_value)
+                    except AttributeError:
+                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
+                post_filter['operation'] = _function
+            elif filter_operation == 'within':
+                def _function(field, real_value, filter_value):
+                    try:
+                        return geometry.shape(real_value).within(filter_value)
+                    except AttributeError:
+                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
+                post_filter['operation'] = _function
+
+        return filter_names
+
     def get_all(self, parameters=None):
         initial_datetime = datetime.datetime.now()
         timestamp, parameters = self.analyze_request(parameters)
@@ -324,47 +531,14 @@ class SourceFileBased(models.Model):
         if not parameters:
             parameters = {}
 
-        post_filters = []
-        join_type = JOIN_TYPE_AND
-        DOUBLE_DELIMITER = LQL_DELIMITER + LQL_DELIMITER
-        fields_to_return = []
-        get_all_fields = True
-
-        for parameter, value in parameters.items():
-            logger.debug('parameter: %s' % parameter)
-            logger.debug('value: %s' % value)
-
-            if not parameter.startswith(LQL_DELIMITER):
-                try:
-                    value = self.__class__.parse_string(value)
-                except IndexError:
-                    raise Http400('Malformed query')
-
-                if not parameter.startswith(LQL_DELIMITER):
-                    if DOUBLE_DELIMITER not in parameter:
-                        post_filters.append({'key': parameter, 'operation': 'equals', 'value': value})
-                    else:
-                        key, operation = parameter.split(DOUBLE_DELIMITER)
-                        post_filters.append({'key': key, 'operation': operation, 'value': value})
-            else:
-                if parameter == LQL_DELIMITER + 'join':
-                # Determine query join type
-                    if value.upper() == 'OR':
-                        join_type = JOIN_TYPE_OR
-                elif parameter == LQL_DELIMITER + 'fields':
-                # Determine fields to return
-                    try:
-                        fields_to_return = value.split(',')
-                    except AttributeError:
-                        # Already a list
-                        fields_to_return = value
-
-                    get_all_fields = False
+        filters, get_all_fields, fields_to_return, join_type = self.get_parse_parameters(parameters)
+        filters_function_map = self.get_filter_functions_map(filters)
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
+
         query_results = set()
-        if post_filters:
-            for post_filter in post_filters:
+        if filters:
+            for post_filter in filters_function_map:
                 filter_results = []
 
                 filter_value = post_filter['value']
@@ -399,7 +573,10 @@ class SourceFileBased(models.Model):
                         # A dotted attribute is not found
                         raise Http400('Invalid element: %s' % post_filter['key'])
                     else:
+                        if filter_operation(post_filter['key'], real_value, filter_value):
+                            filter_results.append(row_id)
 
+                        '''
                         # String
 
                         if filter_operation == 'icontains':
@@ -533,7 +710,7 @@ class SourceFileBased(models.Model):
                                     filter_results.append(row_id)
                             except AttributeError:
                                 raise Http400('field: %s, is not a geometry' % post_filter['key'])
-
+                        '''
                 if query_results:
                     if join_type == JOIN_TYPE_AND:
                         query_results &= set(filter_results)
@@ -548,7 +725,7 @@ class SourceFileBased(models.Model):
             fields_lambda = self.__class__.make_fields_filter(fields_to_return)
 
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
-        if post_filters:
+        if filters:
             if len(query_results) == 1:
                 # Special case because itemgetter doesn't returns a list but a value
                 return (fields_lambda(item.row) for item in [itemgetter(*list(query_results))(queryset)])
