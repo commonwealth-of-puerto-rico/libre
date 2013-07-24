@@ -347,12 +347,12 @@ class SourceFileBased(models.Model):
                         key, operation = parameter.split(DOUBLE_DELIMITER)
                         post_filters.append({'key': key, 'operation': operation, 'value': value})
             else:
-                # Determine query join type
                 if parameter == LQL_DELIMITER + 'join':
+                # Determine query join type
                     if value.upper() == 'OR':
                         join_type = JOIN_TYPE_OR
-                # Determine fields to return
                 elif parameter == LQL_DELIMITER + 'fields':
+                # Determine fields to return
                     try:
                         fields_to_return = value.split(',')
                     except AttributeError:
@@ -374,21 +374,27 @@ class SourceFileBased(models.Model):
                     try:
                         real_value = item.row
 
-                        for part in post_filter['key'].split('.'):
+                        for index, part in enumerate(post_filter['key'].split('.')):
                             if part == '_length':
                                 real_value = geometry.shape(real_value).length
-                                break
                             elif part == '_area':
                                 real_value = geometry.shape(real_value).area
-                                break
                             elif part == '_type':
                                 real_value = geometry.shape(real_value).geom_type
-                                break
-
-                            try:
-                                real_value = real_value[part]
-                            except KeyError:
-                                raise Http400('Invalid element: %s' % post_filter['key'])
+                            else:
+                                try:
+                                    real_value = real_value[part]
+                                except KeyError:
+                                    if index == 0:
+                                        if part != self.slug:
+                                            try:
+                                                source = Source.objects.get_subclass(slug=part)
+                                            except Source.DoesNotExist:
+                                                raise Http400('Unknown source: %s' % part)
+                                            else:
+                                                return source.get_all(parameters=parameters)
+                                    else:
+                                        raise Http400('Invalid element: %s' % post_filter['key'])
                     except AttributeError:
                         # A dotted attribute is not found
                         raise Http400('Invalid element: %s' % post_filter['key'])
