@@ -4,11 +4,11 @@ PENDING
 
   * Add compressed file support
   * Skip blank lines?
-  * Add row number exclusion support during import
   * Switch from column widths to column ranges
   * Toggable auto update via inotify, polling or python-watchdog
   * Add internal support for open ranges for rows "10-"
-
+  * Migrate Spreadsheet regex import and skip solution to other filebased sources
+  * Add row number exclusion support during import
 
 * Database sources
 
@@ -61,6 +61,11 @@ PENDING
   * LQL based pagination (size and page number) (Andres Colón)
   * Expand the _fields directive to support dot and index notations
   * Sorting
+  * Subqueries
+  * Sorting
+  * Grouping
+  * Sum
+  * Pagination
 
 * Output
 
@@ -73,8 +78,6 @@ PENDING
     * XML - DONE
     * NIEM
     * Fixed width
-
-  * Control initial map origin and zoom level
 
 * Web services sources
 
@@ -96,4 +99,5 @@ PENDING
   * Delete stored source files when a new file is uploaded
   * Fix JsonField not returning dates or times only datetimes
   * Return a {'status': } dictionary with error message
-  * Fullscreen map
+  * Fix XML renderer
+  * Move _renderer and _fields parsing to allow being parsed on get_one method
