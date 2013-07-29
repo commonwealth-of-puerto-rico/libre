@@ -110,6 +110,15 @@ Return the elements whose field values end with the specified string. Matches up
 Example: ``company_name__iendswith="corp"``
 
 
+iequals
+-------
+
+``iequals=<string>``
+
+Return the elements whose field values match the specified string, matches upper and lower cases.
+
+Example: ``full_name__iequals="john carter"``
+
 
 Number filters
 ~~~~~~~~~~~~~~
@@ -259,6 +268,16 @@ Return the elements whose field values match one entry in the specified list of 
 Example: ``crime_type_id__in=[1,4,8]``
 
 
+not_in
+------
+
+``not_in=<list of strings or numbers>``
+
+Return the elements whose field values do not match one entry in the specified list of strings or numbers.
+
+Example: ``city_id__not_in=[41,3,142]``
+
+
 range
 -----
 
@@ -319,6 +338,11 @@ Example: ``api/sources/crimes/data/?properties.date__month=2&geometry__intersect
 
 Return a count of all crimes committed in February and which occurred within the selected geographical area.
 
+Count
+-----
+
+Sum
+---
 
 
 Coming soon

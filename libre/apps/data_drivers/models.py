@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
-from itertools import izip
+from itertools import izip, tee
 import logging
 from operator import itemgetter
 import re
@@ -28,6 +28,8 @@ from shapely import geometry
 
 from lock_manager import Lock, LockError
 
+from .aggregates import Count, Sum
+from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .exceptions import Http400
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
@@ -328,16 +330,16 @@ class SourceFileBased(models.Model):
 
                 if not parameter.startswith(LQL_DELIMITER):
                     if DOUBLE_DELIMITER not in parameter:
-                        filters.append({'field': parameter, 'operation': 'equals', 'value': value})
+                        filters.append({'field': parameter, 'filter_name': 'equals', 'value': value})
                     else:
                         try:
-                            field, operation = parameter.split(DOUBLE_DELIMITER)
+                            field, filter_name = parameter.split(DOUBLE_DELIMITER)
                         except ValueError:
                             # Trying more than one filter per field
                             # This could be supported eventually, for now it's an error
                             raise Http400('Only one filter per field is supported')
                         else:
-                            filters.append({'field': field, 'operation': operation, 'value': value})
+                            filters.append({'field': field, 'filter_name': filter_name, 'value': value})
             else:
                 if parameter == LQL_DELIMITER + 'join':
                 # Determine query join type
@@ -353,10 +355,19 @@ class SourceFileBased(models.Model):
 
                     get_all_fields = False
                 elif parameter == LQL_DELIMITER + 'aggregate':
+                    # TODO: switch to regular expression
                     for element in value.strip()[1:-1].split(','):
                         name, aggregate_string = element.split(':')
-                        if aggregate_string == 'Count()':
-                            aggregates.append({'name': name.strip()[1:-1], 'function': lambda x: len(list(x))})
+                        if aggregate_string.startswith('Count('):
+                            aggregates.append({
+                                'name': name.strip()[1:-1],
+                                'function': Count(aggregate_string.replace('Count(', '').replace(')', '').split(','))
+                            })
+                        elif aggregate_string.startswith('Sum('):
+                            aggregates.append({
+                                'name': name.strip()[1:-1],
+                                'function': Sum(aggregate_string.replace('Sum(', '').replace(')', '').split(','))
+                            })
 
         return filters, get_all_fields, fields_to_return, join_type, aggregates
 
@@ -365,167 +376,12 @@ class SourceFileBased(models.Model):
         for post_filter in filter_names:
             filter_results = []
 
-            filter_value = post_filter['value']
-            filter_operation = post_filter['operation']
-
-            # String
-
-            if filter_operation == 'icontains':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return filter_value.upper() in real_value.upper()
-                    except (TypeError, AttributeError):
-                        if not isinstance(filter_value, basestring):
-                            raise Http400('This filter is meant to be used with string data type values.')
-                post_filter['operation'] = _function
-            elif filter_operation == 'contains':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return filter_value in real_value
-                    except TypeError:
-                        if not isinstance(filter_value, basestring):
-                            raise Http400('This filter is meant to be used with string data type values.')
-                post_filter['operation'] = _function
-            elif filter_operation == 'startswith':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return real_value.startswith(filter_value)
-                    except TypeError:
-                        if not isinstance(filter_value, basestring):
-                            raise Http400('This filter is meant to be used with string data type values.')
-                post_filter['operation'] = _function
-            elif filter_operation == 'istartswith':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return real_value.upper().startswith(filter_value.upper())
-                    except (TypeError, AttributeError):
-                        if not isinstance(filter_value, basestring):
-                            raise Http400('This filter is meant to be used with string data type values.')
-                post_filter['operation'] = _function
-            elif filter_operation == 'endswith':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return real_value.endswith(filter_value)
-                    except TypeError:
-                        if not isinstance(filter_value, basestring):
-                            raise Http400('This filter is meant to be used with string data type values.')
-                post_filter['operation'] = _function
-            elif filter_operation == 'iendswith':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return real_value.upper().endswith(filter_value.upper())
-                    except (TypeError, AttributeError):
-                        if not isinstance(filter_value, basestring):
-                            raise Http400('This filter is meant to be used with string data type values.')
-                post_filter['operation'] = _function
-
-            # Number
-
-            elif filter_operation == 'lt':
-                def _function(field, real_value, filter_value):
-                    return real_value < filter_value
-                post_filter['operation'] = _function
-            elif filter_operation == 'lte':
-                def _function(field, real_value, filter_value):
-                    return real_value <= filter_value
-                post_filter['operation'] = _function
-            elif filter_operation == 'gt':
-                def _function(field, real_value, filter_value):
-                    return real_value > filter_value
-                post_filter['operation'] = _function
-            elif filter_operation == 'gte':
-                def _function(field, real_value, filter_value):
-                    return real_value >= filter_value
-                post_filter['operation'] = _function
-
-            # Other
-
-            elif filter_operation == 'in':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return real_value in filter_value
-                    except TypeError:
-                        raise Http400('Invalid value type for specified filter or field.')
-                post_filter['operation'] = _function
-
-            elif filter_operation == 'equals':
-                def _function(field, real_value, filter_value):
-                    return filter_value == real_value
-                post_filter['operation'] = _function
-
-            # Date
-
-            elif filter_operation == 'year':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return parse(real_value).year == filter_value
-                    except (ValueError, AttributeError):
-                        raise Http400('field: %s, is not a date or time field' % field)
-                post_filter['operation'] = _function
-            elif filter_operation == 'month':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return parse(real_value).month == filter_value
-                    except (ValueError, AttributeError):
-                        raise Http400('field: %s, is not a date or time field' % field)
-                post_filter['operation'] = _function
-            elif filter_operation == 'day':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return parse(real_value).day == filter_value
-                    except (ValueError, AttributeError):
-                        raise Http400('field: %s, is not a date or time field' % field)
-                post_filter['operation'] = _function
-            elif filter_operation == 'range':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return parse(real_value) >= filter_value[0] and parse(real_value) <= filter_value[1]
-                    except AttributeError as exception:
-                        raise Http400('field: %s is not a date' % field)
-                    except (TypeError, IndexError) as exception:
-                        raise Http400('Range filter value must be a list of 2 dates.')
-                post_filter['operation'] = _function
-
-            # Spatial
-
-            elif filter_operation == 'has':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return geometry.shape(real_value).contains(filter_value)
-                    except AttributeError:
-                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                post_filter['operation'] = _function
-            elif filter_operation == 'disjoint':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return geometry.shape(real_value).disjoint(filter_value)
-                    except AttributeError:
-                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                post_filter['operation'] = _function
-            elif filter_operation == 'intersects':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return geometry.shape(real_value).intersects(filter_value)
-                    except AttributeError:
-                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                post_filter['operation'] = _function
-            elif filter_operation == 'touches':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return geometry.shape(real_value).touches(filter_value)
-                    except AttributeError:
-                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                post_filter['operation'] = _function
-            elif filter_operation == 'within':
-                def _function(field, real_value, filter_value):
-                    try:
-                        return geometry.shape(real_value).within(filter_value)
-                    except AttributeError:
-                        raise Http400('field: %s, is not a geometry' % post_filter['key'])
-                post_filter['operation'] = _function
+            try:
+                filter_identifier = FILTER_NAMES[post_filter['filter_name']]
+            except KeyError:
+                raise Http400('Unknown filter: %s' % post_filter['filter_name'])
             else:
-                # Unknown filter name, remove from list of parsed filters
-                filter_names.remove(post_filter)
+                post_filter['operation'] = FILTER_CLASS_MAP[filter_identifier](post_filter['field'], post_filter['value'])
 
         return filter_names
 
@@ -567,9 +423,7 @@ class SourceFileBased(models.Model):
         for post_filter in filters_function_map:
             filter_results = []
 
-            filter_value = post_filter['value']
             filter_operation = post_filter['operation']
-            filter_field = post_filter['field']
 
             for row_id, item in enumerate(queryset):
                 try:
@@ -602,7 +456,8 @@ class SourceFileBased(models.Model):
                     # A dotted attribute is not found
                     raise Http400('Invalid element: %s' % post_filter['field'])
                 else:
-                    if filter_operation(post_filter['field'], value, post_filter['value']):
+                    # Evaluate row values against the established filters
+                    if filter_operation.evaluate(value):
                         filter_results.append(row_id)
 
             if query_results:
@@ -625,7 +480,9 @@ class SourceFileBased(models.Model):
         if aggregates:
             result = {}
             for aggregate in aggregates:
-                result[aggregate['name']] = aggregate['function'](data)
+                # Make a backup of the generator
+                data, backup = tee(data)
+                result[aggregate['name']] = aggregate['function'].execute(backup)
         else:
             result = data
 
@@ -851,8 +708,8 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
 
         for i in parsed_range:
             converted_row = dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
-            skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items()]
-            import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items()]
+            skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items() if name in self.skip_regex_map]
+            import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items() if name in self.import_regex_map]
 
             if all(cell_skip == False for cell_skip in skip_result) and all(import_result):
                 yield converted_row
