@@ -175,9 +175,9 @@ class Equals(Filter):
 class Range(Filter):
     def evaluate(self, value):
         try:
-            return parse(value) >= filter_value[0] and parse(value) <= filter_value[1]
+            return parse(value) >= self.filter_value[0] and parse(value) <= self.filter_value[1]
         except AttributeError as exception:
-            raise Http400('field: %s is not a date' % field)
+            raise Http400('field: %s is not a date' % self.field)
         except (TypeError, IndexError) as exception:
             raise Http400('Range filter value must be a list of 2 dates.')
 
@@ -192,7 +192,7 @@ class Year(Filter):
 class Month(Filter):
     def evaluate(self, value):
         try:
-            return parse(value).month == filter_value
+            return parse(value).month == self.filter_value
         except (ValueError, AttributeError):
             raise Http400('field: %s, is not a date or time field' % self.field)
 
@@ -200,7 +200,7 @@ class Month(Filter):
 class Day(Filter):
     def evaluate(self, value):
         try:
-            return parse(value).day == filter_value
+            return parse(value).day == self.filter_value
         except (ValueError, AttributeError):
             raise Http400('field: %s, is not a date or time field' % self.field)
 
