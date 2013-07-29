@@ -268,6 +268,16 @@ Return the elements whose field values match one entry in the specified list of 
 Example: ``crime_type_id__in=[1,4,8]``
 
 
+not_in
+------
+
+``not_in=<list of strings or numbers>``
+
+Return the elements whose field values do not match one entry in the specified list of strings or numbers.
+
+Example: ``city_id__not_in=[41,3,142]``
+
+
 range
 -----
 

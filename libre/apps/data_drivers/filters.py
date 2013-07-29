@@ -24,6 +24,7 @@ FILTER_INTERSECTS = 19
 FILTER_TOUCHES = 20
 FILTER_WITHIN = 21
 FILTER_IEQUALS = 22
+FILTER_NOT_IN = 23
 
 FILTER_NAMES = {
     'contains': FILTER_CONTAINS,
@@ -38,6 +39,7 @@ FILTER_NAMES = {
     'gt': FILTER_GT,
     'gte': FILTER_GTE,
     'in': FILTER_IN,
+    'not_in': FILTER_NOT_IN,
     'equals': FILTER_EQUALS,  # TODO: Add support for aliases  '='
     'range': FILTER_RANGE,
     'year': FILTER_YEAR,
@@ -151,6 +153,14 @@ class In(Filter):
             raise Http400('Invalid value type for specified filter or field.')
 
 
+class NotIn(Filter):
+    def evaluate(self, value):
+        try:
+            return value not in self.filter_value
+        except TypeError:
+            raise Http400('Invalid value type for specified filter or field.')
+
+
 class Equals(Filter):
     def evaluate(self, value):
         return self.filter_value == value
@@ -247,6 +257,8 @@ FILTER_CLASS_MAP = {
     FILTER_GT: GreaterThan,
     FILTER_GTE: GreaterThanOrEqual,
     FILTER_IN: In,
+    # Other
+    FILTER_NOT_IN: NotIn,
     FILTER_EQUALS: Equals,
     # Date
     FILTER_RANGE: Range,
