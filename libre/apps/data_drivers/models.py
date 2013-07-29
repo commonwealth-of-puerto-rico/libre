@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
-from itertools import izip, tee
+from itertools import groupby, izip, tee
 import logging
 from operator import itemgetter
 import re
@@ -314,6 +314,7 @@ class SourceFileBased(models.Model):
         fields_to_return = []
         get_all_fields = True
         filters = []
+        self.groups = []
 
         join_type = JOIN_TYPE_AND
         DOUBLE_DELIMITER = LQL_DELIMITER + LQL_DELIMITER
@@ -347,15 +348,11 @@ class SourceFileBased(models.Model):
                         join_type = JOIN_TYPE_OR
                 elif parameter == LQL_DELIMITER + 'fields':
                 # Determine fields to return
-                    try:
-                        fields_to_return = value.split(',')
-                    except AttributeError:
-                        # Already a list
-                        fields_to_return = value
-
+                    fields_to_return = value.split(',')
                     get_all_fields = False
                 elif parameter == LQL_DELIMITER + 'aggregate':
                     # TODO: switch to regular expression
+                    # Use QueryDict lists instead of Regex
                     for element in value.strip()[1:-1].split(','):
                         name, aggregate_string = element.split(':')
                         if aggregate_string.startswith('Count('):
@@ -368,6 +365,8 @@ class SourceFileBased(models.Model):
                                 'name': name.strip()[1:-1],
                                 'function': Sum(aggregate_string.replace('Sum(', '').replace(')', '').split(','))
                             })
+                elif parameter == LQL_DELIMITER + 'group_by':
+                    self.groups = value.split(',')
 
         return filters, get_all_fields, fields_to_return, join_type, aggregates
 
@@ -476,8 +475,16 @@ class SourceFileBased(models.Model):
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
         data = self.get_data(queryset, filters, query_results, fields_lambda)
-
-        if aggregates:
+        # TODO: Sort data
+        if self.groups:
+            result = {}
+            for group in self.groups:
+                data, backup = tee(data)
+                # Make a backup of the generator
+                result[group] = {}
+                for key, grp in groupby(backup, lambda x: x[group]):
+                    result[group][key] = [i for i in grp]
+        elif aggregates:
             result = {}
             for aggregate in aggregates:
                 # Make a backup of the generator
@@ -549,6 +556,8 @@ class SourceTabularBased(models.Model):
     class Meta:
         abstract = True
 
+from .utils import UnicodeReader
+
 
 class SourceCSV(Source, SourceFileBased, SourceTabularBased):
     source_type = _('CSV file')
@@ -567,25 +576,26 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
         if self.quote_character:
             kwargs['quotechar'] = str(self.quote_character)
 
-        reader = csv.reader(file_handle, **kwargs)
+        reader = UnicodeReader(file_handle, **kwargs)
 
         logger.debug('column_names: %s' % column_names)
 
         if self.import_rows:
-            parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
+            parsed_range = parse_range(self.import_rows)
         else:
             parsed_range = None
 
         logger.debug('parsed_range: %s' % parsed_range)
 
         for row_id, row in enumerate(reader, 1):
-            if parsed_range:
-                if row_id in parsed_range:
+            if row:
+                if parsed_range:
+                    if row_id in parsed_range:
+                        row_dict = dict(zip(column_names, row))
+                        yield self.apply_datatypes(row_dict, functions_map)
+                else:
                     row_dict = dict(zip(column_names, row))
                     yield self.apply_datatypes(row_dict, functions_map)
-            else:
-                row_dict = dict(zip(column_names, row))
-                yield self.apply_datatypes(row_dict, functions_map)
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):

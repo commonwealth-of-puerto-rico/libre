@@ -304,7 +304,7 @@ When multiple filters are specified per query the results of each filter are ``A
 fields
 ------
 
-``_fields=<list of fields to return>``
+``_fields=<comma delimited list of fields to return>``
 
 Return only the fields specified.
 
