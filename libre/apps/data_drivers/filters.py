@@ -23,6 +23,7 @@ FILTER_DISJOINT = 18
 FILTER_INTERSECTS = 19
 FILTER_TOUCHES = 20
 FILTER_WITHIN = 21
+FILTER_IEQUALS = 22
 
 FILTER_NAMES = {
     'contains': FILTER_CONTAINS,
@@ -31,6 +32,7 @@ FILTER_NAMES = {
     'istartswith': FILTER_ISTARTSWITH,
     'endswith': FILTER_ENDSWITH,
     'iendswith': FILTER_IENDSWITH,
+    'iequals': FILTER_IEQUALS,
     'lt': FILTER_LT,
     'lte': FILTER_LTE,
     'gt': FILTER_GT,
@@ -105,6 +107,15 @@ class IEndswith(Filter):
     def evaluate(self, value):
         try:
             return value.upper().endswith(self.filter_value.upper())
+        except (TypeError, AttributeError):
+            if not isinstance(self.filter_value, basestring):
+                raise Http400('This filter is meant to be used with string data type values.')
+
+
+class IEquals(Filter):
+    def evaluate(self, value):
+        try:
+            return value.upper() == self.filter_value.upper()
         except (TypeError, AttributeError):
             if not isinstance(self.filter_value, basestring):
                 raise Http400('This filter is meant to be used with string data type values.')
@@ -229,6 +240,7 @@ FILTER_CLASS_MAP = {
     FILTER_ISTARTSWITH: IStartswith,
     FILTER_ENDSWITH: Endswith,
     FILTER_IENDSWITH: IEndswith,
+    FILTER_IEQUALS: IEquals,
     # Number
     FILTER_LT: LessThan,
     FILTER_LTE: LessThanOrEqual,

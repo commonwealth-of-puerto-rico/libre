@@ -110,6 +110,15 @@ Return the elements whose field values end with the specified string. Matches up
 Example: ``company_name__iendswith="corp"``
 
 
+iequals
+-------
+
+``iequals=<string>``
+
+Return the elements whose field values match the specified string, matches upper and lower cases.
+
+Example: ``full_name__iequals="john carter"``
+
 
 Number filters
 ~~~~~~~~~~~~~~
