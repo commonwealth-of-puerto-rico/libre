@@ -277,7 +277,7 @@ All directive are prepended by the underscore delimiter '_'.
 join
 ----
 
-``join=<OR | AND>``
+``_join=<OR | AND>``
 
 When multiple filters are specified per query the results of each filter are ``ANDed`` by default, this directive changes that behaviour so that results are ``ORed`` together.
 
@@ -285,7 +285,7 @@ When multiple filters are specified per query the results of each filter are ``A
 fields
 ------
 
-``fields=<list of fields to return>``
+``_fields=<list of fields to return>``
 
 Return only the fields specified.
 
@@ -295,15 +295,30 @@ Return only the fields specified.
 renderer
 --------
 
-``renderer={'zoom_level':13,'longitude':-66.116079,'latitude':18.464386}``
-
-Pass renderer specific key value pairs.
+Pass renderer specific key value pairs. The key and values are dependent on the renderer being used.
 
 Values for the map_leaflet renderer:
 
 * zoom_level
 * longitude
 * latitude
+
+Example: ``_renderer={'zoom_level':13,'longitude':-66.116079,'latitude':18.464386}``
+
+
+aggregation
+-----------
+
+Aggregates asssist with the summarization of data.
+
+Example: ``_aggregate={'total':Count()}``
+
+Return the count of rows returned as an alias of 'total'.
+
+Example: ``api/sources/crimes/data/?properties.date__month=2&geometry__intersects=Point(-67,18.3).buffer(0.05)&_aggregate={'total':Count()}&_format=json``
+
+Return a count of all crimes committed in February and which occurred within the selected geographical area.
+
 
 
 Coming soon
