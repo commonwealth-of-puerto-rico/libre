@@ -61,11 +61,30 @@ PENDING
   * LQL based pagination (size and page number) (Andres Colón)
   * Expand the _fields directive to support dot and index notations
   * Sorting
+
+    * _order=<field name>,<field name>
+    * Ascending (field name)
+    * Descending (-field name)
+
   * Subqueries
-  * Sorting
-  * Grouping
-  * Sum
+  * Aggregation
+
+    * Grouping
+    * Sum
+
   * Pagination
+  * Limiting
+
+    * _limit=<soft limit of elements>
+
+  * Skipping results
+
+    * _skip=<number of elements>
+
+  * Joins between datasets
+
+    * _join=<data set name>,<join type>,<current set field>__<foreign set field>,<current set field>__<foreign set field>
+
 
 * Output
 
@@ -103,3 +122,4 @@ PENDING
   * Move _renderer and _fields parsing to allow being parsed on get_one method
   * Optimize AND type join
   * Use islice
+  * Dataset browser
