@@ -1,5 +1,9 @@
+from __future__ import absolute_import
+
 from dateutil.parser import parse
 from shapely import geometry
+
+from .exceptions import Http400
 
 # Discreet values
 FILTER_CONTAINS = 1

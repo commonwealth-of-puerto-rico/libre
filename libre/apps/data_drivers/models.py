@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
-from itertools import izip
+from itertools import izip, tee
 import logging
 from operator import itemgetter
 import re
@@ -28,6 +28,7 @@ from shapely import geometry
 
 from lock_manager import Lock, LockError
 
+from .aggregates import Count, Sum
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .exceptions import Http400
 from .job_processing import Job
@@ -354,10 +355,19 @@ class SourceFileBased(models.Model):
 
                     get_all_fields = False
                 elif parameter == LQL_DELIMITER + 'aggregate':
+                    # TODO: switch to regular expression
                     for element in value.strip()[1:-1].split(','):
                         name, aggregate_string = element.split(':')
-                        if aggregate_string == 'Count()':
-                            aggregates.append({'name': name.strip()[1:-1], 'function': lambda x: len(list(x))})
+                        if aggregate_string.startswith('Count('):
+                            aggregates.append({
+                                'name': name.strip()[1:-1],
+                                'function': Count(aggregate_string.replace('Count(', '').replace(')', '').split(','))
+                            })
+                        elif aggregate_string.startswith('Sum('):
+                            aggregates.append({
+                                'name': name.strip()[1:-1],
+                                'function': Sum(aggregate_string.replace('Sum(', '').replace(')', '').split(','))
+                            })
 
         return filters, get_all_fields, fields_to_return, join_type, aggregates
 
@@ -470,7 +480,9 @@ class SourceFileBased(models.Model):
         if aggregates:
             result = {}
             for aggregate in aggregates:
-                result[aggregate['name']] = aggregate['function'](data)
+                # Make a backup of the generator
+                data, backup = tee(data)
+                result[aggregate['name']] = aggregate['function'].execute(backup)
         else:
             result = data
 

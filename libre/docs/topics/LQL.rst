@@ -324,6 +324,15 @@ Values for the map_leaflet renderer:
 * longitude
 * latitude
 
+Aggregation
+~~~~~~~~~~~
+
+Count
+-----
+
+Sum
+---
+
 
 Coming soon
 ===========
