@@ -35,7 +35,7 @@ from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
     DATA_TYPE_NUMBER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPE_OR, LQL_DELIMITER,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
-from .utils import parse_range
+from .utils import parse_range, parse_value
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
@@ -258,57 +258,6 @@ class SourceFileBased(models.Model):
         except SourceData.DoesNotExist:
             raise Http404
 
-    @staticmethod
-    def parse_string(string):
-        logger.debug('parsing: %s' % string)
-        if string[0] == '"' and string[-1] == '"':
-            # Strip quotes
-            return unicode(string[1:-1])
-        elif string.startswith('Point'):
-            # Is a point geometry data type
-            x, y = string.replace(' ', '').replace('Point(', '').replace(')', '').split(',')
-
-            # Check if the Point data type is also specifing a buffer
-            buffer_size = None
-            if '.buffer(' in y:
-                y, buffer_size = y.split('.buffer(')
-
-            value = geometry.Point(float(x), float(y))
-
-            if buffer_size:
-                value = value.buffer(float(buffer_size))
-
-            return value
-        elif string[0] == '[' and string[-1] == ']':
-            # Is a list of values
-            logger.debug('Is a list')
-            result = []
-            strings = string.replace('[', '').replace(']', '').split(',')
-            for string in strings:
-                result.append(SourceFileBased.parse_string(string))
-            return result
-        elif string.startswith('DateTime'):
-            # Is a datetime
-            logger.debug('Is a datetime')
-            date_string = string.replace('DateTime(', '').replace(')', '')
-            return parse(date_string)
-        elif string.startswith('Date'):
-            # Is a date
-            logger.debug('Is a date')
-            date_string = string.replace('Date(', '').replace(')', '')
-            return parse(date_string).date()
-        elif string.startswith('Time'):
-            # Is a time
-            logger.debug('Is a time')
-            date_string = string.replace('Time(', '').replace(')', '')
-            return parse(date_string).time()
-        else:
-            logger.debug('Is a number')
-            try:
-                return DATA_TYPE_FUNCTIONS[DATA_TYPE_NUMBER](string)
-            except ValueError:
-                raise Http400('Invalid value')
-
     def get_parse_parameters(self, parameters):
         aggregates = []
         fields_to_return = []
@@ -325,7 +274,7 @@ class SourceFileBased(models.Model):
 
             if not parameter.startswith(LQL_DELIMITER):
                 try:
-                    value = self.__class__.parse_string(value)
+                    value = parse_value(value)
                 except IndexError:
                     raise Http400('Malformed query')
 

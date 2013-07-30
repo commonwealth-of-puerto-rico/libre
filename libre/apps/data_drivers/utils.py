@@ -1,4 +1,13 @@
-import csv, codecs
+from __future__ import absolute_import
+
+import codecs
+import csv
+import logging
+
+from dateutil.parser import parse
+from shapely import geometry
+
+logger = logging.getLogger(__name__)
 
 
 # http://stackoverflow.com/questions/4248399/page-range-for-printing-algorithm
@@ -59,3 +68,54 @@ class UnicodeReader:
 
     def __iter__(self):
         return self
+
+
+def parse_value(string):
+    logger.debug('parsing: %s' % string)
+    if string[0] == '"' and string[-1] == '"':
+        # Strip quotes
+        return unicode(string[1:-1])
+    elif string.startswith('Point'):
+        # Is a point geometry data type
+        x, y = string.replace(' ', '').replace('Point(', '').replace(')', '').split(',')
+
+        # Check if the Point data type is also specifing a buffer
+        buffer_size = None
+        if '.buffer(' in y:
+            y, buffer_size = y.split('.buffer(')
+
+        value = geometry.Point(float(x), float(y))
+
+        if buffer_size:
+            value = value.buffer(float(buffer_size))
+
+        return value
+    elif string[0] == '[' and string[-1] == ']':
+        # Is a list of values
+        logger.debug('Is a list')
+        result = []
+        strings = string.replace('[', '').replace(']', '').split(',')
+        for string in strings:
+            result.append(parse_value(string))
+        return result
+    elif string.startswith('DateTime'):
+        # Is a datetime
+        logger.debug('Is a datetime')
+        date_string = string.replace('DateTime(', '').replace(')', '')
+        return parse(date_string)
+    elif string.startswith('Date'):
+        # Is a date
+        logger.debug('Is a date')
+        date_string = string.replace('Date(', '').replace(')', '')
+        return parse(date_string).date()
+    elif string.startswith('Time'):
+        # Is a time
+        logger.debug('Is a time')
+        date_string = string.replace('Time(', '').replace(')', '')
+        return parse(date_string).time()
+    else:
+        logger.debug('Is a number')
+        try:
+            return convert_to_number(string)
+        except ValueError:
+            raise Http400('Invalid value')
