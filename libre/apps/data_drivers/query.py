@@ -4,15 +4,131 @@ from itertools import groupby, izip, tee
 import logging
 from operator import itemgetter
 
-from dateutil.parser import parse
 from shapely import geometry
 
+from .aggregates import Count, Sum
 from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
-from .literals import DOUBLE_DELIMITER, JOIN_TYPE_AND, LQL_DELIMITER
+from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPE_OR, LQL_DELIMITER)
+
 from .utils import parse_value
 
 logger = logging.getLogger(__name__)
+
+
+class Query():
+    def __init__(self, data, limit):
+        self.data = data
+        self.limit = limit
+
+    def execute(self, parameters):
+        if not parameters:
+            parameters = {}
+
+        filters, fields_to_return, join_type, aggregates, groups = parse_parameters(parameters)
+        filters_function_map = get_filter_functions_map(filters)
+
+        logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
+
+        query_results = set()
+        for post_filter in filters_function_map:
+            filter_results = []
+
+            filter_operation = post_filter['operation']
+
+            for row_id, item in enumerate(self.data):
+                try:
+                    value = item.row
+
+                    for index, part in enumerate(post_filter['field'].split('.')):
+                        if part == '_length':
+                            value = geometry.shape(value).length
+                        elif part == '_area':
+                            value = geometry.shape(value).area
+                        elif part == '_type':
+                            value = geometry.shape(value).geom_type
+                        else:
+                            try:
+                                value = value[part]
+                            except KeyError:
+                                # Error in the first part of the field name
+                                # Check to see if it is a source slug reference
+                                if index == 0:
+                                    if part != self.slug:
+                                        try:
+                                            source = Source.objects.get_subclass(slug=part)
+                                        except Source.DoesNotExist:
+                                            raise Http400('Unknown source: %s' % part)
+                                        else:
+                                            return source.get_all(parameters=parameters)
+                                else:
+                                    raise Http400('Invalid element: %s' % post_filter['field'])
+                except (AttributeError, TypeError):
+                    # A dotted attribute is not found
+                    raise Http400('Invalid element: %s' % post_filter['field'])
+                else:
+                    # Evaluate row values against the established filters
+                    if filter_operation.evaluate(value):
+                        filter_results.append(row_id)
+
+            if query_results:
+                if join_type == JOIN_TYPE_AND:
+                    query_results &= set(filter_results)
+                else:
+                    query_results |= set(filter_results)
+            else:
+                query_results = set(filter_results)
+
+        if not fields_to_return:
+            fields_lambda = lambda x: x
+        else:
+            fields_lambda = make_fields_filter(fields_to_return)
+
+        data = self.get_data(self.data, filters, query_results, fields_lambda)
+        if groups:
+            result = {}
+            for group in groups:
+                data, backup = tee(data)
+                # Make a backup of the generator
+                result[group] = {}
+                sorted_data = sorted(backup, key=itemgetter(group))
+
+                for key, group_data in groupby(sorted_data, lambda x: x[group]):
+                    result[group][key] = list(group_data)
+        else:
+            result = data
+
+        if aggregates:
+            if not groups:
+                new_result = {}
+                for aggregate in aggregates:
+                    # Make a backup of the generator
+                    data, backup = tee(data)
+                    new_result[aggregate['name']] = aggregate['function'].execute(backup)
+                return new_result
+            else:
+                new_result = {}
+                for group in groups:
+                    new_result.setdefault(group, {})
+                    for group_result in result[group]:
+                        for aggregate in aggregates:
+                            new_result[group].setdefault(group_result, {})
+                            new_result[group][group_result][aggregate['name']] = aggregate['function'].execute(result[group][group_result])
+
+                return new_result
+        return result
+
+    def get_data(self, queryset, filters, query_results, fields_lambda):
+        if filters:
+            if len(query_results) == 1:
+                # Special case because itemgetter doesn't returns a list but a value
+                return (fields_lambda(item.row) for item in [itemgetter(*list(query_results))(queryset)])
+            elif len(query_results) == 0:
+                return []
+            else:
+                return (fields_lambda(item.row) for item in itemgetter(*list(query_results))(queryset)[0:self.limit])
+        else:
+            return (fields_lambda(item.row) for item in queryset[0:self.limit])
 
 
 def parse_parameters(parameters):
@@ -75,10 +191,7 @@ def parse_parameters(parameters):
 
 
 def get_filter_functions_map(filter_names):
-    result = []
     for post_filter in filter_names:
-        filter_results = []
-
         try:
             filter_identifier = FILTER_NAMES[post_filter['filter_name']]
         except KeyError:

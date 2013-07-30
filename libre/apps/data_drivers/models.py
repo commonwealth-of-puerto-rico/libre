@@ -3,9 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
-from itertools import groupby, izip, tee
 import logging
-from operator import itemgetter
 import re
 import string
 import struct
@@ -17,25 +15,21 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
 
-from dateutil.parser import parse
 import fiona
 from suds.client import Client
 import jsonfield
 import xlrd
 from model_utils.managers import InheritanceManager
 from pyproj import Proj, transform
-from shapely import geometry
 
 from lock_manager import Lock, LockError
 
-from .aggregates import Count, Sum
 from .exceptions import Http400
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
-    DATA_TYPE_NUMBER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPE_OR, LQL_DELIMITER,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
-from .query import get_filter_functions_map, make_fields_filter, parse_parameters
-from .utils import parse_range, parse_value
+from .query import Query
+from .utils import parse_range
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
@@ -258,18 +252,6 @@ class SourceFileBased(models.Model):
         except SourceData.DoesNotExist:
             raise Http404
 
-    def get_data(self, queryset, filters, query_results, fields_lambda):
-        if filters:
-            if len(query_results) == 1:
-                # Special case because itemgetter doesn't returns a list but a value
-                return (fields_lambda(item.row) for item in [itemgetter(*list(query_results))(queryset)])
-            elif len(query_results) == 0:
-                return []
-            else:
-                return (fields_lambda(item.row) for item in itemgetter(*list(query_results))(queryset)[0:self.limit])
-        else:
-            return (fields_lambda(item.row) for item in queryset[0:self.limit])
-
     def get_all(self, parameters=None):
         initial_datetime = datetime.datetime.now()
         timestamp, parameters = self.analyze_request(parameters)
@@ -284,102 +266,9 @@ class SourceFileBased(models.Model):
 
         queryset = SourceData.objects.filter(source_data_version=source_data_version)
 
-        if not parameters:
-            parameters = {}
-
-        filters, fields_to_return, join_type, aggregates, groups = parse_parameters(parameters)
-        filters_function_map = get_filter_functions_map(filters)
-
-        logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
-
-        query_results = set()
-        for post_filter in filters_function_map:
-            filter_results = []
-
-            filter_operation = post_filter['operation']
-
-            for row_id, item in enumerate(queryset):
-                try:
-                    value = item.row
-
-                    for index, part in enumerate(post_filter['field'].split('.')):
-                        if part == '_length':
-                            value = geometry.shape(value).length
-                        elif part == '_area':
-                            value = geometry.shape(value).area
-                        elif part == '_type':
-                            value = geometry.shape(value).geom_type
-                        else:
-                            try:
-                                value = value[part]
-                            except KeyError:
-                                # Error in the first part of the field name
-                                # Check to see if it is a source slug reference
-                                if index == 0:
-                                    if part != self.slug:
-                                        try:
-                                            source = Source.objects.get_subclass(slug=part)
-                                        except Source.DoesNotExist:
-                                            raise Http400('Unknown source: %s' % part)
-                                        else:
-                                            return source.get_all(parameters=parameters)
-                                else:
-                                    raise Http400('Invalid element: %s' % post_filter['field'])
-                except (AttributeError, TypeError):
-                    # A dotted attribute is not found
-                    raise Http400('Invalid element: %s' % post_filter['field'])
-                else:
-                    # Evaluate row values against the established filters
-                    if filter_operation.evaluate(value):
-                        filter_results.append(row_id)
-
-            if query_results:
-                if join_type == JOIN_TYPE_AND:
-                    query_results &= set(filter_results)
-                else:
-                    query_results |= set(filter_results)
-            else:
-                query_results = set(filter_results)
-
-        if not fields_to_return:
-            fields_lambda = lambda x: x
-        else:
-            fields_lambda = make_fields_filter(fields_to_return)
-
+        result = Query(queryset, limit=self.limit).execute(parameters)
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
-        data = self.get_data(queryset, filters, query_results, fields_lambda)
-        if groups:
-            result = {}
-            for group in groups:
-                data, backup = tee(data)
-                # Make a backup of the generator
-                result[group] = {}
-                sorted_data = sorted(backup, key=itemgetter(group))
-
-                for key, group_data in groupby(sorted_data, lambda x: x[group]):
-                    result[group][key] = list(group_data)
-        else:
-            result = data
-
-        if aggregates:
-            if not self.groups:
-                new_result = {}
-                for aggregate in aggregates:
-                    # Make a backup of the generator
-                    data, backup = tee(data)
-                    new_result[aggregate['name']] = aggregate['function'].execute(backup)
-                return new_result
-            else:
-                new_result = {}
-                for group in self.groups:
-                    new_result.setdefault(group, {})
-                    for group_result in result[group]:
-                        for aggregate in aggregates:
-                            new_result[group].setdefault(group_result, {})
-                            new_result[group][group_result][aggregate['name']] = aggregate['function'].execute(result[group][group_result])
-
-                return new_result
         return result
 
     class Meta:
@@ -503,7 +392,7 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
         parse = struct.Struct(fmtstring).unpack_from
 
         if self.import_rows:
-            parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
+            parsed_range = map(lambda x: x - 1, parse_range(self.import_rows))
         else:
             parsed_range = None
 
@@ -557,7 +446,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         Handle different value types for XLS. Item is a cell object.
         """
         # Thx to Augusto C Men to point fast solution for XLS/XLSX dates
-        if item.ctype == 3: #XL_CELL_DATE:
+        if item.ctype == 3:  # XL_CELL_DATE:
             try:
                 return datetime.datetime(*xlrd.xldate_as_tuple(item.value, self._book.datemode))
             except ValueError:
@@ -565,7 +454,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
                 # Invalid date
                 return item.value
 
-        if item.ctype == 2: #XL_CELL_NUMBER:
+        if item.ctype == 2:  # XL_CELL_NUMBER:
             if item.value % 1 == 0:  # integers
                 return int(item.value)
             else:
@@ -579,7 +468,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         logger.debug('column_names: %s' % column_names)
 
         if self.import_rows:
-            parsed_range = map(lambda x: x-1, parse_range(self.import_rows))
+            parsed_range = map(lambda x: x - 1, parse_range(self.import_rows))
         else:
             parsed_range = xrange(0, self._sheet.nrows)
 
