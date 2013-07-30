@@ -122,4 +122,6 @@ PENDING
   * Move _renderer and _fields parsing to allow being parsed on get_one method
   * Optimize AND type join
   * Use islice
-  * Dataset browser
+  * Dataset human browser
+  * Data store browser
+  * Regex support for CSV and Fixed width
