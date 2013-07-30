@@ -350,6 +350,8 @@ class SourceFileBased(models.Model):
                 # Determine fields to return
                     fields_to_return = value.split(',')
                     get_all_fields = False
+                elif parameter == LQL_DELIMITER + 'group_by':
+                    self.groups = value.split(',')
                 elif parameter == LQL_DELIMITER + 'aggregate':
                     # TODO: switch to regular expression
                     # Use QueryDict lists instead of Regex
@@ -365,8 +367,7 @@ class SourceFileBased(models.Model):
                                 'name': name.strip()[1:-1],
                                 'function': Sum(aggregate_string.replace('Sum(', '').replace(')', '').split(','))
                             })
-                elif parameter == LQL_DELIMITER + 'group_by':
-                    self.groups = value.split(',')
+
 
         return filters, get_all_fields, fields_to_return, join_type, aggregates
 
@@ -475,24 +476,37 @@ class SourceFileBased(models.Model):
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
         data = self.get_data(queryset, filters, query_results, fields_lambda)
-        # TODO: Sort data
         if self.groups:
             result = {}
             for group in self.groups:
                 data, backup = tee(data)
                 # Make a backup of the generator
                 result[group] = {}
-                for key, grp in groupby(backup, lambda x: x[group]):
-                    result[group][key] = [i for i in grp]
-        elif aggregates:
-            result = {}
-            for aggregate in aggregates:
-                # Make a backup of the generator
-                data, backup = tee(data)
-                result[aggregate['name']] = aggregate['function'].execute(backup)
+                sorted_data = sorted(backup, key=itemgetter(group))
+
+                for key, group_data in groupby(sorted_data, lambda x: x[group]):
+                    result[group][key] = list(group_data)
         else:
             result = data
 
+        if aggregates:
+            if not self.groups:
+                new_result = {}
+                for aggregate in aggregates:
+                    # Make a backup of the generator
+                    data, backup = tee(data)
+                    new_result[aggregate['name']] = aggregate['function'].execute(backup)
+                return new_result
+            else:
+                new_result = {}
+                for group in self.groups:
+                    new_result.setdefault(group, {})
+                    for group_result in result[group]:
+                        for aggregate in aggregates:
+                            new_result[group].setdefault(group_result, {})
+                            new_result[group][group_result][aggregate['name']] = aggregate['function'].execute(result[group][group_result])
+
+                return new_result
         return result
 
     class Meta:

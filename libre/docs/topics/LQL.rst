@@ -325,30 +325,43 @@ Values for the map_leaflet renderer:
 Example: ``_renderer={'zoom_level':13,'longitude':-66.116079,'latitude':18.464386}``
 
 
-aggregation
------------
-
+Aggregation
+~~~~~~~~~~~
 Aggregates asssist with the summarization of data.
 
-Example: ``_aggregate={'total':Count()}``
-
-Return the count of rows returned as an alias of 'total'.
-
-Example: ``api/sources/crimes/data/?properties.date__month=2&geometry__intersects=Point(-67,18.3).buffer(0.05)&_aggregate={'total':Count()}&_format=json``
+Example: ``api/sources/crimes/data/?properties.date__month=2&geometry__intersects=Point(-67,18.3).buffer(0.05)&_aggregate={'total':Count(*)}&_format=json``
 
 Return a count of all crimes committed in February and which occurred within the selected geographical area.
 
+
 Count
 -----
+Return the count of rows or occurences of a value in the specified list, returned as an alias.
+
+``Count(<comma delimited list of fields to count> or <*>)``
+
+Example: ``_aggregate={'total':Count(*)}``
+
 
 Sum
 ---
+Return the sum values of the specified fields.
+
+``Sum(<comma delimited list of fields to sum>)``
+
+Example: ``_aggregate={'total':Sum(score)}``
+
+
+Grouping
+~~~~~~~~
+``_group_by=<comma delimited list of fields by which to group data>``
+
+Example: ``_group_by=city,region``
+
 
 
 Coming soon
 ===========
 * Subqueries
 * Sorting
-* Grouping
-* Sum
 * Pagination
