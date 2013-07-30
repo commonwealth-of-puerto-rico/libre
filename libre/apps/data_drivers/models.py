@@ -35,6 +35,7 @@ from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
     DATA_TYPE_NUMBER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPE_OR, LQL_DELIMITER,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
+from .query import parse_parameters
 from .utils import parse_range, parse_value
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
@@ -258,68 +259,6 @@ class SourceFileBased(models.Model):
         except SourceData.DoesNotExist:
             raise Http404
 
-    def get_parse_parameters(self, parameters):
-        aggregates = []
-        fields_to_return = []
-        get_all_fields = True
-        filters = []
-        self.groups = []
-
-        join_type = JOIN_TYPE_AND
-        DOUBLE_DELIMITER = LQL_DELIMITER + LQL_DELIMITER
-
-        for parameter, value in parameters.items():
-            logger.debug('parameter: %s' % parameter)
-            logger.debug('value: %s' % value)
-
-            if not parameter.startswith(LQL_DELIMITER):
-                try:
-                    value = parse_value(value)
-                except IndexError:
-                    raise Http400('Malformed query')
-
-                if not parameter.startswith(LQL_DELIMITER):
-                    if DOUBLE_DELIMITER not in parameter:
-                        filters.append({'field': parameter, 'filter_name': 'equals', 'value': value})
-                    else:
-                        try:
-                            field, filter_name = parameter.split(DOUBLE_DELIMITER)
-                        except ValueError:
-                            # Trying more than one filter per field
-                            # This could be supported eventually, for now it's an error
-                            raise Http400('Only one filter per field is supported')
-                        else:
-                            filters.append({'field': field, 'filter_name': filter_name, 'value': value})
-            else:
-                if parameter == LQL_DELIMITER + 'join':
-                # Determine query join type
-                    if value.upper() == 'OR':
-                        join_type = JOIN_TYPE_OR
-                elif parameter == LQL_DELIMITER + 'fields':
-                # Determine fields to return
-                    fields_to_return = value.split(',')
-                    get_all_fields = False
-                elif parameter == LQL_DELIMITER + 'group_by':
-                    self.groups = value.split(',')
-                elif parameter == LQL_DELIMITER + 'aggregate':
-                    # TODO: switch to regular expression
-                    # Use QueryDict lists instead of Regex
-                    for element in value.strip()[1:-1].split(','):
-                        name, aggregate_string = element.split(':')
-                        if aggregate_string.startswith('Count('):
-                            aggregates.append({
-                                'name': name.strip()[1:-1],
-                                'function': Count(aggregate_string.replace('Count(', '').replace(')', '').split(','))
-                            })
-                        elif aggregate_string.startswith('Sum('):
-                            aggregates.append({
-                                'name': name.strip()[1:-1],
-                                'function': Sum(aggregate_string.replace('Sum(', '').replace(')', '').split(','))
-                            })
-
-
-        return filters, get_all_fields, fields_to_return, join_type, aggregates
-
     def get_filter_functions_map(self, filter_names):
         result = []
         for post_filter in filter_names:
@@ -363,7 +302,7 @@ class SourceFileBased(models.Model):
         if not parameters:
             parameters = {}
 
-        filters, get_all_fields, fields_to_return, join_type, aggregates = self.get_parse_parameters(parameters)
+        filters, fields_to_return, join_type, aggregates, groups = parse_parameters(parameters)
         filters_function_map = self.get_filter_functions_map(filters)
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
@@ -417,7 +356,7 @@ class SourceFileBased(models.Model):
             else:
                 query_results = set(filter_results)
 
-        if get_all_fields:
+        if not fields_to_return:
             fields_lambda = lambda x: x
         else:
             fields_lambda = self.__class__.make_fields_filter(fields_to_return)
@@ -425,9 +364,9 @@ class SourceFileBased(models.Model):
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
         data = self.get_data(queryset, filters, query_results, fields_lambda)
-        if self.groups:
+        if groups:
             result = {}
-            for group in self.groups:
+            for group in groups:
                 data, backup = tee(data)
                 # Make a backup of the generator
                 result[group] = {}
