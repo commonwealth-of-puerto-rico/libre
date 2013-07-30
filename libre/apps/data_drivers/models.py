@@ -34,7 +34,7 @@ from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
     DATA_TYPE_NUMBER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPE_OR, LQL_DELIMITER,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
-from .query import get_filter_functions_map, parse_parameters
+from .query import get_filter_functions_map, make_fields_filter, parse_parameters
 from .utils import parse_range, parse_value
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
@@ -344,7 +344,7 @@ class SourceFileBased(models.Model):
         if not fields_to_return:
             fields_lambda = lambda x: x
         else:
-            fields_lambda = self.__class__.make_fields_filter(fields_to_return)
+            fields_lambda = make_fields_filter(fields_to_return)
 
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
@@ -384,26 +384,6 @@ class SourceFileBased(models.Model):
 
     class Meta:
         abstract = True
-
-    @staticmethod
-    def make_fields_filter(fields_to_return):
-        """
-        Fabricate a function tailored made to return a number of fields
-        for each row.
-        """
-        # TODO: support multilevel dot '.', and index '[]' notation
-        if len(fields_to_return) == 1:
-            # Special because itemgetter with a single element doesn't return a list
-            field_extract_lambda = lambda x: [itemgetter(*fields_to_return)(x)]
-        else:
-            field_extract_lambda = lambda x: itemgetter(*fields_to_return)(x)
-
-        def _function(row):
-            try:
-                return dict(izip(fields_to_return, field_extract_lambda(row)))
-            except KeyError as exception:
-                raise Http400('Could not find a field named in the current row: %s' % exception)
-        return _function
 
 
 class SourceTabularBased(models.Model):

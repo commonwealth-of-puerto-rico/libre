@@ -1,10 +1,13 @@
 from __future__ import absolute_import
 
+from itertools import groupby, izip, tee
 import logging
+from operator import itemgetter
 
 from dateutil.parser import parse
 from shapely import geometry
 
+from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import DOUBLE_DELIMITER, JOIN_TYPE_AND, LQL_DELIMITER
 from .utils import parse_value
@@ -84,3 +87,23 @@ def get_filter_functions_map(filter_names):
             post_filter['operation'] = FILTER_CLASS_MAP[filter_identifier](post_filter['field'], post_filter['value'])
 
     return filter_names
+
+
+def make_fields_filter(fields_to_return):
+    """
+    Fabricate a function tailored made to return a number of fields
+    for each row.
+    """
+    # TODO: support multilevel dot '.', and index '[]' notation
+    if len(fields_to_return) == 1:
+        # Special because itemgetter with a single element doesn't return a list
+        field_extract_lambda = lambda x: [itemgetter(*fields_to_return)(x)]
+    else:
+        field_extract_lambda = lambda x: itemgetter(*fields_to_return)(x)
+
+    def _function(row):
+        try:
+            return dict(izip(fields_to_return, field_extract_lambda(row)))
+        except KeyError as exception:
+            raise Http400('Could not find a field named in the current row: %s' % exception)
+    return _function
