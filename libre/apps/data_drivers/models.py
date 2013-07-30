@@ -29,13 +29,12 @@ from shapely import geometry
 from lock_manager import Lock, LockError
 
 from .aggregates import Count, Sum
-from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .exceptions import Http400
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
     DATA_TYPE_NUMBER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPE_OR, LQL_DELIMITER,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
-from .query import parse_parameters
+from .query import get_filter_functions_map, parse_parameters
 from .utils import parse_range, parse_value
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
@@ -259,20 +258,6 @@ class SourceFileBased(models.Model):
         except SourceData.DoesNotExist:
             raise Http404
 
-    def get_filter_functions_map(self, filter_names):
-        result = []
-        for post_filter in filter_names:
-            filter_results = []
-
-            try:
-                filter_identifier = FILTER_NAMES[post_filter['filter_name']]
-            except KeyError:
-                raise Http400('Unknown filter: %s' % post_filter['filter_name'])
-            else:
-                post_filter['operation'] = FILTER_CLASS_MAP[filter_identifier](post_filter['field'], post_filter['value'])
-
-        return filter_names
-
     def get_data(self, queryset, filters, query_results, fields_lambda):
         if filters:
             if len(query_results) == 1:
@@ -303,7 +288,7 @@ class SourceFileBased(models.Model):
             parameters = {}
 
         filters, fields_to_return, join_type, aggregates, groups = parse_parameters(parameters)
-        filters_function_map = self.get_filter_functions_map(filters)
+        filters_function_map = get_filter_functions_map(filters)
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
 

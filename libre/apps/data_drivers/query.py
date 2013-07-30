@@ -5,6 +5,7 @@ import logging
 from dateutil.parser import parse
 from shapely import geometry
 
+from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import DOUBLE_DELIMITER, JOIN_TYPE_AND, LQL_DELIMITER
 from .utils import parse_value
 
@@ -68,3 +69,18 @@ def parse_parameters(parameters):
                         })
 
     return filters, fields_to_return, join_type, aggregates, groups
+
+
+def get_filter_functions_map(filter_names):
+    result = []
+    for post_filter in filter_names:
+        filter_results = []
+
+        try:
+            filter_identifier = FILTER_NAMES[post_filter['filter_name']]
+        except KeyError:
+            raise Http400('Unknown filter: %s' % post_filter['filter_name'])
+        else:
+            post_filter['operation'] = FILTER_CLASS_MAP[filter_identifier](post_filter['field'], post_filter['value'])
+
+    return filter_names
