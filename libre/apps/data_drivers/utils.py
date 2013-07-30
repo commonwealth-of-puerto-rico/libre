@@ -7,6 +7,8 @@ import logging
 from dateutil.parser import parse
 from shapely import geometry
 
+from .exceptions import Http400
+
 logger = logging.getLogger(__name__)
 
 
