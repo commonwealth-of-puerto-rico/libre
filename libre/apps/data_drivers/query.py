@@ -9,23 +9,25 @@ from shapely import geometry
 from .aggregates import Count, Sum
 from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
-from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPE_OR, LQL_DELIMITER)
-
+from .jsonq import JSONq
+from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
+    JOIN_TYPE_OR, LQL_DELIMITER)
 from .utils import parse_value
 
 logger = logging.getLogger(__name__)
 
 
 class Query():
-    def __init__(self, data, limit):
+    def __init__(self, data, limit, klass):
         self.data = data
         self.limit = limit
+        self.klass = klass
 
     def execute(self, parameters):
         if not parameters:
             parameters = {}
 
-        filters, fields_to_return, join_type, aggregates, groups = parse_parameters(parameters)
+        filters, field_query, join_type, aggregates, groups = parse_parameters(parameters)
         filters_function_map = get_filter_functions_map(filters)
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[join_type])
@@ -56,8 +58,8 @@ class Query():
                                 if index == 0:
                                     if part != self.slug:
                                         try:
-                                            source = Source.objects.get_subclass(slug=part)
-                                        except Source.DoesNotExist:
+                                            source = self.klass.objects.get_subclass(slug=part)
+                                        except self.klass.DoesNotExist:
                                             raise Http400('Unknown source: %s' % part)
                                         else:
                                             return source.get_all(parameters=parameters)
@@ -79,25 +81,28 @@ class Query():
             else:
                 query_results = set(filter_results)
 
-        if not fields_to_return:
-            fields_lambda = lambda x: x
+        data = self.get_data(self.data, filters, query_results)
+
+        data = self.process_groups(data, groups)
+
+        data = self.process_aggregates(data, groups, aggregates)
+
+        data = self.process_field_filtering(data, field_query)
+
+        return data
+
+    def process_field_filtering(self, data, field_query):
+        if not field_query:
+            return data
         else:
-            fields_lambda = make_fields_filter(fields_to_return)
+            jsonq = JSONq(data)
+            try:
+                return jsonq.query(field_query, do_filter=True)
+            except ValueError as exception:
+                raise Http400('Filter query error; %s' % exception)
 
-        data = self.get_data(self.data, filters, query_results, fields_lambda)
-        if groups:
-            result = {}
-            for group in groups:
-                data, backup = tee(data)
-                # Make a backup of the generator
-                result[group] = {}
-                sorted_data = sorted(backup, key=itemgetter(group))
 
-                for key, group_data in groupby(sorted_data, lambda x: x[group]):
-                    result[group][key] = list(group_data)
-        else:
-            result = data
-
+    def process_aggregates(self, data, groups, aggregates):
         if aggregates:
             if not groups:
                 new_result = {}
@@ -110,15 +115,35 @@ class Query():
                 new_result = {}
                 for group in groups:
                     new_result.setdefault(group, {})
-                    for group_result in result[group]:
+                    for group_result in data[group]:
                         for aggregate in aggregates:
                             new_result[group].setdefault(group_result, {})
-                            new_result[group][group_result][aggregate['name']] = aggregate['function'].execute(result[group][group_result])
+                            new_result[group][group_result][aggregate['name']] = aggregate['function'].execute(data[group][group_result])
 
                 return new_result
-        return result
+        else:
+            return data
 
-    def get_data(self, queryset, filters, query_results, fields_lambda):
+    def process_groups(self, data, groups):
+        if groups:
+            result = {}
+            for group in groups:
+                data, backup = tee(data)
+                # Make a backup of the generator
+                result[group] = {}
+                sorted_data = sorted(backup, key=itemgetter(group))
+
+                for key, group_data in groupby(sorted_data, lambda x: x[group]):
+                    result[group][key] = list(group_data)
+
+            return result
+        else:
+            return data
+
+    def get_data(self, queryset, filters, query_results, fields_lambda=None):
+        if not fields_lambda:
+            fields_lambda = lambda x: x
+
         if filters:
             if len(query_results) == 1:
                 # Special case because itemgetter doesn't returns a list but a value
@@ -133,7 +158,7 @@ class Query():
 
 def parse_parameters(parameters):
     aggregates = []
-    fields_to_return = []
+    field_query = None
     filters = []
     groups = []
 
@@ -168,14 +193,19 @@ def parse_parameters(parameters):
                     join_type = JOIN_TYPE_OR
             elif parameter == LQL_DELIMITER + 'fields':
             # Determine fields to return
-                fields_to_return = value.split(',')
+                field_query = value.split(',')
             elif parameter == LQL_DELIMITER + 'group_by':
                 groups = value.split(',')
             elif parameter == LQL_DELIMITER + 'aggregate':
-                # TODO: switch to regular expression
-                # Use QueryDict lists instead of Regex
+                # TODO: Use QueryDict lists instead of Regex
+                # example: _aggregate__count=Count(*)
                 for element in value.strip()[1:-1].split(','):
-                    name, aggregate_string = element.split(':')
+                    try:
+                        name, aggregate_string = element.split(':')
+                    except ValueError:
+                        # No alias specified
+                        raise Http400('Specify an alias for the aggregate')
+
                     if aggregate_string.startswith('Count('):
                         aggregates.append({
                             'name': name.strip()[1:-1],
@@ -187,7 +217,7 @@ def parse_parameters(parameters):
                             'function': Sum(aggregate_string.replace('Sum(', '').replace(')', '').split(','))
                         })
 
-    return filters, fields_to_return, join_type, aggregates, groups
+    return filters, field_query, join_type, aggregates, groups
 
 
 def get_filter_functions_map(filter_names):
@@ -200,23 +230,3 @@ def get_filter_functions_map(filter_names):
             post_filter['operation'] = FILTER_CLASS_MAP[filter_identifier](post_filter['field'], post_filter['value'])
 
     return filter_names
-
-
-def make_fields_filter(fields_to_return):
-    """
-    Fabricate a function tailored made to return a number of fields
-    for each row.
-    """
-    # TODO: support multilevel dot '.', and index '[]' notation
-    if len(fields_to_return) == 1:
-        # Special because itemgetter with a single element doesn't return a list
-        field_extract_lambda = lambda x: [itemgetter(*fields_to_return)(x)]
-    else:
-        field_extract_lambda = lambda x: itemgetter(*fields_to_return)(x)
-
-    def _function(row):
-        try:
-            return dict(izip(fields_to_return, field_extract_lambda(row)))
-        except KeyError as exception:
-            raise Http400('Could not find a field named in the current row: %s' % exception)
-    return _function
