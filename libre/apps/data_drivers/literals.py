@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import renderers
 from dateutil.parser import parse
 
-from .renderers import LeafletRenderer
+from .renderers import LeafletRenderer, CustomXMLRenderer
 from .utils import convert_to_number
 
 # Row based
@@ -47,7 +47,7 @@ RENDERER_LEAFLET = 5
 RENDERER_MAPPING = {
     RENDERER_BROWSEABLE_API: renderers.BrowsableAPIRenderer,
     RENDERER_JSON: renderers.JSONRenderer,
-    RENDERER_XML: renderers.XMLRenderer,
+    RENDERER_XML: CustomXMLRenderer,
     RENDERER_YAML: renderers.YAMLRenderer,
     RENDERER_LEAFLET: LeafletRenderer,
 }

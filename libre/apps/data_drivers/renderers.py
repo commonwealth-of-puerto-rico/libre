@@ -2,10 +2,13 @@ from __future__ import absolute_import
 
 import logging
 import json
+import types
 
 from django.template import Context, Template, TemplateSyntaxError
+from django.utils.xmlutils import SimplerXMLGenerator
 
 from rest_framework import renderers
+from rest_framework.compat import StringIO, smart_text, six
 
 
 class LeafletRenderer(renderers.TemplateHTMLRenderer):
@@ -69,3 +72,26 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         context.update({'data': json.dumps(new_data)})
         context.update({'template_extra_context': extra_context})
         return template.render(context)
+
+
+class CustomXMLRenderer(renderers.XMLRenderer):
+    def _to_xml(self, xml, data):
+        if isinstance(data, (list, tuple, types.GeneratorType)):
+            for item in data:
+                xml.startElement("list-item", {})
+                self._to_xml(xml, item)
+                xml.endElement("list-item")
+
+        elif isinstance(data, dict):
+            for key, value in six.iteritems(data):
+                xml.startElement(key, {})
+                self._to_xml(xml, value)
+                xml.endElement(key)
+
+        elif data is None:
+            # Don't output any value
+            pass
+
+        else:
+            xml.characters(smart_text(data))
+
