@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from itertools import groupby, izip, tee
 import logging
 from operator import itemgetter
+import types
 
 from shapely import geometry
 import jsonpath_rw
@@ -18,6 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 class Query():
+    json_path = None
+    aggregates = []
+    filters = []
+    groups = []
+    join_type = JOIN_TYPE_AND
+
     def __init__(self, queryset, limit, klass):
         self.queryset = queryset
         self.limit = limit
@@ -96,7 +103,11 @@ class Query():
         if self.json_path:
             try:
                 expression = jsonpath_rw.parse(self.json_path)
-                self.data = [match.value for match in expression.find( [(k,v) for k,v in self.data.items()] )]
+
+                if isinstance(self.data, (types.GeneratorType)):
+                    self.data = [match.value for match in expression.find(list(self.data))]
+                else:
+                    self.data = [match.value for match in expression.find(self.data)]
             except Exception as exception:
                 raise Http400('JSON query error; %s' % exception)
 
@@ -146,13 +157,6 @@ class Query():
             self.data = (item.row for item in self.queryset[0:self.limit])
 
     def parse_parameters(self, parameters):
-        self.json_path = None
-        aggregates = []
-        filters = []
-        groups = []
-
-        join_type = JOIN_TYPE_AND
-
         for parameter, value in parameters.items():
             logger.debug('parameter: %s' % parameter)
             logger.debug('value: %s' % value)
@@ -168,7 +172,7 @@ class Query():
                 # Determine fields to return
                     self.json_path = value
                 elif parameter == LQL_DELIMITER + 'group_by':
-                    groups = value.split(',')
+                    self.groups = value.split(',')
                 elif parameter.startswith(LQL_DELIMITER + 'aggregate'):
                     # TODO: Use QueryDict lists instead of Regex
                     # example: _aggregate__count=Count(*)
@@ -176,14 +180,14 @@ class Query():
                     aggregate_string = value
 
                     if value.startswith('Count('):
-                        aggregates.append({
+                        self.aggregates.append({
                             'name': name,
-                            'function': Count(value.replace('Count(', '').replace(')', '').split(','))
+                            'function': Count(value.replace('Count(', '').replace(')', ''))
                         })
                     elif value.startswith('Sum('):
-                        aggregates.append({
+                        self.aggregates.append({
                             'name': name,
-                            'function': Sum(value.replace('Sum(', '').replace(')', '').split(','))
+                            'function': Sum(value.replace('Sum(', '').replace(')', ''))
                         })
                     else:
                         raise Http400('Unkown aggregate: %s' % value)
@@ -196,20 +200,15 @@ class Query():
                     # This could be supported eventually, for now it's an error
                     raise Http400('Only one filter per field is supported')
                 else:
-                    filters.append({'field': field, 'filter_name': filter_name, 'value': value})
+                    self.filters.append({'field': field, 'filter_name': filter_name, 'value': value})
             else:
                 # Otherwise it is an equal filter
-                filters.append({'field': parameter, 'filter_name': 'equals', 'value': value})
+                self.filters.append({'field': parameter, 'filter_name': 'equals', 'value': value})
 
                 try:
                     value = parse_value(value)
                 except IndexError:
                     raise Http400('Malformed query')
-
-        self.filters = filters
-        self.join_type = join_type
-        self.aggregates = aggregates
-        self.groups = groups
 
     def get_filter_functions_map(self):
         for post_filter in self.filters:
