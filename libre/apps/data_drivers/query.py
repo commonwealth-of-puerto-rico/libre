@@ -165,25 +165,9 @@ class Query():
             logger.debug('parameter: %s' % parameter)
             logger.debug('value: %s' % value)
 
-            if not parameter.startswith(LQL_DELIMITER):
-                try:
-                    value = parse_value(value)
-                except IndexError:
-                    raise Http400('Malformed query')
+            if parameter.startswith(LQL_DELIMITER):
+                # Single delimiter? It is a predicate
 
-                if not parameter.startswith(LQL_DELIMITER):
-                    if DOUBLE_DELIMITER not in parameter:
-                        filters.append({'field': parameter, 'filter_name': 'equals', 'value': value})
-                    else:
-                        try:
-                            field, filter_name = parameter.split(DOUBLE_DELIMITER)
-                        except ValueError:
-                            # Trying more than one filter per field
-                            # This could be supported eventually, for now it's an error
-                            raise Http400('Only one filter per field is supported')
-                        else:
-                            filters.append({'field': field, 'filter_name': filter_name, 'value': value})
-            else:
                 if parameter == LQL_DELIMITER + 'join':
                 # Determine query join type
                     if value.upper() == 'OR':
@@ -193,26 +177,48 @@ class Query():
                     field_query = value.split(',')
                 elif parameter == LQL_DELIMITER + 'group_by':
                     groups = value.split(',')
-                elif parameter == LQL_DELIMITER + 'aggregate':
+                elif parameter.startswith(LQL_DELIMITER + 'aggregate'):
                     # TODO: Use QueryDict lists instead of Regex
                     # example: _aggregate__count=Count(*)
-                    for element in value.strip()[1:-1].split(','):
-                        try:
-                            name, aggregate_string = element.split(':')
-                        except ValueError:
-                            # No alias specified
-                            raise Http400('Specify an alias for the aggregate')
+                    name = parameter.split(DOUBLE_DELIMITER)[1]
+                    aggregate_string = value
 
-                        if aggregate_string.startswith('Count('):
-                            aggregates.append({
-                                'name': name.strip()[1:-1],
-                                'function': Count(aggregate_string.replace('Count(', '').replace(')', '').split(','))
-                            })
-                        elif aggregate_string.startswith('Sum('):
-                            aggregates.append({
-                                'name': name.strip()[1:-1],
-                                'function': Sum(aggregate_string.replace('Sum(', '').replace(')', '').split(','))
-                            })
+                    if value.startswith('Count('):
+                        aggregates.append({
+                            'name': name,
+                            'function': Count(value.replace('Count(', '').replace(')', '').split(','))
+                        })
+                    elif value.startswith('Sum('):
+                        aggregates.append({
+                            'name': name,
+                            'function': Sum(value.replace('Sum(', '').replace(')', '').split(','))
+                        })
+                    else:
+                        raise Http400('Unkown aggregate: %s' % value)
+            elif DOUBLE_DELIMITER in parameter:
+                # Not an aggregate? Then it is a filter
+                try:
+                    field, filter_name = parameter.split(DOUBLE_DELIMITER)
+                except ValueError:
+                    # Trying more than one filter per field
+                    # This could be supported eventually, for now it's an error
+                    raise Http400('Only one filter per field is supported')
+                else:
+                    filters.append({'field': field, 'filter_name': filter_name, 'value': value})
+            else:
+                # Otherwise it is an equal filter
+                filters.append({'field': parameter, 'filter_name': 'equals', 'value': value})
+
+                try:
+                    value = parse_value(value)
+                except IndexError:
+                    raise Http400('Malformed query')
+
+
+
+
+
+
 
         self.filters = filters
         self.field_query = field_query
