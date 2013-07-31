@@ -5,11 +5,11 @@ import logging
 from operator import itemgetter
 
 from shapely import geometry
+import jsonpath_rw
 
 from .aggregates import Count, Sum
 from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
-from .jsonq import JSONq
 from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
     JOIN_TYPE_OR, LQL_DELIMITER)
 from .utils import parse_value
@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class Query():
-    def __init__(self, data, limit, klass):
-        self.data = data
+    def __init__(self, queryset, limit, klass):
+        self.queryset = queryset
         self.limit = limit
         self.klass = klass
 
@@ -39,7 +39,7 @@ class Query():
 
             filter_operation = post_filter['operation']
 
-            for row_id, item in enumerate(self.data):
+            for row_id, item in enumerate(self.queryset):
                 try:
                     value = item.row
 
@@ -82,54 +82,48 @@ class Query():
             else:
                 query_results = set(filter_results)
 
-        data = self.get_data(self.data, query_results)
+        self.get_data(query_results)
 
-        data = self.process_groups(data)
+        self.process_groups()
 
-        data = self.process_aggregates(data)
+        self.process_aggregates()
 
-        data = self.process_field_filtering(data)
+        self.process_json_path()
 
-        return data
+        return self.data
 
-    def process_field_filtering(self, data):
-        if not self.field_query:
-            return data
-        else:
-            jsonq = JSONq(data)
+    def process_json_path(self):
+        if self.json_path:
             try:
-                return jsonq.query(self.field_query, do_filter=True)
-            except ValueError as exception:
-                raise Http400('Filter query error; %s' % exception)
+                expression = jsonpath_rw.parse(self.json_path)
+                self.data = [match.value for match in expression.find( [(k,v) for k,v in self.data.items()] )]
+            except Exception as exception:
+                raise Http400('JSON query error; %s' % exception)
 
-
-    def process_aggregates(self, data):
+    def process_aggregates(self):
         if self.aggregates:
-            if not self.groups:
-                new_result = {}
-                for aggregate in self.aggregates:
-                    # Make a backup of the generator
-                    data, backup = tee(data)
-                    new_result[aggregate['name']] = aggregate['function'].execute(backup)
-                return new_result
-            else:
+            if self.groups:
                 new_result = {}
                 for group in self.groups:
                     new_result.setdefault(group, {})
-                    for group_result in data[group]:
+                    for group_result in self.data[group]:
                         for aggregate in self.aggregates:
                             new_result[group].setdefault(group_result, {})
-                            new_result[group][group_result][aggregate['name']] = aggregate['function'].execute(data[group][group_result])
+                            new_result[group][group_result][aggregate['name']] = aggregate['function'].execute(self.data[group][group_result])
+                self.data = new_result
+            else:
+                new_result = {}
+                for aggregate in self.aggregates:
+                    # Make a backup of the generator
+                    self.data, backup = tee(self.data)
+                    new_result[aggregate['name']] = aggregate['function'].execute(backup)
+                self.data = new_result
 
-                return new_result
-        else:
-            return data
-
-    def process_groups(self, data):
+    def process_groups(self):
         if self.groups:
             result = {}
             for group in self.groups:
-                data, backup = tee(data)
+                self.data, backup = tee(self.data)
                 # Make a backup of the generator
                 result[group] = {}
                 sorted_data = sorted(backup, key=itemgetter(group))
@@ -137,25 +131,23 @@ class Query():
                 for key, group_data in groupby(sorted_data, lambda x: x[group]):
                     result[group][key] = list(group_data)
 
-            return result
-        else:
-            return data
+            self.data = result
 
-    def get_data(self, queryset, query_results):
+    def get_data(self, query_results):
         if self.filters:
             if len(query_results) == 1:
                 # Special case because itemgetter doesn't returns a list but a value
-                return (item.row for item in [itemgetter(*list(query_results))(queryset)])
+                self.data = (item.row for item in [itemgetter(*list(query_results))(self.queryset)])
             elif len(query_results) == 0:
-                return []
+                self.data = []
             else:
-                return (item.row for item in itemgetter(*list(query_results))(queryset)[0:self.limit])
+                self.data = (item.row for item in itemgetter(*list(query_results))(self.queryset)[0:self.limit])
         else:
-            return (item.row for item in queryset[0:self.limit])
+            self.data = (item.row for item in self.queryset[0:self.limit])
 
     def parse_parameters(self, parameters):
+        self.json_path = None
         aggregates = []
-        field_query = None
         filters = []
         groups = []
 
@@ -172,9 +164,9 @@ class Query():
                 # Determine query join type
                     if value.upper() == 'OR':
                         join_type = JOIN_TYPE_OR
-                elif parameter == LQL_DELIMITER + 'fields':
+                elif parameter == LQL_DELIMITER + 'json_path':
                 # Determine fields to return
-                    field_query = value.split(',')
+                    self.json_path = value
                 elif parameter == LQL_DELIMITER + 'group_by':
                     groups = value.split(',')
                 elif parameter.startswith(LQL_DELIMITER + 'aggregate'):
@@ -214,18 +206,10 @@ class Query():
                 except IndexError:
                     raise Http400('Malformed query')
 
-
-
-
-
-
-
         self.filters = filters
-        self.field_query = field_query
         self.join_type = join_type
         self.aggregates = aggregates
         self.groups = groups
-
 
     def get_filter_functions_map(self):
         for post_filter in self.filters:

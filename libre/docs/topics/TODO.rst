@@ -125,3 +125,19 @@ PENDING
   * Dataset human browser
   * Data store browser
   * Regex support for CSV and Fixed width
+  * Add support for item-based and result-based evaluation
+  * Add support for JSON Pointer
+
+    * http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-09
+
+  * Add support for RQL
+
+    * http://www.sitepen.com/blog/2010/11/02/resource-query-language-a-query-language-for-the-web-nosql/
+    * http://rql-engine.eu01.aws.af.cm/
+
+
+  * Add support for JSON Query
+
+    * http://dojotoolkit.org/reference-guide/1.9/dojox/json/query.html
+    * http://www.sitepen.com/blog/2008/07/16/jsonquery-data-querying-beyond-jsonpath/
+
