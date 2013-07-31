@@ -87,7 +87,7 @@ class SourceGetAll(generics.GenericAPIView):
             'args': getattr(self, 'args', ()),
             'kwargs': getattr(self, 'kwargs', {}),
             'request': getattr(self, 'request', None),
-            'extra_context': self.renderer_extra_context
+            'extra_context': getattr(self, 'renderer_extra_context', {})
         }
 
 class SourceGetOne(generics.GenericAPIView):
