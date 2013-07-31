@@ -19,16 +19,16 @@ logger = logging.getLogger(__name__)
 
 
 class Query():
-    json_path = None
-    aggregates = []
-    filters = []
-    groups = []
-    join_type = JOIN_TYPE_AND
-
     def __init__(self, queryset, limit, klass):
         self.queryset = queryset
         self.limit = limit
         self.klass = klass
+        self.json_path = None
+        self.aggregates = []
+        self.filters = []
+        self.groups = []
+        self.join_type = JOIN_TYPE_AND
+        self.filters_function_map = []
 
     def execute(self, parameters):
         if not parameters:
@@ -41,16 +41,18 @@ class Query():
 
         query_results = set()
 
-        for post_filter in self.filters_function_map:
+        logger.debug('self.filters_function_map: %s' % self.filters_function_map)
+
+        for filter_entry in self.filters_function_map:
             filter_results = []
 
-            filter_operation = post_filter['operation']
+            filter_operation = filter_entry['operation']
 
             for row_id, item in enumerate(self.queryset):
                 try:
                     value = item.row
 
-                    for index, part in enumerate(post_filter['field'].split('.')):
+                    for index, part in enumerate(filter_entry['field'].split('.')):
                         if part == '_length':
                             value = geometry.shape(value).length
                         elif part == '_area':
@@ -72,10 +74,10 @@ class Query():
                                         else:
                                             return source.get_all(parameters=parameters)
                                 else:
-                                    raise Http400('Invalid element: %s' % post_filter['field'])
+                                    raise Http400('Invalid element: %s' % filter_entry['field'])
                 except (AttributeError, TypeError):
                     # A dotted attribute is not found
-                    raise Http400('Invalid element: %s' % post_filter['field'])
+                    raise Http400('Invalid element: %s' % filter_entry['field'])
                 else:
                     # Evaluate row values against the established filters
                     if filter_operation.evaluate(value):
@@ -89,12 +91,10 @@ class Query():
             else:
                 query_results = set(filter_results)
 
+        logger.debug('query_results: %s' % query_results)
         self.get_data(query_results)
-
         self.process_groups()
-
         self.process_aggregates()
-
         self.process_json_path()
 
         return self.data
@@ -200,23 +200,27 @@ class Query():
                     # This could be supported eventually, for now it's an error
                     raise Http400('Only one filter per field is supported')
                 else:
-                    self.filters.append({'field': field, 'filter_name': filter_name, 'value': value})
+                    try:
+                        value = parse_value(value)
+                    except IndexError:
+                        raise Http400('Malformed query')
+                    self.filters.append({'field': field, 'filter_name': filter_name, 'filter_value': value})
             else:
                 # Otherwise it is an equal filter
-                self.filters.append({'field': parameter, 'filter_name': 'equals', 'value': value})
-
                 try:
                     value = parse_value(value)
                 except IndexError:
                     raise Http400('Malformed query')
 
-    def get_filter_functions_map(self):
-        for post_filter in self.filters:
-            try:
-                filter_identifier = FILTER_NAMES[post_filter['filter_name']]
-            except KeyError:
-                raise Http400('Unknown filter: %s' % post_filter['filter_name'])
-            else:
-                post_filter['operation'] = FILTER_CLASS_MAP[filter_identifier](post_filter['field'], post_filter['value'])
+                self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': value})
 
-        self.filters_function_map = self.filters
+    def get_filter_functions_map(self):
+        for filter_entry in self.filters:
+            filters_dictionary = {'field': filter_entry['field'], 'filter_name': filter_entry['filter_name'], 'filter_value': filter_entry['filter_value']}
+            try:
+                filter_identifier = FILTER_NAMES[filter_entry['filter_name']]
+            except KeyError:
+                raise Http400('Unknown filter: %s' % filter_entry['filter_name'])
+            else:
+                filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
+                self.filters_function_map.append(filters_dictionary)
