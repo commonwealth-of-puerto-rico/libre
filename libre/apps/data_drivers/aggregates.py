@@ -7,24 +7,22 @@ from .exceptions import Http400
 
 
 class Aggregate(object):
-    def __init__(self, fields):
-        self.fields = fields
+    def __init__(self, argument):
+        self.argument = argument
 
 
 class Count(Aggregate):
     def execute(self, elements):
         result = {}
-        if len(self.fields) == 1 and self.fields[0] == '*':
+        if self.argument == '*':
             return len(list(elements))
         else:
-            for field in self.fields:
-                # Make a backup of the generator
-                elements, backup = tee(elements)
-                try:
-                    result[field] = len(Counter([element[field] for element in backup if element[field]]).values())
-                except KeyError:
-                    raise Http400('Unknown field: %s' % field)
-            return result
+            # Make a backup of the generator
+            elements, backup = tee(elements)
+            try:
+                return len(Counter([element[self.argument] for element in backup if element[self.argument]]).values())
+            except KeyError:
+                raise Http400('Unknown field: %s' % self.argument)
 
 
 class Sum(Aggregate):
