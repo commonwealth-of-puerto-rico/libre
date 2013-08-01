@@ -146,6 +146,7 @@ INSTALLED_APPS = (
     'south',
     'rest_framework',
     'lock_manager',
+    'db_drivers',
     'data_drivers',
     'main',
 )
@@ -191,6 +192,7 @@ SUIT_CONFIG = {
     'ADMIN_NAME': PROJECT_TITLE,
     'MENU_OPEN_FIRST_CHILD': False,
     'MENU': (
+        {'label': _('Database drivers'), 'icon':'icon-cog', 'app': 'db_drivers'},
         {'label': _('Data drivers'), 'icon':'icon-cog', 'app': 'data_drivers'},
         {'label': _('Homepage'), 'icon':'icon-globe', 'url': 'https://github.com/commonwealth-of-puerto-rico/libre/'},
     ),

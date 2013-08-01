@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import csv
 import datetime
 import hashlib
+from itertools import islice
 import logging
 import re
 import string
@@ -22,6 +23,7 @@ import xlrd
 from model_utils.managers import InheritanceManager
 from pyproj import Proj, transform
 
+from db_drivers.models import DatabaseConnection
 from lock_manager import Lock, LockError
 
 from .exceptions import Http400
@@ -29,7 +31,7 @@ from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 from .query import Query
-from .utils import parse_range
+from .utils import UnicodeReader, parse_range
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
@@ -45,6 +47,12 @@ class Source(models.Model):
     published = models.BooleanField(default=False, verbose_name=_('published'))
 
     objects = InheritanceManager()
+
+    def get_column_names(self):
+        if self.columns.count():
+            return self.columns.all().values_list('name', flat=True)
+        else:
+            return string.ascii_uppercase
 
     @staticmethod
     def add_row_id(row, id):
@@ -101,6 +109,7 @@ class SourceWS(Source):
         result = []
         try:
             row_id = 1
+            # TODO: use enumerate
             for data in getattr(client.service, self.endpoint)(**self.get_parameters(parameters)):
                 entry = {'_id': row_id}
                 for field in self.wsresultfield_set.all():
@@ -128,7 +137,7 @@ class WSArgument(models.Model):
         verbose_name_plural = _('arguments')
 
 
-class WSResultField(models.Model):
+class WSResultField (models.Model):
     source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
     name = models.CharField(max_length=32, verbose_name=_('name'))
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
@@ -303,16 +312,8 @@ class SourceTabularBased(models.Model):
 
         return skip_result_map, import_result_map
 
-    def get_column_names(self):
-        if self.columns.count():
-            return self.columns.all().values_list('name', flat=True)
-        else:
-            return string.ascii_uppercase
-
     class Meta:
         abstract = True
-
-from .utils import UnicodeReader
 
 
 class SourceCSV(Source, SourceFileBased, SourceTabularBased):
@@ -714,3 +715,48 @@ class ShapefileColumn(ColumnBase):
     class Meta:
         verbose_name = _('shapefile column')
         verbose_name_plural = _('shapefile columns')
+
+
+class SourceDatabase(Source):
+    source_type = _('Database')
+
+    database_connection = models.ForeignKey(DatabaseConnection, verbose_name=_('database connection'))
+    query = models.TextField(verbose_name=_('query'))
+    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
+
+    def get_one(self, id, timestamp=None, parameters=None):
+        # ID are all base 1
+        if id == 0:
+            raise Http400('Invalid ID; IDs are base 1')
+
+        return self.get_all(timestamp, parameters, get_id=id)
+
+    def get_all(self, timestamp=None, parameters=None, get_id=None):
+        if get_id:
+            return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), get_id-1, get_id)
+        else:
+            return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), 0, self.limit)
+
+    def _get_all(self, timestamp=None, parameters=None, get_id=None):
+        if not parameters:
+            parameters = {}
+
+        cursor = self.database_connection.load_backend().cursor()
+        cursor.execute(self.query, {})
+        column_names = self.get_column_names()
+
+        for row_id, data in enumerate(cursor.fetchall(), 1):
+            yield dict(zip(column_names, data), **{'_id': row_id})
+
+    class Meta:
+        verbose_name = _('database source')
+        verbose_name_plural = _('database sources')
+
+
+class DatabaseResultColumn(ColumnBase):
+    source = models.ForeignKey(SourceDatabase, verbose_name=_('Database source'), related_name='columns')
+    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+
+    class Meta:
+        verbose_name = _('database column')
+        verbose_name_plural = _('database columns')

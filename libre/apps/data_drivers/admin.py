@@ -6,9 +6,17 @@ from django.utils.translation import ugettext_lazy as _
 
 from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput, SuitSplitDateTimeWidget
 
-from .models import (FixedWidthColumn, CSVColumn, FixedWidthColumn, ShapefileColumn, SourceCSV,
+from .models import (CSVColumn, DatabaseResultColumn, SourceDatabase, FixedWidthColumn, ShapefileColumn, SourceCSV,
     SourceDataVersion, SourceFixedWidth, SourceShape, SourceSpreadsheet, SpreadsheetColumn,
     SourceWS, WSArgument, WSResultField)
+
+
+class SourceDatabaseForm(ModelForm):
+    class Meta:
+        widgets = {
+            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
+            'query': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
+        }
 
 
 class SourceSpreadsheetForm(ModelForm):
@@ -62,6 +70,12 @@ class SourceShapeForm(ModelForm):
             'path': EnclosedInput(prepend='icon-folder-open'),
             'url': EnclosedInput(prepend='icon-globe'),
         }
+
+
+class DatabaseResultColumnInline(admin.TabularInline):
+    model = DatabaseResultColumn
+    extra = 1
+    suit_classes = 'suit-tab suit-tab-configuration'
 
 
 class SourceDataVersionInline(admin.TabularInline):
@@ -131,6 +145,21 @@ def clear_versions(modeladmin, request, queryset):
         message_bit = '%s sources versions were deleted.' % len(queryset)
     modeladmin.message_user(request, message_bit)
 clear_versions.short_description = _('Clear all source versions')
+
+
+class SourceDatabaseAdmin(admin.ModelAdmin):
+    suit_form_tabs = (('configuration', _('Configuration')),)
+
+    fieldsets = (
+        (_('Basic information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('name', 'slug', 'description', 'database_connection', 'query', 'limit', 'published')
+        }),
+    )
+    list_display = ('name', 'slug', 'description', 'published')
+    list_editable = ('published',)
+    inlines = [DatabaseResultColumnInline]
+    form = SourceDatabaseForm
 
 
 class SourceSpreadsheetAdmin(admin.ModelAdmin):
@@ -291,6 +320,7 @@ class SourceShapeAdmin(admin.ModelAdmin):
     form = SourceShapeForm
 
 
+admin.site.register(SourceDatabase, SourceDatabaseAdmin)
 admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
 admin.site.register(SourceCSV, SourceCSVAdmin)
 admin.site.register(SourceShape, SourceShapeAdmin)
