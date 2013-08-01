@@ -66,6 +66,14 @@ PENDING
     * Ascending (field name)
     * Descending (-field name)
 
+  * Add range exclusion
+
+    * _xrange, _not_in_range, _nrange
+
+  * Add regex support
+
+    * _match
+
   * Subqueries
   * Aggregation
 
@@ -84,6 +92,8 @@ PENDING
   * Joins between datasets
 
     * _join=<data set name>,<join type>,<current set field>__<foreign set field>,<current set field>__<foreign set field>
+
+  * Add support for annotations
 
 
 * Output
@@ -141,3 +151,9 @@ PENDING
     * http://dojotoolkit.org/reference-guide/1.9/dojox/json/query.html
     * http://www.sitepen.com/blog/2008/07/16/jsonquery-data-querying-beyond-jsonpath/
 
+  * Add support for JSONgrep
+
+    * http://blogs.fluidinfo.com/terry/2010/11/25/jsongrep-py-python-for-extracting-pieces-of-json-objects/
+
+  * Migrate DatabaseSource's get_one and get_all solution to other source classes
+  * Get rid of WSResultField WSArgument and use SourceColumnBase instead
