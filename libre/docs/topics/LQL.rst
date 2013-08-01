@@ -329,7 +329,7 @@ Aggregation
 ~~~~~~~~~~~
 Aggregates asssist with the summarization of data.
 
-Example: ``api/sources/crimes/data/?properties.date__month=2&geometry__intersects=Point(-67,18.3).buffer(0.05)&_aggregate={'total':Count(*)}&_format=json``
+Example: ``api/sources/crimes/data/?properties.date__month=2&geometry__intersects=Point(-67,18.3).buffer(0.05)&_aggregate__total=Count(*)&_format=json``
 
 Return a count of all crimes committed in February and which occurred within the selected geographical area.
 
@@ -338,18 +338,18 @@ Count
 -----
 Return the count of rows or occurences of a value in the specified list, returned as an alias.
 
-``Count(<comma delimited list of fields to count> or <*>)``
+``Count(<field to count> or <*>)``
 
-Example: ``_aggregate={'total':Count(*)}``
+Example: ``_aggregate__total=Count(*)``
 
 
 Sum
 ---
 Return the sum values of the specified fields.
 
-``Sum(<comma delimited list of fields to sum>)``
+``Sum(<field to sum>)``
 
-Example: ``_aggregate={'total':Sum(score)}``
+Example: ``_aggregate__total_score=Sum(score)``
 
 
 Grouping
