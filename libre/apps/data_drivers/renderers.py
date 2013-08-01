@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from itertools import islice
 import logging
 import json
 import types
@@ -76,7 +77,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
 
 class CustomXMLRenderer(renderers.XMLRenderer):
     def _to_xml(self, xml, data):
-        if isinstance(data, (list, tuple, types.GeneratorType)):
+        if isinstance(data, (list, tuple, types.GeneratorType, islice)):
             for item in data:
                 xml.startElement("list-item", {})
                 self._to_xml(xml, item)
