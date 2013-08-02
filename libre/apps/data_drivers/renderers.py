@@ -54,7 +54,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         features = []
 
         try:
-            popup_template = Template(view.get_object().popup_template)
+            popup_template = Template(getattr(view.get_object(), 'popup_template', None))
         except TemplateSyntaxError as exception:
             popup_template = Template(exception)
 
