@@ -8,7 +8,16 @@ LQL is a mixture of SQL, Django's ORM, Python's syntax and geospatial queries co
 
 Values
 ======
-LQL accepts as input, strings, numbers, lists and geometries. Any value enclosed in double quotes will be interpreted as a string, a value or set of values enclosed in the geometry specifier Point is interpreted as a point geometry, otherwise it will be parsed as a number.
+LQL accepts as input:
+
+* numbers - Any value not enclosed in double quotes.
+* strings - Any value enclosed in double quotes.
+* lists - Any value enclosed with brackets.
+* geometries - Any value enclosed in the geometry specifier ``Point(coordinates)``, ``LineStrings(coordinates)``, ``LinearRings(coordinates)``, ``Polygon(exterior[, interiors=None])``, ``MultiPoint(points)``, ``MultiLineString(lines)``, ``MultiPolygon(polygons)`` or ``Geometry(GeoJSON)``.
+* dates - Any value enclosed with the ``Date`` specifier.
+* time - Any value enclosed with the ``Time`` specifier.
+* date & time - Any value enclosed with the ``DateTime`` specifier.
+
 The only exception to this convention are special query directive values, such as those of the **join** directive, which are specified unquoted.
 Geospacial geometries also have special attributes which can be accesed and used for filtering, these are: _length, _area and _type
 
