@@ -273,9 +273,9 @@ class SourceFileBased(models.Model):
         except SourceDataVersion.DoesNotExist:
             return []
 
-        queryset = SourceData.objects.filter(source_data_version=source_data_version)
+        self.queryset = SourceData.objects.filter(source_data_version=source_data_version)
 
-        results = Query(queryset, limit=self.limit, klass=Source).execute(parameters)
+        results = Query(self, Source).execute(parameters)
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
         return results

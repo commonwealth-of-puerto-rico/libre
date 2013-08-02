@@ -19,10 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 class Query():
-    def __init__(self, queryset, limit, klass):
-        self.queryset = queryset
-        self.limit = limit
-        self.klass = klass
+    def __init__(self, source, source_class):
+        self.source = source
+        self.source_class = source_class
         self.json_path = None
         self.aggregates = []
         self.filters = []
@@ -48,7 +47,7 @@ class Query():
 
             filter_operation = filter_entry['operation']
 
-            for row_id, item in enumerate(self.queryset):
+            for row_id, item in enumerate(self.source.queryset):
                 try:
                     value = item.row
 
@@ -65,14 +64,19 @@ class Query():
                             except KeyError:
                                 # Error in the first part of the field name
                                 # Check to see if it is a source slug reference
+                                logger.debug('Unknown key: %s' % part)
                                 if index == 0:
-                                    if part != self.slug:
+                                    logger.debug('index: %s' % index)
+                                    logger.debug('part: %s, self.slug: %s' % (part, self.source.slug))
+                                    if part != self.source.slug:
                                         try:
-                                            source = self.klass.objects.get_subclass(slug=part)
-                                        except self.klass.DoesNotExist:
+                                            new_source = self.source_class.objects.get_subclass(slug=part)
+                                        except self.source_class.DoesNotExist:
+                                            logger.debug('no source named: %s' % part)
                                             raise Http400('Unknown source: %s' % part)
                                         else:
-                                            return source.get_all(parameters=parameters)
+                                            logger.debug('got new source named: %s' % part)
+                                            return new_source.get_all(parameters=parameters)
                                 else:
                                     raise Http400('Invalid element: %s' % filter_entry['field'])
                 except (AttributeError, TypeError):
@@ -148,13 +152,13 @@ class Query():
         if self.filters:
             if len(query_results) == 1:
                 # Special case because itemgetter doesn't returns a list but a value
-                self.data = (item.row for item in [itemgetter(*list(query_results))(self.queryset)])
+                self.data = (item.row for item in [itemgetter(*list(query_results))(self.source.queryset)])
             elif len(query_results) == 0:
                 self.data = []
             else:
-                self.data = (item.row for item in itemgetter(*list(query_results))(self.queryset)[0:self.limit])
+                self.data = (item.row for item in itemgetter(*list(query_results))(self.source.queryset)[0:self.source.limit])
         else:
-            self.data = (item.row for item in self.queryset[0:self.limit])
+            self.data = (item.row for item in self.source.queryset[0:self.source.limit])
 
     def parse_parameters(self, parameters):
         for parameter, value in parameters.items():
