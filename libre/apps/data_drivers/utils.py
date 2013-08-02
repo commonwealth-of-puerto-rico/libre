@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import codecs
 import csv
+from HTMLParser import HTMLParser
 import logging
 
 from dateutil.parser import parse
@@ -74,13 +75,16 @@ class UnicodeReader:
 
 def parse_value(string):
     from .models import Source
+    html_parser = HTMLParser()
+    string = html_parser.unescape(string)
+
     logger.debug('parsing: %s' % string)
     if string[0] == '"' and string[-1] == '"':
         # Strip quotes
         return unicode(string[1:-1])
     elif string.startswith('Point'):
         # Is a point geometry data type
-        x, y = string.replace(' ', '').replace('Point(', '').replace(')', '').split(',')
+        x, y = string.strip().replace('Point(', '').replace(')', '').split(',')
 
         # Check if the Point data type is also specifing a buffer
         buffer_size = None
@@ -93,19 +97,53 @@ def parse_value(string):
             value = value.buffer(float(buffer_size))
 
         return value
+    elif string.startswith('LineStrings'):
+        # Is a point geometry data type
+        points = string.strip().replace('LineStrings(', '').replace(')', '')
+
+        value = geometry.LineStrings(parse_value(points))
+
+        return value
+    elif string.startswith('LinearRings'):
+        # Is a point geometry data type
+        points = string.strip().replace('LinearRings(', '').replace(')', '')
+
+        value = geometry.LinearRings(parse_value(points))
+
+        return value
     elif string.startswith('Polygon'):
         # Is a point geometry data type
-        points = string.replace(' ', '').replace('Polygon(', '').replace(')', '')
-
-        ## Check if the Point data type is also specifing a buffer
-        #buffer_size = None
-        #if '.buffer(' in y:
-        #    y, buffer_size = y.split('.buffer(')
+        points = string.strip().replace('Polygon(', '').replace(')', '')
 
         value = geometry.Polygon(parse_value(points))
 
-        #if buffer_size:
-        #    value = value.buffer(float(buffer_size))
+        return value
+    elif string.startswith('MultiPoint'):
+        # Is a point geometry data type
+        points = string.strip().replace('MultiPoint(', '').replace(')', '')
+
+        value = geometry.MultiPoint(parse_value(points))
+
+        return value
+    elif string.startswith('MultiLineString'):
+        # Is a point geometry data type
+        points = string.strip().replace('MultiLineString(', '').replace(')', '')
+
+        value = geometry.MultiLineString(parse_value(points))
+
+        return value
+    elif string.startswith('MultiPolygon'):
+        # Is a point geometry data type
+        points = string.strip().replace('MultiPolygon(', '').replace(')', '')
+
+        value = geometry.MultiPolygon(parse_value(points))
+
+        return value
+    elif string.startswith('Geometry'):
+        # Is a point geometry data type
+        points = string.strip().replace('Geometry(', '').replace(')', '')
+
+        value = geometry.shape(parse_value(points))
 
         return value
     elif string[0] == '[' and string[-1] == ']':
