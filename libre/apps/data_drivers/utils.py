@@ -73,6 +73,7 @@ class UnicodeReader:
 
 
 def parse_value(string):
+    from .models import Source
     logger.debug('parsing: %s' % string)
     if string[0] == '"' and string[-1] == '"':
         # Strip quotes
@@ -90,6 +91,21 @@ def parse_value(string):
 
         if buffer_size:
             value = value.buffer(float(buffer_size))
+
+        return value
+    elif string.startswith('Polygon'):
+        # Is a point geometry data type
+        points = string.replace(' ', '').replace('Polygon(', '').replace(')', '')
+
+        ## Check if the Point data type is also specifing a buffer
+        #buffer_size = None
+        #if '.buffer(' in y:
+        #    y, buffer_size = y.split('.buffer(')
+
+        value = geometry.Polygon(parse_value(points))
+
+        #if buffer_size:
+        #    value = value.buffer(float(buffer_size))
 
         return value
     elif string[0] == '[' and string[-1] == ']':
@@ -116,8 +132,27 @@ def parse_value(string):
         date_string = string.replace('Time(', '').replace(')', '')
         return parse(date_string).time()
     else:
-        logger.debug('Is a number')
+        # Check for reference
+        parts = string.split('.')
+        source_slug = parts[0]
+
         try:
-            return convert_to_number(string)
-        except ValueError:
-            raise Http400('Invalid value')
+            new_source = Source.objects.get_subclass(slug=source_slug)
+        except Source.DoesNotExist:
+            logger.debug('no source named: %s' % source_slug)
+            raise Http400('Unknown source: %s' % source_slug)
+            logger.debug('Is a number')
+            try:
+                return convert_to_number(string)
+            except ValueError:
+                raise Http400('Invalid value')
+        else:
+            logger.debug('got new source named: %s' % source_slug)
+            # Rebuild the parameters for this enclosed value
+            new_string = u'.'.join(parts[1:])
+            parameters = {}
+            for part in new_string.split('&'):
+                key, value = part.split('=')
+                parameters[key] = value
+
+            return new_source.get_all(parameters=parameters)

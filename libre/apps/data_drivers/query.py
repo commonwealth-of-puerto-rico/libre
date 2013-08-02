@@ -59,26 +59,7 @@ class Query():
                         elif part == '_type':
                             value = geometry.shape(value).geom_type
                         else:
-                            try:
-                                value = value[part]
-                            except KeyError:
-                                # Error in the first part of the field name
-                                # Check to see if it is a source slug reference
-                                logger.debug('Unknown key: %s' % part)
-                                if index == 0:
-                                    logger.debug('index: %s' % index)
-                                    logger.debug('part: %s, self.slug: %s' % (part, self.source.slug))
-                                    if part != self.source.slug:
-                                        try:
-                                            new_source = self.source_class.objects.get_subclass(slug=part)
-                                        except self.source_class.DoesNotExist:
-                                            logger.debug('no source named: %s' % part)
-                                            raise Http400('Unknown source: %s' % part)
-                                        else:
-                                            logger.debug('got new source named: %s' % part)
-                                            return new_source.get_all(parameters=parameters)
-                                else:
-                                    raise Http400('Invalid element: %s' % filter_entry['field'])
+                            value = value[part]
                 except (AttributeError, TypeError):
                     # A dotted attribute is not found
                     raise Http400('Invalid element: %s' % filter_entry['field'])
@@ -206,17 +187,18 @@ class Query():
                 else:
                     try:
                         value = parse_value(value)
-                    except IndexError:
-                        raise Http400('Malformed query')
-                    self.filters.append({'field': field, 'filter_name': filter_name, 'filter_value': value})
+                    except Exception as exception:
+                        raise Http400('Malformed query: %s' % exception)
+                    else:
+                        self.filters.append({'field': field, 'filter_name': filter_name, 'filter_value': value})
             else:
-                # Otherwise it is an equal filter
+                # Otherwise it is an 'equality (=)' filter
                 try:
                     value = parse_value(value)
-                except IndexError:
-                    raise Http400('Malformed query')
-
-                self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': value})
+                except Exception as exception:
+                    raise Http400('Malformed query; %s' % exception)
+                else:
+                    self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': value})
 
     def get_filter_functions_map(self):
         for filter_entry in self.filters:
