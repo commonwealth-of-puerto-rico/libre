@@ -5,6 +5,8 @@ import logging
 from operator import itemgetter
 import types
 
+from django.conf import settings
+
 from shapely import geometry
 import jsonpath_rw
 
@@ -19,9 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class Query():
-    def __init__(self, source, source_class):
+    def __init__(self, source):
         self.source = source
-        self.source_class = source_class
         self.json_path = None
         self.aggregates = []
         self.filters = []
@@ -90,11 +91,16 @@ class Query():
                 expression = jsonpath_rw.parse(self.json_path)
 
                 if isinstance(self.data, (types.GeneratorType)):
-                    self.data = [match.value for match in expression.find(list(self.data))]
+                    results = [match.value for match in expression.find(list(self.data))]
                 else:
-                    self.data = [match.value for match in expression.find(self.data)]
+                    results = [match.value for match in expression.find(self.data)]
             except Exception as exception:
                 raise Http400('JSON query error; %s' % exception)
+            else:
+                if len(results) > 1:
+                    self.data = results
+                else:
+                    self.data = results[0]
 
     def process_aggregates(self):
         if self.aggregates:
@@ -188,7 +194,10 @@ class Query():
                     try:
                         value = parse_value(value)
                     except Exception as exception:
-                        raise Http400('Malformed query: %s' % exception)
+                        if getattr(settings, 'DEBUG', False):
+                            raise
+                        else:
+                            raise Http400('Malformed query: %s' % exception)
                     else:
                         self.filters.append({'field': field, 'filter_name': filter_name, 'filter_value': value})
             else:
@@ -196,7 +205,10 @@ class Query():
                 try:
                     value = parse_value(value)
                 except Exception as exception:
-                    raise Http400('Malformed query; %s' % exception)
+                    if getattr(settings, 'DEBUG', False):
+                        raise
+                    else:
+                        raise Http400('Malformed query: %s' % exception)
                 else:
                     self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': value})
 
