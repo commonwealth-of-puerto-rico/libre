@@ -24,7 +24,6 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         return new_feature
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        from ast import literal_eval
         """
         Renders data to HTML, using Django's standard template rendering.
 
@@ -38,10 +37,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         view = renderer_context['view']
         request = renderer_context['request']
         response = renderer_context['response']
-        if renderer_context.get('extra_context'):
-            extra_context = literal_eval(renderer_context['extra_context'])
-        else:
-            extra_context = None
+        extra_context = renderer_context['extra_context']
 
         if response.exception:
             template = self.get_exception_template(response)

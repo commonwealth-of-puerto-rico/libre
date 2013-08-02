@@ -322,7 +322,7 @@ Values for the map_leaflet renderer:
 * longitude
 * latitude
 
-Example: ``_renderer={'zoom_level':13,'longitude':-66.116079,'latitude':18.464386}``
+Example: ``_renderer__zoom_level=13&_renderer__longitude=-66.116079&_renderer__latitude=18.464386``
 
 
 Aggregation

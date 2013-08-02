@@ -16,7 +16,7 @@ from rest_framework.decorators import api_view
 
 import main
 
-from .literals import RENDERER_MAPPING
+from .literals import DOUBLE_DELIMITER, LQL_DELIMITER, RENDERER_MAPPING
 from .models import Source, SourceDataVersion
 from .serializers import SourceDataVersionSerializer, SourceSerializer
 
@@ -72,7 +72,17 @@ class SourceGetAll(generics.GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         source = self.get_object()
-        self.renderer_extra_context = request.GET.get('_renderer')
+
+        result = {}
+        for key, value in request.GET.items():
+            if key.startswith(LQL_DELIMITER + 'renderer'):
+                try:
+                    result[key.split(DOUBLE_DELIMITER)[1]] = value
+                except IndexError:
+                    # Badly encoded renderer values, ignore the exception
+                    pass
+
+        self.renderer_extra_context = result#request.GET.get(LQL_DELIMITER + 'renderer')
         return Response(source.get_all(parameters=request.GET))
 
     def get_renderer_context(self):
