@@ -275,7 +275,7 @@ class SourceFileBased(models.Model):
 
         self.queryset = SourceData.objects.filter(source_data_version=source_data_version)
 
-        results = Query(self, Source).execute(parameters)
+        results = Query(self).execute(parameters)
         logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
         return results
