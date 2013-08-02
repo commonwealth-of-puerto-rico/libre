@@ -118,6 +118,7 @@ PENDING
 
   * Improve output logging - INPROGRES
   * Empty but valid queries should return HTTP404 or HTTP200 with '{"status": "Not found"}'
+  * Empty but valid queries should return HTTP400 or HTTP200 with '{"status": "Query Error"}'
   * Show required argument for WS
   * Interpret WS arguments
   * Result count
@@ -137,6 +138,8 @@ PENDING
   * Regex support for CSV and Fixed width
   * Add support for item-based and result-based evaluation
   * Add support for JSON Pointer
+  * Add support for displaying map titles
+  * Add support for dynamic icons for the map renderer
 
     * http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-09
 
@@ -157,3 +160,5 @@ PENDING
 
   * Migrate DatabaseSource's get_one and get_all solution to other source classes
   * Get rid of WSResultField WSArgument and use SourceColumnBase instead
+  * Add suppor for parentheses (accounting style) encoded negative numbers
+  * When comparing with point geomertries, optionally display the reference geometry
