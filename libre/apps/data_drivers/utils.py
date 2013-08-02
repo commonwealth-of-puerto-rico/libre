@@ -178,12 +178,11 @@ def parse_value(string):
             new_source = Source.objects.get_subclass(slug=source_slug)
         except Source.DoesNotExist:
             logger.debug('no source named: %s' % source_slug)
-            raise Http400('Unknown source: %s' % source_slug)
             logger.debug('Is a number')
             try:
                 return convert_to_number(string)
             except ValueError:
-                raise Http400('Invalid value')
+                raise Http400('Invalid value or unknown source: %s' % string)
         else:
             logger.debug('got new source named: %s' % source_slug)
             # Rebuild the parameters for this enclosed value
