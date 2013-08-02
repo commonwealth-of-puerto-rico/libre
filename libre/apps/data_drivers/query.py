@@ -97,10 +97,10 @@ class Query():
             except Exception as exception:
                 raise Http400('JSON query error; %s' % exception)
             else:
-                if len(results) > 1:
-                    self.data = results
-                else:
+                if len(results) == 1:
                     self.data = results[0]
+                else:
+                    self.data = results
 
     def process_aggregates(self):
         if self.aggregates:
