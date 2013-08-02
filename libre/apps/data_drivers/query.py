@@ -61,7 +61,7 @@ class Query():
                             value = geometry.shape(value).geom_type
                         else:
                             value = value[part]
-                except (AttributeError, TypeError):
+                except (AttributeError, TypeError, KeyError):
                     # A dotted attribute is not found
                     raise Http400('Invalid element: %s' % filter_entry['field'])
                 else:
