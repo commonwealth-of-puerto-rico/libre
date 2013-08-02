@@ -77,7 +77,7 @@ class Query():
             else:
                 query_results = set(filter_results)
 
-        logger.debug('query_results: %s' % query_results)
+        #logger.debug('query_results: %s' % query_results)
         self.get_data(query_results)
         self.process_groups()
         self.process_aggregates()
