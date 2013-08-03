@@ -162,3 +162,5 @@ PENDING
   * Get rid of WSResultField WSArgument and use SourceColumnBase instead
   * Add suppor for parentheses (accounting style) encoded negative numbers
   * When comparing with point geomertries, optionally display the reference geometry
+  * Add note about escaping ampersant in subqueries
+  * Icon preview in admin
