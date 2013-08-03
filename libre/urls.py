@@ -13,6 +13,7 @@ urlpatterns = patterns('',
 
     url(r'^', include('main.urls')),
     url(r'^api/', include('data_drivers.urls')),
+    url(r'^icons/', include('icons.urls')),
 )
 
 if settings.DEVELOPMENT:

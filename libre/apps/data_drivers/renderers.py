@@ -11,6 +11,8 @@ from django.utils.xmlutils import SimplerXMLGenerator
 from rest_framework import renderers
 from rest_framework.compat import StringIO, smart_text, six
 
+from icons.models import Icon
+
 
 class LeafletRenderer(renderers.TemplateHTMLRenderer):
     template_name = 'leaflet.html'
@@ -20,7 +22,14 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         new_feature = {'type': 'Feature'}
         new_feature.update(feature)
         new_feature['properties'] = {}
-        new_feature['properties']['popup'] = template.render(Context(feature))
+        new_feature['properties']['popup'] = template.render(
+            Context(
+                {
+                    'source': feature,
+                    'icons': dict([(icon.name, icon) for icon in Icon.objects.all()]),
+                }
+            )
+        )
         return new_feature
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
