@@ -76,6 +76,8 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         new_data['features'] = features
 
         context.update({'data': json.dumps(new_data)})
+        if 'geometry' in extra_context:
+            extra_context['geometry'] = json.dumps(extra_context['geometry'].__geo_interface__)
         context.update({'template_extra_context': extra_context})
         return template.render(context)
 

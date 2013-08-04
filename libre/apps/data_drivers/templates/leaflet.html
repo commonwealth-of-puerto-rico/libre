@@ -46,6 +46,26 @@
                 }
             }).addTo(map);
 
+            {% if template_extra_context.geometry %}
+                var feature = {
+                    'type': 'Feature',
+                    'geometry': {{ template_extra_context.geometry|safe }},
+                    'properties': {
+                        'style': {
+                            'color': '#004070',
+                            'weight': 4,
+                            'opacity': 1
+                        }
+                    }
+                }
+
+                var fenceLayer = L.geoJson(feature, {
+                     style: function (feature) {
+                         return feature.properties.style;
+                     },
+                 }).addTo(map);
+            {% endif %}
+
         </script>
     </body>
 </html>
