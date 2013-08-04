@@ -16,9 +16,11 @@ from rest_framework.decorators import api_view
 
 import main
 
+from .exceptions import Http400
 from .literals import DOUBLE_DELIMITER, LQL_DELIMITER, RENDERER_MAPPING
 from .models import Source, SourceDataVersion
 from .serializers import SourceDataVersionSerializer, SourceSerializer
+from .utils import parse_value
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +62,7 @@ class SourceDataVersionDetail(generics.RetrieveAPIView):
     serializer_class = SourceDataVersionSerializer
 
 
-class SourceGetAll(generics.GenericAPIView):
+class LIBREView(generics.GenericAPIView):
     queryset = Source.objects.filter(published=True).select_subclasses()
 
     def get_renderers(self):
@@ -70,64 +72,52 @@ class SourceGetAll(generics.GenericAPIView):
         source = self.get_object()
         return [RENDERER_MAPPING[i]() for i in source.__class__.renderers]
 
-    def get(self, request, *args, **kwargs):
-        source = self.get_object()
+    def get_renderer_context(self):
+        """
+        Returns a dict that is passed through to Renderer.render(),
+        as the `renderer_context` keyword argument.
+        """
+        # Note: Additionally 'response' will also be added to the context,
+        #       by the Response object.
+        return {
+            'view': self,
+            'args': getattr(self, 'args', ()),
+            'kwargs': getattr(self, 'kwargs', {}),
+            'request': getattr(self, 'request', None),
+            'extra_context': getattr(self, 'renderer_extra_context', {})
+        }
 
+    def get_renderer_extra_variables(self, request):
         result = {}
         for key, value in request.GET.items():
             if key.startswith(LQL_DELIMITER + 'renderer'):
                 try:
-                    result[key.split(DOUBLE_DELIMITER)[1]] = value
+                    renderer_variables = key.split(DOUBLE_DELIMITER)[1]
                 except IndexError:
                     # Badly encoded renderer values, ignore the exception
                     pass
+                else:
+                    try:
+                        result[renderer_variables] = parse_value(value)
+                    except Exception as exception:
+                        raise Http400('Invalid renderer value; %s' % exception)
 
-        self.renderer_extra_context = result#request.GET.get(LQL_DELIMITER + 'renderer')
-        return Response(source.get_all(parameters=request.GET))
+        self.renderer_extra_context = result
 
-    def get_renderer_context(self):
-        """
-        Returns a dict that is passed through to Renderer.render(),
-        as the `renderer_context` keyword argument.
-        """
-        # Note: Additionally 'response' will also be added to the context,
-        #       by the Response object.
-        return {
-            'view': self,
-            'args': getattr(self, 'args', ()),
-            'kwargs': getattr(self, 'kwargs', {}),
-            'request': getattr(self, 'request', None),
-            'extra_context': getattr(self, 'renderer_extra_context', {})
-        }
 
-class SourceGetOne(generics.GenericAPIView):
-    queryset = Source.objects.filter(published=True).select_subclasses()
-
-    def get_renderers(self):
-        """
-        Instantiates and returns the list of renderers that this view can use.
-        """
-        source = self.get_object()
-        return [RENDERER_MAPPING[i]() for i in source.__class__.renderers]
-
+class SourceGetAll(LIBREView):
     def get(self, request, *args, **kwargs):
         source = self.get_object()
+        self.get_renderer_extra_variables(request)
+        return Response(source.get_all(parameters=request.GET))
+
+
+class SourceGetOne(LIBREView):
+    def get(self, request, *args, **kwargs):
+        source = self.get_object()
+        self.get_renderer_extra_variables(request)
         return Response(source.get_one(int(kwargs['id']), parameters=request.GET))
 
-    def get_renderer_context(self):
-        """
-        Returns a dict that is passed through to Renderer.render(),
-        as the `renderer_context` keyword argument.
-        """
-        # Note: Additionally 'response' will also be added to the context,
-        #       by the Response object.
-        return {
-            'view': self,
-            'args': getattr(self, 'args', ()),
-            'kwargs': getattr(self, 'kwargs', {}),
-            'request': getattr(self, 'request', None),
-            'extra_context': getattr(self, 'renderer_extra_context', {})
-        }
 
 class LibreMetadataList(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
