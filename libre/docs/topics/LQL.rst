@@ -330,6 +330,7 @@ Values for the map_leaflet renderer:
 * zoom_level
 * longitude
 * latitude
+* geometry
 
 Example: ``_renderer__zoom_level=13&_renderer__longitude=-66.116079&_renderer__latitude=18.464386``
 
