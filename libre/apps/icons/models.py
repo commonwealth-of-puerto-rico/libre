@@ -11,6 +11,7 @@ import PIL
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+from django.core.urlresolvers import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -25,22 +26,27 @@ class Icon(models.Model):
     def __unicode__(self):
         return self.label or self.name
 
-    def display(self): # TODO: move to widgets?
+    def compose(self, base64=False):
         try:
-            result = self.__class__._cache[self.name]
+            self.__class__._cache.setdefault(self.pk, {})
+            return self.__class__._cache[self.pk][base64]
         except KeyError:
-            result = self._compose(self)
-            self.__class__._cache[self.name] = result
+            image = PIL.Image.open(self.icon_file.file)
+            output = StringIO()
+            image.save(output, 'PNG')
+            contents = output.getvalue()
+            output.close()
+            if base64:
+                contents = 'data:image/png;base64,%s' % contents.encode('base64')
+            self.__class__._cache.setdefault(self.pk, {})
+            self.__class__._cache[self.pk][base64] = contents
+            return contents
 
-        return mark_safe('<img style="vertical-align: middle;" src="%s" />' % result)
+    def compose_base64(self):
+        return self.compose(base64=True)
 
-    def _compose(self, icon):
-        image = PIL.Image.open(self.icon_file.file)
-        output = StringIO()
-        image.save(output, 'PNG')
-        contents = output.getvalue().encode('base64')
-        output.close()
-        return 'data:image/png;base64,%s' % contents
+    def get_absolute_url(self):
+        return reverse('display', args=[self.name])
 
     class Meta:
         verbose_name = _(u'icon')
