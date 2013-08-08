@@ -614,12 +614,13 @@ class SourceShape(Source, SourceFileBased):
             functions_map = self.get_functions_map()
 
             for row_id, feature in enumerate(source, 1):
-                feature['properties'] = Source.add_row_id(self.apply_datatypes(feature.get('properties', {}), functions_map), row_id)
+                if feature['geometry']:
+                    feature['properties'] = Source.add_row_id(self.apply_datatypes(feature.get('properties', {}), functions_map), row_id)
 
-                if new_projection:
-                    feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
+                    if new_projection:
+                        feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
 
-                SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=feature)
+                    SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=feature)
 
         source_data_version.ready = True
         source_data_version.active = True
