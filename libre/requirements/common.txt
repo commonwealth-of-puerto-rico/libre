@@ -14,3 +14,4 @@ python-dateutil==2.1
 Shapely==1.2.17
 jsonpath-rw==1.2.0
 Pillow==2.1.0
+pyparsing==2.0.1

@@ -6,11 +6,21 @@ from HTMLParser import HTMLParser
 import logging
 
 from dateutil.parser import parse
+import pyparsing
 from shapely import geometry
 
 from .exceptions import Http400
 
 logger = logging.getLogger(__name__)
+
+
+enclosed_parser = pyparsing.Forward()
+nestedBrackets = pyparsing.nestedExpr('[', ']', content=enclosed_parser)
+enclosed_parser << (pyparsing.Word(pyparsing.alphanums + '-' + '.' + '(' + ')') | ',' | nestedBrackets)
+
+
+def parse_enclosed(string):
+    return enclosed_parser.parseString(string).asList()
 
 
 # http://stackoverflow.com/questions/4248399/page-range-for-printing-algorithm
@@ -94,7 +104,7 @@ def parse_value(string):
         value = geometry.Point(float(x), float(y))
 
         if buffer_size:
-            value = value.buffer(float(buffer_size))
+            value = value.buffer(float(buffer_size[:-1]))
 
         return value
     elif string.startswith('LineStrings'):
@@ -143,17 +153,33 @@ def parse_value(string):
         # Is a point geometry data type
         points = string.strip().replace('Geometry(', '').replace(')', '')
 
+        # Check if the geometry data type is also specifing a buffer
+        buffer_size = None
+        if '.buffer(' in points:
+            points, buffer_size = points.split('.buffer(')
+
         value = geometry.shape(parse_value(points))
+
+        if buffer_size:
+            value = value.buffer(float(buffer_size[:-1]))
 
         return value
     elif string[0] == '[' and string[-1] == ']':
         # Is a list of values
         logger.debug('Is a list')
+
         result = []
-        strings = string.replace('[', '').replace(']', '').split(',')
-        for string in strings:
-            result.append(parse_value(string))
-        return result
+
+        for string in parse_enclosed(string)[0]:
+            if string != ',':  # Single comma, don't process
+                if ',' in string:
+                    # is a nested list, recompose
+                    result.append(parse_value('[%s]' % (''.join(string))))
+                else:
+                    # is a single element, parse as is
+                    result.append(parse_value(string))
+
+        return list(result)
     elif string.startswith('DateTime'):
         # Is a datetime
         logger.debug('Is a datetime')
