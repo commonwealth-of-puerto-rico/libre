@@ -130,7 +130,7 @@ PENDING
   * Fix JsonField not returning dates or times only datetimes
   * Return a {'status': } dictionary with error message
   * Fix XML renderer
-  * Move _renderer and _fields parsing to allow being parsed on get_one method
+  * Move _fields parsing to allow being parsed on get_one method
   * Optimize AND type join
   * Use islice
   * Dataset human browser
@@ -164,3 +164,4 @@ PENDING
   * When comparing with point geomertries, optionally display the reference geometry
   * Add note about escaping ampersant in subqueries
   * Icon preview in admin
+  * Move and zoom map to covert geometries extents
