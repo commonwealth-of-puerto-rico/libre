@@ -43,12 +43,12 @@ def api_root(request, format=None):
 
 
 class SourceList(generics.ListAPIView):
-    queryset = Source.objects.filter(published=True)
+    queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
 
 
 class SourceDetail(generics.RetrieveAPIView):
-    queryset = Source.objects.filter(published=True)
+    queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
 
 
@@ -100,6 +100,7 @@ class LIBREView(generics.GenericAPIView):
                     try:
                         result[renderer_variables] = parse_value(value)
                     except Exception as exception:
+                        raise
                         raise Http400('Invalid renderer value; %s' % exception)
 
         self.renderer_extra_context = result
