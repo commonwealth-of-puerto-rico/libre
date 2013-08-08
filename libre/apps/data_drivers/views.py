@@ -17,7 +17,7 @@ from rest_framework.decorators import api_view
 import main
 
 from .exceptions import Http400
-from .literals import DOUBLE_DELIMITER, LQL_DELIMITER, RENDERER_MAPPING
+from .literals import DOUBLE_DELIMITER, LQL_DELIMITER, RENDERER_MAPPING, RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML
 from .models import Source, SourceDataVersion
 from .serializers import SourceDataVersionSerializer, SourceSerializer
 from .utils import parse_value
@@ -42,22 +42,42 @@ def api_root(request, format=None):
     })
 
 
-class SourceList(generics.ListAPIView):
+class CustomListAPIView(generics.ListAPIView):
+    def get_renderers(self):
+        """
+        Instantiates and returns the list of renderers that this view can use.
+        """
+        return [RENDERER_MAPPING[i]() for i in self.__class__.renderers]
+
+
+class SourceList(CustomListAPIView):
+    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML)
     queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
 
 
-class SourceDetail(generics.RetrieveAPIView):
+class CustomRetrieveAPIView(generics.RetrieveAPIView):
+    def get_renderers(self):
+        """
+        Instantiates and returns the list of renderers that this view can use.
+        """
+        return [RENDERER_MAPPING[i]() for i in self.__class__.renderers]
+
+
+class SourceDetail(CustomRetrieveAPIView):
+    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML)
     queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
 
 
-class SourceDataVersionList(generics.ListAPIView):
+class SourceDataVersionList(CustomListAPIView):
+    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML)
     queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
 
 
-class SourceDataVersionDetail(generics.RetrieveAPIView):
+class SourceDataVersionDetail(CustomRetrieveAPIView):
+    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML)
     queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
 
