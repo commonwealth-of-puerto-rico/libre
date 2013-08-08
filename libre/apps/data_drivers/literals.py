@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import renderers
 from dateutil.parser import parse
 
-from .renderers import LeafletRenderer, CustomXMLRenderer
+from .renderers import CustomXMLRenderer, LeafletRenderer
 from .utils import convert_to_number
 
 # Row based
