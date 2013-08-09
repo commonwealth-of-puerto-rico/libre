@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import datetime
 import logging
 import json
 
@@ -128,9 +129,14 @@ class LIBREView(generics.GenericAPIView):
 
 class SourceGetAll(LIBREView):
     def get(self, request, *args, **kwargs):
+        initial_datetime = datetime.datetime.now()
+
         source = self.get_object()
         self.get_renderer_extra_variables(request)
-        return Response(source.get_all(parameters=request.GET))
+        result = source.get_all(parameters=request.GET)
+        logger.debug('Total view elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
+
+        return Response(result)
 
 
 class SourceGetOne(LIBREView):
