@@ -164,4 +164,3 @@ PENDING
   * When comparing with point geomertries, optionally display the reference geometry
   * Add note about escaping ampersant in subqueries
   * Icon preview in admin
-  * Move and zoom map to covert geometries extents
