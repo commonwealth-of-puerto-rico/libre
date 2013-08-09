@@ -63,6 +63,7 @@ PENDING
   * Sorting
 
     * _order=<field name>,<field name>
+    * sort(+field_name,-field_name)
     * Ascending (field name)
     * Descending (-field name)
 
@@ -88,13 +89,29 @@ PENDING
   * Skipping results
 
     * _skip=<number of elements>
-
+    * _first
+    * _last
+    * _one
+    
+      * Return error if more than one
+    
+  * Combined
+  
+    * _limit=(count, start, maxCount)
+    
   * Joins between datasets
 
     * _join=<data set name>,<join type>,<current set field>__<foreign set field>,<current set field>__<foreign set field>
+    * _relation=(field, subquery)
 
   * Add support for annotations
+  * Field selection
+    
+    * _select=(field_name, field_name)
 
+  * _distinct
+  * Not in = out
+  * _excludes
 
 * Output
 
@@ -164,3 +181,4 @@ PENDING
   * When comparing with point geomertries, optionally display the reference geometry
   * Add note about escaping ampersant in subqueries
   * Icon preview in admin
+  * Favicon
