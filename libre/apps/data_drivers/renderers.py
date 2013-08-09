@@ -10,6 +10,7 @@ from django.utils.xmlutils import SimplerXMLGenerator
 
 from rest_framework import renderers
 from rest_framework.compat import StringIO, smart_text, six
+from shapely import geometry
 
 from icons.models import Icon
 
@@ -26,6 +27,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
             Context(
                 {
                     'source': feature,
+                    # TODO: pre-calculate icons outside this context
                     'icons': dict([(icon.name, icon) for icon in Icon.objects.all()]),
                 }
             )
@@ -74,12 +76,29 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
                 features.append(self._process_feature(feature, popup_template))
 
         new_data['features'] = features
+        if 'latitude' and 'longitude' not in extra_context:
+            extra_context['extents'] = self.determine_extents(features)
 
         context.update({'data': json.dumps(new_data)})
         if 'geometry' in extra_context:
             extra_context['geometry'] = json.dumps(extra_context['geometry'].__geo_interface__)
         context.update({'template_extra_context': extra_context})
         return template.render(context)
+
+    def determine_extents(self, features):
+        bounds_generator = (geometry.shape(feature['geometry']).bounds for feature in features)
+        iterator = iter(bounds_generator)
+        
+        first_feature_bounds = iterator.next()
+        
+        min_x, min_y, max_x, max_y = first_feature_bounds
+        for bounds in bounds_generator:
+            min_x = min(min_x, bounds[0])
+            min_y = min(min_y, bounds[1])
+            max_x = max(max_x, bounds[2])
+            max_y = max(max_y, bounds[3])
+        
+        return min_x, min_y, max_x, max_y
 
 
 class CustomXMLRenderer(renderers.XMLRenderer):

@@ -27,11 +27,8 @@
         <script>
             // create a map in the "map" div, set the view to a given place and zoom
             var map = L.map('map')
-            {% if template_extra_context.latitude and template_extra_context.longitude %}
-                map.setView([{{ template_extra_context.latitude|default:18.30 }}, {{ template_extra_context.longitude|default:-66.60 }}], {{ template_extra_context.zoom_level|default:10 }});
-            {% else %}
-                map.locate({setView: true, maxZoom: {{ template_extra_context.zoom_level|default:10 }}});
-            {% endif %}
+
+
 
             // add an OpenStreetMap tile layer
             L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
@@ -65,6 +62,22 @@
                      },
                  }).addTo(map);
             {% endif %}
+
+            {% if template_extra_context.latitude and template_extra_context.longitude %}
+                map.setView([{{ template_extra_context.latitude|default:18.30 }}, {{ template_extra_context.longitude|default:-66.60 }}], {{ template_extra_context.zoom_level|default:10 }});
+            {% elif template_extra_context.extents %}
+                map.fitBounds([
+                    [{{ template_extra_context.extents.1 }}, {{ template_extra_context.extents.0 }}],
+                    [{{ template_extra_context.extents.3 }}, {{ template_extra_context.extents.2 }}]
+                ],
+                    {              
+                        padding: [7, 7]
+                    }
+                );
+            {% else %}
+                map.locate({setView: true, maxZoom: {{ template_extra_context.zoom_level|default:10 }}});
+            {% endif %}
+
 
         </script>
     </body>
