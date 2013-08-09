@@ -102,6 +102,34 @@ class Query():
                 else:
                     self.data = results
 
+    def get_data(self, query_results):
+        if self.filters:
+            if len(query_results) == 1:
+                # Special case because itemgetter doesn't returns a list but a value
+                self.data = (item.row for item in [itemgetter(*list(query_results))(self.source.queryset)])
+            elif len(query_results) == 0:
+                self.data = []
+            else:
+                self.data = (item.row for item in itemgetter(*list(query_results))(self.source.queryset)[0:self.source.limit])
+        else:
+            self.data = (item.row for item in self.source.queryset[0:self.source.limit])
+
+    def process_groups(self):
+        if self.groups:
+            result = {'groups': []}
+            for group in self.groups:
+                grouping_dictionary = {}
+                self.data, backup = tee(self.data)
+                # Make a backup of the generator
+                sorted_data = sorted(backup, key=itemgetter(group))
+                group_dictionary = {'name': group, 'values': []}
+
+                for key, group_data in groupby(sorted_data, lambda x: x[group]):
+                    group_dictionary['values'].append({'value': key, 'elements': list(group_data)})
+
+                result['groups'].append(group_dictionary)
+            self.data = result
+
     def process_aggregates(self):
         if self.aggregates:
             if self.groups:
@@ -120,33 +148,7 @@ class Query():
                     self.data, backup = tee(self.data)
                     new_result[aggregate['name']] = aggregate['function'].execute(backup)
                 self.data = new_result
-
-    def process_groups(self):
-        if self.groups:
-            result = {}
-            for group in self.groups:
-                self.data, backup = tee(self.data)
-                # Make a backup of the generator
-                result[group] = {}
-                sorted_data = sorted(backup, key=itemgetter(group))
-
-                for key, group_data in groupby(sorted_data, lambda x: x[group]):
-                    result[group][key] = list(group_data)
-
-            self.data = result
-
-    def get_data(self, query_results):
-        if self.filters:
-            if len(query_results) == 1:
-                # Special case because itemgetter doesn't returns a list but a value
-                self.data = (item.row for item in [itemgetter(*list(query_results))(self.source.queryset)])
-            elif len(query_results) == 0:
-                self.data = []
-            else:
-                self.data = (item.row for item in itemgetter(*list(query_results))(self.source.queryset)[0:self.source.limit])
-        else:
-            self.data = (item.row for item in self.source.queryset[0:self.source.limit])
-
+                
     def parse_parameters(self, parameters):
         for parameter, value in parameters.items():
             logger.debug('parameter: %s' % parameter)
