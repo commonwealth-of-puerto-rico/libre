@@ -116,7 +116,7 @@ class Query():
 
     def process_groups(self):
         if self.groups:
-            result = {'groups': []}
+            result = []
             for group in self.groups:
                 grouping_dictionary = {}
                 self.data, backup = tee(self.data)
@@ -127,27 +127,26 @@ class Query():
                 for key, group_data in groupby(sorted_data, lambda x: x[group]):
                     group_dictionary['values'].append({'value': key, 'elements': list(group_data)})
 
-                result['groups'].append(group_dictionary)
+                result.append(group_dictionary)
             self.data = result
 
     def process_aggregates(self):
         if self.aggregates:
             if self.groups:
-                new_result = {}
-                for group in self.groups:
-                    new_result.setdefault(group, {})
-                    for group_result in self.data[group]:
+                result = []
+                for group in self.data:
+                    for group_value in group['values']:
+                        group_value['aggregates'] = []
+                        group_value_aggregates = []
                         for aggregate in self.aggregates:
-                            new_result[group].setdefault(group_result, {})
-                            new_result[group][group_result][aggregate['name']] = aggregate['function'].execute(self.data[group][group_result])
-                self.data = new_result
+                            group_value['aggregates'].append({aggregate['name']: aggregate['function'].execute(group_value['elements'])})
             else:
-                new_result = {}
+                result = {}
                 for aggregate in self.aggregates:
                     # Make a backup of the generator
                     self.data, backup = tee(self.data)
-                    new_result[aggregate['name']] = aggregate['function'].execute(backup)
-                self.data = new_result
+                    result[aggregate['name']] = aggregate['function'].execute(backup)
+                self.data = result
                 
     def parse_parameters(self, parameters):
         for parameter, value in parameters.items():
