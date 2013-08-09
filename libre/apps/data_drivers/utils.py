@@ -9,14 +9,23 @@ from dateutil.parser import parse
 import pyparsing
 from shapely import geometry
 
+from .literals import (DATA_TYPE_DATE, DATA_TYPE_DATETIME, DATA_TYPE_NUMBER, DATA_TYPE_STRING,
+    DATA_TYPE_TIME, THOUSAND_SYMBOL, DECIMAL_SYMBOL)
 from .exceptions import Http400
 
 logger = logging.getLogger(__name__)
 
-
 enclosed_parser = pyparsing.Forward()
 nestedBrackets = pyparsing.nestedExpr('[', ']', content=enclosed_parser)
 enclosed_parser << (pyparsing.Word(pyparsing.alphanums + '-' + '.' + '(' + ')') | ',' | nestedBrackets)
+
+DATA_TYPE_FUNCTIONS = {
+    DATA_TYPE_STRING: lambda x: unicode(x).strip(),
+    DATA_TYPE_NUMBER: lambda x: convert_to_number(x),
+    DATA_TYPE_DATETIME: lambda x: parse(x),
+    DATA_TYPE_DATE: lambda x: parse(x).date(),
+    DATA_TYPE_TIME: lambda x: parse(x).time(),
+}
 
 
 def parse_enclosed(string):
@@ -33,11 +42,19 @@ def parse_range(astr):
 
 
 def convert_to_number(data):
-    #int(re.sub(r'[^\d-]+', '', data))
-    if '.' in data:
-        return float(data.replace(',', '').replace('$', ''))
+    # Get rid of dollar signs and thousand separators
+    data = data.replace(THOUSAND_SYMBOL, '').replace('$', '')
+    
+    if '(' and ')' in data:
+        # Is a negative number
+        return -convert_to_number(data.replace(')', '').replace('(', ''))
     else:
-        return int(data.replace(',', '').replace('$', ''))
+        if DECIMAL_SYMBOL in data:
+            # It is a decimal number
+            return float(data)
+        else:
+            # Otherwise it is an integer
+            return int(data)
 
 
 class UTF8Recoder:

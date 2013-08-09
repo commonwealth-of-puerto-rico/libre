@@ -3,10 +3,8 @@ from __future__ import absolute_import
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import renderers
-from dateutil.parser import parse
 
 from .renderers import CustomXMLRenderer, LeafletRenderer
-from .utils import convert_to_number
 
 # Row based
 DEFAULT_LIMIT = 50
@@ -29,14 +27,6 @@ DATA_TYPE_CHOICES = (
     (DATA_TYPE_DATE, _('Date')),
     (DATA_TYPE_TIME, _('Time')),
 )
-
-DATA_TYPE_FUNCTIONS = {
-    DATA_TYPE_STRING: lambda x: unicode(x).strip(),
-    DATA_TYPE_NUMBER: lambda x: convert_to_number(x),
-    DATA_TYPE_DATETIME: lambda x: parse(x),
-    DATA_TYPE_DATE: lambda x: parse(x).date(),
-    DATA_TYPE_TIME: lambda x: parse(x).time(),
-}
 
 RENDERER_BROWSEABLE_API = 1
 RENDERER_JSON = 2
@@ -63,3 +53,6 @@ JOIN_TYPE_CHOICES = {
 LQL_DELIMITER = '_'
 
 DOUBLE_DELIMITER = LQL_DELIMITER + LQL_DELIMITER
+
+THOUSAND_SYMBOL = ','
+DECIMAL_SYMBOL = '.'

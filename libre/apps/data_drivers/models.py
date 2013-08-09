@@ -28,10 +28,10 @@ from lock_manager import Lock, LockError
 
 from .exceptions import Http400
 from .job_processing import Job
-from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES, DATA_TYPE_FUNCTIONS,
+from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 from .query import Query
-from .utils import UnicodeReader, parse_range
+from .utils import DATA_TYPE_FUNCTIONS, UnicodeReader, parse_range
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
