@@ -182,3 +182,6 @@ PENDING
   * Add note about escaping ampersant in subqueries
   * Icon preview in admin
   * Favicon
+  * Add webhooks support
+  
+    * https://github.com/johnboxall/django_webhooks
