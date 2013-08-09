@@ -310,14 +310,14 @@ join
 When multiple filters are specified per query the results of each filter are ``ANDed`` by default, this directive changes that behaviour so that results are ``ORed`` together.
 
 
-fields
-------
+json_path
+---------
 
-``_fields=<comma delimited list of fields to return>``
+Reduce the result set using JSON Path
 
-Return only the fields specified.
+``_json_path=JSON Path syntax``
 
-**Note**: Works only for single level element collections (multilevel dot and index notations not yet supported).
+JSON Path syntax: https://github.com/kennknowles/python-jsonpath-rw
 
 
 renderer
