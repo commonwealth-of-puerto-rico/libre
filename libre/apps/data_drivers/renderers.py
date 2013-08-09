@@ -19,20 +19,22 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
     template_name = 'leaflet.html'
     format = 'map_leaflet'
 
-    def _process_feature(self, feature, template):
+    def process_feature(self, feature, template):
         new_feature = {'type': 'Feature'}
         new_feature.update(feature)
         new_feature['properties'] = {}
         new_feature['properties']['popup'] = template.render(
             Context(
                 {
-                    'source': feature,
-                    # TODO: pre-calculate icons outside this context
-                    'icons': dict([(icon.name, icon) for icon in Icon.objects.all()]),
+                    'feature': feature,
+                    'icons': self.icons_dict
                 }
             )
         )
         return new_feature
+
+    def setup_icons_dict(self):
+        self.icons_dict = dict([(icon.name, icon) for icon in Icon.objects.all()])
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         """
@@ -64,16 +66,18 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
 
         features = []
 
+        self.setup_icons_dict()
+
         try:
             popup_template = Template(getattr(view.get_object(), 'popup_template', None))
         except TemplateSyntaxError as exception:
             popup_template = Template(exception)
 
         if type(data) == type({}):
-            features.append(self._process_feature(data, popup_template))
+            features.append(self.process_feature(data, popup_template))
         else:
             for feature in data:
-                features.append(self._process_feature(feature, popup_template))
+                features.append(self.process_feature(feature, popup_template))
 
         new_data['features'] = features
         if 'latitude' and 'longitude' not in extra_context:
