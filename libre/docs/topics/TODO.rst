@@ -32,7 +32,6 @@ PENDING
 
   * Parse values
 
-    * Parse dates (using dateutil) - DONE
     * True values, False values
 
   * Add Relationship support
@@ -92,13 +91,13 @@ PENDING
     * _first
     * _last
     * _one
-    
+
       * Return error if more than one
-    
+
   * Combined
-  
+
     * _limit=(count, start, maxCount)
-    
+
   * Joins between datasets
 
     * _join=<data set name>,<join type>,<current set field>__<foreign set field>,<current set field>__<foreign set field>
@@ -106,7 +105,7 @@ PENDING
 
   * Add support for annotations
   * Field selection
-    
+
     * _select=(field_name, field_name)
 
   * _distinct
@@ -140,19 +139,16 @@ PENDING
   * Interpret WS arguments
   * Result count
   * Fix upload_to
-  * Allow skiping/importing rows that match a regex per field
   * Calculate geometries area, size, lenghts in pin template
   * Delete stored source files when a source is deleted
   * Delete stored source files when a new file is uploaded
   * Fix JsonField not returning dates or times only datetimes
   * Return a {'status': } dictionary with error message
-  * Fix XML renderer
   * Move _fields parsing to allow being parsed on get_one method
   * Optimize AND type join
   * Use islice
   * Dataset human browser
   * Data store browser
-  * Regex support for CSV and Fixed width
   * Add support for item-based and result-based evaluation
   * Add support for JSON Pointer
   * Add support for displaying map titles
@@ -177,11 +173,18 @@ PENDING
 
   * Migrate DatabaseSource's get_one and get_all solution to other source classes
   * Get rid of WSResultField WSArgument and use SourceColumnBase instead
-  * Add suppor for parentheses (accounting style) encoded negative numbers
-  * When comparing with point geomertries, optionally display the reference geometry
-  * Add note about escaping ampersant in subqueries
   * Icon preview in admin
-  * Favicon
   * Add webhooks support
-  
+
     * https://github.com/johnboxall/django_webhooks
+
+  * Rename field name
+  * Regex support for Fixed width sources
+  * Add view source model
+  * Favicon
+  * Add note about escaping ampersant in subqueries
+  * Improve _flatten predicate
+  * Label & titles
+  * Result metadata
+  * Dynamic icons
+  * pagination
