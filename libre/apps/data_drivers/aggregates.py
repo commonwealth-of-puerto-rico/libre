@@ -26,13 +26,19 @@ class Count(Aggregate):
 
 class Sum(Aggregate):
     def execute(self, elements):
-        result = {}
-        for field in self.fields:
-            # Make a backup of the generator
-            elements, backup = tee(elements)
-            try:
-                # TODO: do type convertion
-                result[field] = sum([element[field] for element in backup if element[field]])
-            except KeyError:
-                raise Http400('Unknown field: %s' % field)
-        return result
+        # Make a backup of the generator
+        elements, backup = tee(elements)
+        try:
+            return sum([element[self.argument] for element in backup if element[self.argument]])
+        except KeyError:
+            raise Http400('Unknown field: %s' % self.argument)
+
+
+class Max(Aggregate):
+    def execute(self, elements):
+        # Make a backup of the generator
+        elements, backup = tee(elements)
+        try:
+            return max([element[self.argument] for element in backup if element[self.argument]])
+        except KeyError:
+            raise Http400('Unknown field: %s' % self.argument)
