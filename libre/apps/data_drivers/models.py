@@ -294,21 +294,19 @@ class SourceTabularBased(models.Model):
             return True
 
     def get_regex_maps(self):
-        skip_result_map = {}
+        self.skip_regex_map = {}
         for name, skip_regex in self.columns.values_list('name', 'skip_regex'):
             if skip_regex:
-                skip_result_map[name] = re.compile(skip_regex)
+                self.skip_regex_map[name] = re.compile(skip_regex)
             else:
-                skip_result_map[name] = self.__class__.AlwaysFalseSearch()
+                self.skip_regex_map[name] = self.__class__.AlwaysFalseSearch()
 
-        import_result_map = {}
+        self.import_regex_map = {}
         for name, import_regex in self.columns.values_list('name', 'import_regex'):
             if import_regex:
-                import_result_map[name] = re.compile(import_regex)
+                self.import_regex_map[name] = re.compile(import_regex)
             else:
-                import_result_map[name] = self.__class__.AlwaysTrueSearch()
-
-        return skip_result_map, import_result_map
+                self.import_regex_map[name] = self.__class__.AlwaysTrueSearch()
 
     class Meta:
         abstract = True
@@ -343,14 +341,21 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
         logger.debug('parsed_range: %s' % parsed_range)
 
         for row_id, row in enumerate(reader, 1):
-            if row:
-                if parsed_range:
-                    if row_id in parsed_range:
-                        row_dict = dict(zip(column_names, row))
-                        yield self.apply_datatypes(row_dict, functions_map)
-                else:
+            if parsed_range:
+                if row_id in parsed_range:
                     row_dict = dict(zip(column_names, row))
+                    if self.process_regex(row_dict):
+                        yield self.apply_datatypes(row_dict, functions_map)
+            else:
+                row_dict = dict(zip(column_names, row))
+                if self.process_regex(row_dict):
                     yield self.apply_datatypes(row_dict, functions_map)
+
+    def process_regex(self, row):
+        skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.skip_regex_map]
+        import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.import_regex_map]
+
+        return all(cell_skip is False for cell_skip in skip_result) and all(import_result)
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -365,6 +370,7 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
             file_handle = urllib2.urlopen(self.url)
 
         logger.debug('file_handle: %s' % file_handle)
+        self.get_regex_maps()
 
         for row_id, row in enumerate(self._get_items(file_handle), 1):
             SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
@@ -444,6 +450,15 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         """
         Handle different value types for XLS. Item is a cell object.
         """
+        # Types:
+        # 0 = empty u''
+        # 1 = unicode text
+        # 2 = float (convert to int if possible, then convert to string)
+        # 3 = date (convert to unambiguous date/time string)
+        # 4 = boolean (convert to string "0" or "1")
+        # 5 = error (convert from code to error text)
+        # 6 = blank u''
+
         # Thx to Augusto C Men to point fast solution for XLS/XLSX dates
         if item.ctype == 3:  # XL_CELL_DATE:
             try:
@@ -473,10 +488,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
 
         for i in parsed_range:
             converted_row = dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
-            skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items() if name in self.skip_regex_map]
-            import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items() if name in self.import_regex_map]
-
-            if all(cell_skip is False for cell_skip in skip_result) and all(import_result):
+            if self.process_regex(converted_row):
                 yield converted_row
 
     @transaction.commit_on_success
@@ -501,7 +513,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         except xlrd.XLRDError:
             self._sheet = self._book.sheet_by_index(int(self.sheet))
 
-        self.skip_regex_map, self.import_regex_map = self.get_regex_maps()
+        self.get_regex_maps()
 
         logger.debug('importing rows')
         for row_id, row in enumerate(self._get_items(), 1):
@@ -682,6 +694,8 @@ class ColumnBase(models.Model):
 class CSVColumn(ColumnBase):
     source = models.ForeignKey(SourceCSV, verbose_name=_('CSV source'), related_name='columns')
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
 
     class Meta:
         verbose_name = _('CSV column')
