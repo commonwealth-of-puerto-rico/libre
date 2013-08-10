@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from django.contrib import admin, messages
-from django.forms import ModelForm
+from django.forms import ModelForm, widgets
 from django.utils.translation import ugettext_lazy as _
 
 from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput, SuitSplitDateTimeWidget
@@ -93,10 +93,21 @@ class FixedWidthColumnInline(admin.TabularInline):
     suit_classes = 'suit-tab suit-tab-configuration'
 
 
+class CSVColumnForm(ModelForm):
+    class Meta:
+        widgets = {
+            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'name': widgets.TextInput(attrs={'class': 'input-small'}),
+            'default': EnclosedInput(attrs={'class': 'input-mini'}),
+            'data_type': widgets.Select(attrs={'class': 'input-small'}),
+        }
+
 class CSVColumnInline(admin.TabularInline):
     model = CSVColumn
     extra = 1
     suit_classes = 'suit-tab suit-tab-configuration'
+    form = CSVColumnForm
 
 
 class SpreadsheetColumnInline(admin.TabularInline):
