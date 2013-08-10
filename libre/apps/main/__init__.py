@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 
 __author__ = 'Roberto Rosario'
-__copyright__ = 'Copyright 2013 Roberto Rosario'
+__copyright__ = 'Copyright 2013 Office of the Chief Information Officer, Commonwealth of Puerto Rico'
 __credits__ = ['Roberto Rosario']
 __license__ = 'GPL'
 __maintainer__ = 'Roberto Rosario'
@@ -11,7 +11,7 @@ __status__ = 'Production'
 
 __version_info__ = {
     'major': 0,
-    'minor': 5,
+    'minor': 7,
     'micro': 0,
     'releaselevel': 'final',
     'serial': 0
