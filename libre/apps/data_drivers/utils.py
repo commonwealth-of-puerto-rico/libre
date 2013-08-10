@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import codecs
 import csv
 from HTMLParser import HTMLParser
 import logging
@@ -57,28 +56,6 @@ def convert_to_number(data):
             return int(data)
 
 
-class UTF8Recoder:
-    """
-    Iterator that reads an encoded stream and reencodes the input to UTF-8
-    """
-    def __init__(self, f, encoding):
-        self.reader = codecs.getreader(encoding)(f)
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        try:
-            return self.reader.next().encode('utf-8')
-        except UnicodeDecodeError:
-            # Ignore unknown encoded rows
-            return ''
-            #try:
-            #    return unicode(self.reader.next(), 'iso-8859-1')
-            #except:
-            #    return ''
-
-
 class UnicodeReader:
     """
     A CSV reader which will iterate over lines in the CSV file "f",
@@ -86,13 +63,17 @@ class UnicodeReader:
     """
 
     def __init__(self, f, dialect=csv.excel, encoding='utf-8', **kwds):
-        f = UTF8Recoder(f, encoding)
         self.reader = csv.reader(f, dialect=dialect, **kwds)
-
     def next(self):
         row = self.reader.next()
         if row:
-            return [unicode(s, 'utf-8') for s in row]
+            try:
+                return [unicode(s, 'utf-8') for s in row]
+            except UnicodeDecodeError:
+                try:
+                    return [s.decode('iso-8859-1') for s in row]
+                except UnicodeDecodeError:
+                    return []
         else:
             return []
 
