@@ -10,7 +10,7 @@ from django.conf import settings
 from shapely import geometry
 import jsonpath_rw
 
-from .aggregates import Count, Sum
+from .aggregates import Count, Max, Sum
 from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
@@ -182,6 +182,11 @@ class Query():
                         self.aggregates.append({
                             'name': name,
                             'function': Sum(value.replace('Sum(', '').replace(')', ''))
+                        })
+                    elif value.startswith('Max('):
+                        self.aggregates.append({
+                            'name': name,
+                            'function': Max(value.replace('Max(', '').replace(')', ''))
                         })
                     else:
                         raise Http400('Unkown aggregate: %s' % value)
