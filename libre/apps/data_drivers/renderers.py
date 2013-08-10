@@ -6,7 +6,6 @@ import json
 import types
 
 from django.template import Context, Template, TemplateSyntaxError
-from django.utils.xmlutils import SimplerXMLGenerator
 
 from rest_framework import renderers
 from rest_framework.compat import StringIO, smart_text, six
@@ -18,6 +17,7 @@ from icons.models import Icon
 class LeafletRenderer(renderers.TemplateHTMLRenderer):
     template_name = 'leaflet.html'
     format = 'map_leaflet'
+    media_type = 'text/map_leaflet'
 
     def process_feature(self, feature, template):
         new_feature = {'type': 'Feature'}
@@ -73,6 +73,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         except TemplateSyntaxError as exception:
             popup_template = Template(exception)
 
+        # TODO: fix this, use isinstace
         if type(data) == type({}):
             features.append(self.process_feature(data, popup_template))
         else:
@@ -92,16 +93,16 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
     def determine_extents(self, features):
         bounds_generator = (geometry.shape(feature['geometry']).bounds for feature in features)
         iterator = iter(bounds_generator)
-        
+
         first_feature_bounds = iterator.next()
-        
+
         min_x, min_y, max_x, max_y = first_feature_bounds
         for bounds in bounds_generator:
             min_x = min(min_x, bounds[0])
             min_y = min(min_y, bounds[1])
             max_x = max(max_x, bounds[2])
             max_y = max(max_y, bounds[3])
-        
+
         return min_x, min_y, max_x, max_y
 
 
@@ -125,4 +126,3 @@ class CustomXMLRenderer(renderers.XMLRenderer):
 
         else:
             xml.characters(smart_text(data))
-

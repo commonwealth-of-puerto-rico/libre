@@ -2,15 +2,10 @@ from __future__ import absolute_import
 
 import datetime
 import logging
-import json
 
-from django.shortcuts import render_to_response
-from django.template import RequestContext
-from django.utils.translation import ugettext_lazy as _
-from django.http import HttpResponse, Http404
 from django.views.generic import TemplateView
 
-from rest_framework import generics, renderers
+from rest_framework import generics
 from rest_framework.reverse import reverse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view

@@ -44,7 +44,7 @@ def parse_range(astr):
 def convert_to_number(data):
     # Get rid of dollar signs and thousand separators
     data = data.replace(THOUSAND_SYMBOL, '').replace('$', '')
-    
+
     if '(' and ')' in data:
         # Is a negative number
         return -convert_to_number(data.replace(')', '').replace('(', ''))
@@ -102,6 +102,7 @@ class UnicodeReader:
 
 def parse_value(string):
     from .models import Source
+
     html_parser = HTMLParser()
     string = html_parser.unescape(string)
 

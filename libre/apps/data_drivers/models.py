@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import csv
 import datetime
 import hashlib
 from itertools import islice
@@ -97,7 +96,7 @@ class SourceWS(Source):
         if id == 0:
             raise Http400('Invalid ID; IDs are base 1')
 
-        return self.get_all(timestamp, parameters)[id-1]
+        return self.get_all(timestamp, parameters)[id - 1]
 
     def get_all(self, timestamp=None, parameters=None):
         if not parameters:
@@ -477,7 +476,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
             skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items() if name in self.skip_regex_map]
             import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in converted_row.items() if name in self.import_regex_map]
 
-            if all(cell_skip == False for cell_skip in skip_result) and all(import_result):
+            if all(cell_skip is False for cell_skip in skip_result) and all(import_result):
                 yield converted_row
 
     @transaction.commit_on_success
@@ -734,7 +733,7 @@ class SourceDatabase(Source):
 
     def get_all(self, timestamp=None, parameters=None, get_id=None):
         if get_id:
-            return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), get_id-1, get_id)
+            return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), get_id - 1, get_id)
         else:
             return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), 0, self.limit)
 

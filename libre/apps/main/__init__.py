@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 __author__ = 'Roberto Rosario'
 __copyright__ = 'Copyright 2013 Roberto Rosario'
-__credits__ = ['Roberto Rosario',]
+__credits__ = ['Roberto Rosario']
 __license__ = 'GPL'
 __maintainer__ = 'Roberto Rosario'
 __email__ = 'roberto.rosario.gonzalez@gmail.com'

@@ -120,7 +120,6 @@ class Query():
         if self.groups:
             result = []
             for group in self.groups:
-                grouping_dictionary = {}
                 self.data, backup = tee(self.data)
                 # Make a backup of the generator
                 sorted_data = sorted(backup, key=itemgetter(group))
@@ -139,7 +138,6 @@ class Query():
                 for group in self.data:
                     for group_value in group['values']:
                         group_value['aggregates'] = []
-                        group_value_aggregates = []
                         for aggregate in self.aggregates:
                             group_value['aggregates'].append({aggregate['name']: aggregate['function'].execute(group_value['elements'])})
             else:
@@ -149,7 +147,7 @@ class Query():
                     self.data, backup = tee(self.data)
                     result[aggregate['name']] = aggregate['function'].execute(backup)
                 self.data = result
-                
+
     def parse_parameters(self, parameters):
         for parameter, value in parameters.items():
             logger.debug('parameter: %s' % parameter)
@@ -161,7 +159,7 @@ class Query():
                 if parameter == LQL_DELIMITER + 'join':
                 # Determine query join type
                     if value.upper() == 'OR':
-                        join_type = JOIN_TYPE_OR
+                        self.join_type = JOIN_TYPE_OR
                 elif parameter == LQL_DELIMITER + 'json_path':
                 # Determine fields to return
                     self.json_path = value
@@ -174,7 +172,6 @@ class Query():
                     # TODO: Use QueryDict lists instead of Regex
                     # example: _aggregate__count=Count(*)
                     name = parameter.split(DOUBLE_DELIMITER)[1]
-                    aggregate_string = value
 
                     if value.startswith('Count('):
                         self.aggregates.append({
@@ -228,7 +225,7 @@ class Query():
             else:
                 filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
                 self.filters_function_map.append(filters_dictionary)
-                
+
     def process_flatten(self):
         if self.as_dict_list:
             data_iterable = iter(self.data)

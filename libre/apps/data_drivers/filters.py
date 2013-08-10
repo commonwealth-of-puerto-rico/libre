@@ -170,16 +170,16 @@ class Equals(Filter):
         return self.filter_value == value
 
 
-
 # Date filters
 class Range(Filter):
     def evaluate(self, value):
         try:
             return parse(value) >= self.filter_value[0] and parse(value) <= self.filter_value[1]
-        except AttributeError as exception:
+        except AttributeError:
             raise Http400('field: %s is not a date' % self.field)
-        except (TypeError, IndexError) as exception:
+        except (TypeError, IndexError):
             raise Http400('Range filter value must be a list of 2 dates.')
+
 
 class Year(Filter):
     def evaluate(self, value):

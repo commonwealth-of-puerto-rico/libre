@@ -13,7 +13,6 @@ class Aggregate(object):
 
 class Count(Aggregate):
     def execute(self, elements):
-        result = {}
         if self.argument == '*':
             return len(list(elements))
         else:
