@@ -42,3 +42,13 @@ class Max(Aggregate):
             return max([element[self.argument] for element in backup if element[self.argument]])
         except KeyError:
             raise Http400('Unknown field: %s' % self.argument)
+
+
+class Min(Aggregate):
+    def execute(self, elements):
+        # Make a backup of the generator
+        elements, backup = tee(elements)
+        try:
+            return min([element[self.argument] for element in backup if element[self.argument]])
+        except KeyError:
+            raise Http400('Unknown field: %s' % self.argument)
