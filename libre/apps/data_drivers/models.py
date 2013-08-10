@@ -38,8 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class Source(models.Model):
-    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML,
-    RENDERER_LEAFLET)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
 
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
     slug = models.SlugField(blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
@@ -529,7 +528,8 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
 
 class SourceShape(Source, SourceFileBased):
     source_type = _('Shapefile')
-    renderers = (RENDERER_JSON, RENDERER_LEAFLET)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML,
+        RENDERER_LEAFLET)
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
     new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
 

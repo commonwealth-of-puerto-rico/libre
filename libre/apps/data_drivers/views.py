@@ -52,7 +52,7 @@ class CustomListAPIView(generics.ListAPIView):
 
 
 class SourceList(CustomListAPIView):
-    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
 
@@ -66,19 +66,19 @@ class CustomRetrieveAPIView(generics.RetrieveAPIView):
 
 
 class SourceDetail(CustomRetrieveAPIView):
-    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
 
 
 class SourceDataVersionList(CustomListAPIView):
-    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
 
 
 class SourceDataVersionDetail(CustomRetrieveAPIView):
-    renderers = (RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
 
