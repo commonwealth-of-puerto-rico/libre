@@ -38,26 +38,27 @@ def api_root(request, format=None):
     })
 
 
-class CustomListAPIView(generics.ListAPIView):
+class CustomAPIView(generics.GenericAPIView):
     def get_renderers(self):
         """
         Instantiates and returns the list of renderers that this view can use.
         """
+        self.renderer_classes = [RENDERER_MAPPING[i] for i in self.__class__.renderers]
         return [RENDERER_MAPPING[i]() for i in self.__class__.renderers]
+
+
+class CustomListAPIView(CustomAPIView, generics.ListAPIView):
+    pass
+
+
+class CustomRetrieveAPIView(CustomAPIView, generics.RetrieveAPIView):
+    pass
 
 
 class SourceList(CustomListAPIView):
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
-
-
-class CustomRetrieveAPIView(generics.RetrieveAPIView):
-    def get_renderers(self):
-        """
-        Instantiates and returns the list of renderers that this view can use.
-        """
-        return [RENDERER_MAPPING[i]() for i in self.__class__.renderers]
 
 
 class SourceDetail(CustomRetrieveAPIView):
@@ -86,6 +87,7 @@ class LIBREView(generics.GenericAPIView):
         Instantiates and returns the list of renderers that this view can use.
         """
         source = self.get_object()
+        self.renderer_classes = [RENDERER_MAPPING[i] for i in source.__class__.renderers]
         return [RENDERER_MAPPING[i]() for i in source.__class__.renderers]
 
     def get_renderer_context(self):
