@@ -17,7 +17,6 @@ from icons.models import Icon
 class LeafletRenderer(renderers.TemplateHTMLRenderer):
     template_name = 'leaflet.html'
     format = 'map_leaflet'
-    media_type = 'text/map_leaflet'
 
     def process_feature(self, feature, template):
         new_feature = {'type': 'Feature'}
