@@ -1,0 +1,19 @@
+{% load i18n %}
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"  "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+    <head>
+        <title>{% trans "400 ERROR: Bad request" %}</title>
+    </head>
+    <body>
+        <h1>{% trans "Bad request (400)" %}</h1>
+        {% trans "Please check your request query syntax." %}<br/>
+        {% trans "Status code:" %}&nbsp;{{ status_code }}<br />
+        {% trans "Details:" %}&nbsp;{{ detail }}<br />
+
+    </body>
+</html>
+
+
