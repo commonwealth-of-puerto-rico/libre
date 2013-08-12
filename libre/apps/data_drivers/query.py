@@ -10,7 +10,7 @@ from django.conf import settings
 from shapely import geometry
 import jsonpath_rw
 
-from .aggregates import Count, Max, Min, Sum
+from .aggregates import Average, Count, Max, Min, Sum
 from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
@@ -192,6 +192,11 @@ class Query():
                         self.aggregates.append({
                             'name': name,
                             'function': Min(value.replace('Min(', '').replace(')', ''))
+                        })
+                    elif value.startswith('Average('):
+                        self.aggregates.append({
+                            'name': name,
+                            'function': Average(value.replace('Average(', '').replace(')', ''))
                         })
                     else:
                         raise Http400('Unkown aggregate: %s' % value)
