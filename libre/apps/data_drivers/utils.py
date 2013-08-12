@@ -270,8 +270,13 @@ def parse_qs(string):
 
     for item in split_qs(string):
         # Split the query string by unquotes ampersants ('&')
-        key, value = split_qs(item, delimiter='=')
-        # Split the item by unquotes equal signs
-        result[key] = value
+        try:
+            # Split the item by unquotes equal signs
+            key, value = split_qs(item, delimiter='=')
+        except ValueError:
+            # Single value without equals sign
+            result[item] = ''
+        else:
+            result[key] = value
 
     return result
