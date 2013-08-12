@@ -134,7 +134,6 @@ PENDING
 
   * Improve output logging - INPROGRES
   * Empty but valid queries should return HTTP404 or HTTP200 with '{"status": "Not found"}'
-  * Empty but valid queries should return HTTP400 or HTTP200 with '{"status": "Query Error"}'
   * Show required argument for WS
   * Interpret WS arguments
   * Result count
@@ -178,13 +177,57 @@ PENDING
 
     * https://github.com/johnboxall/django_webhooks
 
-  * Rename field name
   * Regex support for Fixed width sources
-  * Add view source model
-  * Favicon
-  * Add note about escaping ampersant in subqueries
+  * Add view type source
   * Improve _flatten predicate
   * Label & titles
-  * Result metadata
-  * Dynamic icons
   * pagination
+  * Add dumb result caching
+
+   * Hash query + hash of sources = key: value = result
+
+  * Add custom response header values
+
+    * X-LIBRE-count
+    * X-LIBRE-query
+
+    * response = Response(result)
+      response['X-LIBRE-count'] = count
+      return response
+
+  * Get rid of fetch_all on the DB backend
+
+    * cursor.rowcount
+
+    def dictfetchall(cursor):
+        "Returns all rows from a cursor as a dict"
+        desc = cursor.description
+        return [
+            dict(zip([col[0] for col in desc], row))
+            for row in cursor.fetchall()
+        ]
+
+    from itertools import *
+    from django.db import connection
+
+    def query_to_dicts(query_string, *query_args):
+    """Run a simple query and produce a generator
+        that returns the results as a bunch of dictionaries
+        with keys for the column values selected.
+        """
+    cursor = connection.cursor()
+    cursor.execute(query_string, query_args)
+    col_names = [desc[0] for desc in cursor.description]
+    while True:
+        row = cursor.fetchone()
+        if row is None:
+            break
+        row_dict = dict(izip(col_names, row))
+        yield row_dict
+    return
+
+
+----------
+  * Dynamic icons
+  * Rename field name
+  * Favicon
