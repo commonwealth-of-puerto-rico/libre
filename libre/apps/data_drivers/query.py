@@ -29,7 +29,7 @@ class Query():
         self.groups = []
         self.join_type = JOIN_TYPE_AND
         self.filters_function_map = []
-        self.as_dict_list = False
+        self.as_dict_list = self.as_nested_list = False
 
     def execute(self, parameters):
         if not parameters:
@@ -83,7 +83,7 @@ class Query():
         self.process_groups()
         self.process_aggregates()
         self.process_json_path()
-        self.process_flatten()
+        self.process_transform()
 
         return self.data
 
@@ -163,9 +163,12 @@ class Query():
                 elif parameter == LQL_DELIMITER + 'json_path':
                 # Determine fields to return
                     self.json_path = value
-                elif parameter == LQL_DELIMITER + 'flatten':
+                elif parameter == LQL_DELIMITER + 'as_dict_list':
                 # Flatten result set as list of dictionaries
                     self.as_dict_list = True
+                elif parameter == LQL_DELIMITER + 'as_nested_list':
+                # Flatten result set as nested list
+                    self.as_nested_list = True
                 elif parameter == LQL_DELIMITER + 'group_by':
                     self.groups = value.split(',')
                 elif parameter.startswith(LQL_DELIMITER + 'aggregate'):
@@ -241,7 +244,10 @@ class Query():
                 filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
                 self.filters_function_map.append(filters_dictionary)
 
-    def process_flatten(self):
+    def process_transform(self):
         if self.as_dict_list:
             data_iterable = iter(self.data)
             self.data = imap(lambda x: {x[0]: x[1]}, izip(data_iterable, data_iterable))
+        elif self.as_nested_list:
+            data_iterable = iter(self.data)
+            self.data = izip(data_iterable, data_iterable)
