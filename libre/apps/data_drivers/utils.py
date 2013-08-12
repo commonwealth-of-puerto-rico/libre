@@ -194,27 +194,37 @@ def parse_value(string):
         logger.debug('Is a time')
         date_string = string.replace('Time(', '').replace(')', '')
         return parse(date_string).time()
-    else:
+    elif string[0] == '<' and string[-1] == '>':
+        # Is a subquery
+        logger.debug('Is a subquery')
+        string = string[1:-1]
         # Check for reference
-        parts = string.split('.')
+        parts = string.split('&')
         source_slug = parts[0]
 
         try:
             new_source = Source.objects.get_subclass(slug=source_slug)
         except Source.DoesNotExist:
             logger.debug('no source named: %s' % source_slug)
-            logger.debug('Is a number')
-            try:
-                return convert_to_number(string)
-            except ValueError:
-                raise Http400('Invalid value or unknown source: %s' % string)
+            raise Http400('no source named: %s' % source_slug)
         else:
             logger.debug('got new source named: %s' % source_slug)
-            # Rebuild the parameters for this enclosed value
-            new_string = u'.'.join(parts[1:])
+            # Rebuild the parameters for this enclosed value, omitting the source slug
+            new_string = u'&'.join(parts[1:])
+
             parameters = {}
             for part in new_string.split('&'):
-                key, value = part.split('=')
-                parameters[key] = value
+                try:
+                    key, value = part.split('=')
+                except ValueError:
+                    pass
+                else:
+                    parameters[key] = value
 
             return new_source.get_all(parameters=parameters)
+    else:
+        logger.debug('Is a number')
+        try:
+            return convert_to_number(string)
+        except ValueError:
+            raise Http400('Invalid value or unknown source: %s' % string)

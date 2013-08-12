@@ -17,6 +17,7 @@ LQL accepts as input:
 * dates - Any value enclosed with the ``Date`` specifier.
 * time - Any value enclosed with the ``Time`` specifier.
 * date & time - Any value enclosed with the ``DateTime`` specifier.
+* subqueries - Any string enclosed with the less than (``<``) and more than (``>``) simbols.
 
 The only exception to this convention are special query directive values, such as those of the **join** directive, which are specified unquoted.
 Geospacial geometries also have special attributes which can be accesed and used for filtering, these are: _length, _area and _type
@@ -37,20 +38,8 @@ A time: ``Time(10:00pm)`` or ``Time(22:00)``
 
 A date and time: ``DateTime(2013-01-01 1:00pm)``
 
+A subquery: ``births=<census-prmunnet&_aggregate__aggregated_most_births=Max(births)&_json_path=most_births>
 
-Addressing fields
-=================
-Field names are prepended by a namespace and separated by dots on each new child element.
-Example: ``properties.City``
-
-When referencing data from a separate endpoint the namespace will be the name of the endpoint following a dot.
-Example: ``dataset-25.properties.City``
-
-To address a specific element from a collection the Python list addressing notation is used, that is, the index number inside open and closed brackets.
-Example: ``[10]``
-All indexes are 1 based, meaning that the first element in an endpoint collection is element number 1 and not number 0.
-
-So to address the ``last_name`` property of the **25th** element in an endpoint collection called ``employees`` the syntax would be: ``employees.[25].last_name``
 
 Filtering
 =========
@@ -372,6 +361,5 @@ Example: ``_group_by=city,region``
 
 Coming soon
 ===========
-* Subqueries
 * Sorting
 * Pagination
