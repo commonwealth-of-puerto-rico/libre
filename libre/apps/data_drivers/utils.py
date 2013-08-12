@@ -228,3 +228,50 @@ def parse_value(string):
             return convert_to_number(string)
         except ValueError:
             raise Http400('Invalid value or unknown source: %s' % string)
+
+
+def split_qs(string, delimiter='&'):
+    """Split a string by the specified unquoted, not enclosed delimiter"""
+
+    open_list = '[<{('
+    close_list = ']>})'
+    quote_chars = '"\''
+
+    level = index = last_index = 0
+    quoted = False
+    result = []
+
+    for index, letter in enumerate(string):
+        if letter in quote_chars:
+            if not quoted:
+                quoted = True
+                level += 1
+            else:
+                quoted = False
+                level -= 1
+        elif letter in open_list:
+            level += 1
+        elif letter in close_list:
+                level -= 1
+        elif letter == delimiter and level == 0:
+            # Split here
+            result.append(string[last_index: index])
+            last_index = index + 1
+
+    if index:
+        result.append(string[last_index: index + 1])
+
+    return result
+
+
+def parse_qs(string):
+    """Intelligently parse the query string"""
+    result = {}
+
+    for item in split_qs(string):
+        # Split the query string by unquotes ampersants ('&')
+        key, value = split_qs(item, delimiter='=')
+        # Split the item by unquotes equal signs
+        result[key] = value
+
+    return result
