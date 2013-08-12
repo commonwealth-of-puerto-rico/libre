@@ -344,11 +344,38 @@ Example: ``_aggregate__total=Count(*)``
 
 Sum
 ---
-Return the sum values of the specified fields.
+Return the sum of the values of the specified field.
 
 ``Sum(<field to sum>)``
 
 Example: ``_aggregate__total_score=Sum(score)``
+
+
+Min
+---
+Return the minimum value of the specified field in the elements.
+
+``Min(<field>)``
+
+Example: ``_aggregate__least_deaths=Min(deaths)``
+
+
+Max
+---
+Return the maximun value of the specified field in the elements.
+
+``Max(<field>)``
+
+Example: ``_aggregate__most_births=Max(births)``
+
+
+Average
+-------
+Return the average value of the specified field in the elements.
+
+``Average(<field>)``
+
+Example: ``_aggregate__point_average=Average(points)``
 
 
 Grouping
