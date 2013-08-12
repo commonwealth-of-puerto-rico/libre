@@ -385,6 +385,21 @@ Grouping
 Example: ``_group_by=city,region``
 
 
+Transformations
+~~~~~~~~~~~~~~~
+
+_as_dict_list
+-------------
+
+Return the current values as a list of key value dictionaries
+
+
+_as_nested_list
+---------------
+
+Return the current values as a nested list (list of lists)
+
+
 
 Coming soon
 ===========
