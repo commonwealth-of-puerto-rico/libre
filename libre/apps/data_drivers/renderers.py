@@ -17,6 +17,7 @@ from icons.models import Icon
 class LeafletRenderer(renderers.TemplateHTMLRenderer):
     template_name = 'leaflet.html'
     format = 'map_leaflet'
+    exception_template_names = ['leaflet_exception.html']
 
     def process_feature(self, feature, template):
         new_feature = {'type': 'Feature'}
@@ -59,6 +60,11 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
 
         context = self.resolve_context(data, request, response)
 
+        if response.exception:
+            # If there is an exception don't bother calculating data or geometries
+            context.update({'template_extra_context': extra_context})
+            return template.render(context)
+
         new_data = {
             "type": "FeatureCollection",
         }
@@ -81,6 +87,8 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
 
         new_data['features'] = features
         if 'latitude' and 'longitude' not in extra_context:
+            # User didn't specified which latitude and longitude to move the map,
+            # determine where to move the map ourselves
             extra_context['extents'] = self.determine_extents(features)
 
         context.update({'data': json.dumps(new_data)})
