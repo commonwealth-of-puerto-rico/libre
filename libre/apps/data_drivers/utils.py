@@ -261,11 +261,15 @@ def split_qs(string, delimiter='&'):
                 level -= 1
         elif letter == delimiter and level == 0:
             # Split here
-            result.append(string[last_index: index])
+            element = string[last_index: index]
+            if element:
+                result.append(element)
             last_index = index + 1
 
     if index:
-        result.append(string[last_index: index + 1])
+        element = string[last_index: index + 1]
+        if element:
+            result.append(element)
 
     return result
 
