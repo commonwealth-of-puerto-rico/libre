@@ -9,6 +9,7 @@ import string
 import struct
 import urllib2
 
+from django.core.exceptions import FieldError
 from django.db import models, transaction
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
@@ -51,6 +52,9 @@ class Source(models.Model):
             return self.columns.all().values_list('name', flat=True)
         else:
             return string.ascii_uppercase
+
+    def import_data(self, source_data_version):
+        self.compute_new_name_map()
 
     @staticmethod
     def add_row_id(row, id):
@@ -165,17 +169,26 @@ class SourceFileBased(models.Model):
     def get_functions_map(self):
         return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
 
+    def compute_new_name_map(self):
+        try:
+            self.new_name_map = dict(self.columns.values_list('name', 'new_name'))
+        except FieldError:
+            # This source doesn't support field renaming
+            self.new_name_map = {}
+
     def apply_datatypes(self, properties, functions_map):
         result = {}
 
         for key, value in properties.items():
+            new_name = self.new_name_map.get(key, key)
             try:
-                if key in functions_map:
-                    result[key] = functions_map[key](value)
-                else:
-                    result[key] = value
+                result[new_name] = functions_map[key](value)
+            except KeyError:
+                # Is not to be converted
+                result[new_name] = value
             except ValueError:
-                result[key] = value
+                # Fallback for failed conversion
+                result[new_name] = value
 
         return result
 
@@ -362,6 +375,8 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
         # Reload data in case this is executed in another thread
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
 
+        super(self.__class__, self).import_data(source_data_version)
+
         if self.path:
             file_handle = open(self.path)
         elif self.file:
@@ -416,6 +431,8 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
     def import_data(self, source_data_version):
         # Reload data in case this is executed in another thread
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
+        super(self.__class__, self).import_data(source_data_version)
 
         if self.path:
             self._file_handle = open(self.path)
@@ -495,6 +512,8 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
     def import_data(self, source_data_version):
         # Reload data in case this is executed in another thread
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
+        super(self.__class__, self).import_data(source_data_version)
 
         logger.debug('opening workbook')
         if self.path:
@@ -604,6 +623,8 @@ class SourceShape(Source, SourceFileBased):
     def import_data(self, source_data_version):
         # Reload data in case this is executed in another thread
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
+        super(self.__class__, self).import_data(source_data_version)
 
         if self.path:
             self._file_handle = open(self.path)
@@ -724,6 +745,7 @@ class SpreadsheetColumn(ColumnBase):
 
 class ShapefileColumn(ColumnBase):
     source = models.ForeignKey(SourceShape, verbose_name=_('shapefile source'), related_name='columns')
+    new_name = models.CharField(max_length=32, verbose_name=_('new name'), blank=True)
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
 
     class Meta:

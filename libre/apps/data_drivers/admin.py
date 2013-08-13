@@ -116,10 +116,21 @@ class SpreadsheetColumnInline(admin.TabularInline):
     suit_classes = 'suit-tab suit-tab-configuration'
 
 
+class ShapefileColumnForm(ModelForm):
+    class Meta:
+        widgets = {
+            'name': widgets.TextInput(attrs={'class': 'input-small'}),
+            'new_name': widgets.TextInput(attrs={'class': 'input-small'}),
+            'default': EnclosedInput(attrs={'class': 'input-mini'}),
+            'data_type': widgets.Select(attrs={'class': 'input-small'}),
+        }
+
+
 class ShapefileColumnInline(admin.TabularInline):
     model = ShapefileColumn
     extra = 1
     suit_classes = 'suit-tab suit-tab-configuration'
+    form = ShapefileColumnForm
 
 
 def check_updated(modeladmin, request, queryset):
