@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import csv
 from HTMLParser import HTMLParser
 import logging
+import types
 
 from dateutil.parser import parse
 import pyparsing
@@ -41,19 +42,24 @@ def parse_range(astr):
 
 
 def convert_to_number(data):
-    # Get rid of dollar signs and thousand separators
-    data = data.replace(THOUSAND_SYMBOL, '').replace('$', '')
-
-    if '(' and ')' in data:
-        # Is a negative number
-        return -convert_to_number(data.replace(')', '').replace('(', ''))
+    if isinstance(data, (types.IntType, types.FloatType, types.LongType)):
+        # Is already a number
+        return data
     else:
-        if DECIMAL_SYMBOL in data:
-            # It is a decimal number
-            return float(data)
+        # Must be a string or unicode
+        # Get rid of dollar signs and thousand separators
+        data = data.replace(THOUSAND_SYMBOL, '').replace('$', '')
+
+        if '(' and ')' in data:
+            # Is a negative number
+            return -convert_to_number(data.replace(')', '').replace('(', ''))
         else:
-            # Otherwise it is an integer
-            return int(data)
+            if DECIMAL_SYMBOL in data:
+                # It is a decimal number
+                return float(data)
+            else:
+                # Otherwise it is an integer
+                return int(data)
 
 
 class UnicodeReader:
