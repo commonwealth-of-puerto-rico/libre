@@ -5,6 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import renderers
 
 from .renderers import CustomXMLRenderer, LeafletRenderer
+from .settings import LQL_DELIMITER
 
 # Row based
 DEFAULT_LIMIT = 50
@@ -49,8 +50,6 @@ JOIN_TYPE_CHOICES = {
     JOIN_TYPE_OR: 'OR',
     JOIN_TYPE_AND: 'AND'
 }
-
-LQL_DELIMITER = '_'
 
 DOUBLE_DELIMITER = LQL_DELIMITER + LQL_DELIMITER
 

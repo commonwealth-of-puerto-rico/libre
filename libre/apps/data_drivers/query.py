@@ -14,7 +14,8 @@ from .aggregates import Average, Count, Max, Min, Sum
 from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
-    JOIN_TYPE_OR, LQL_DELIMITER)
+    JOIN_TYPE_OR)
+from .settings import LQL_DELIMITER
 from .utils import attrib_sorter, parse_value
 
 logger = logging.getLogger(__name__)

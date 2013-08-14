@@ -199,17 +199,19 @@ SUIT_CONFIG = {
     ),
 }
 
-REST_FRAMEWORK = {
-    'URL_FORMAT_OVERRIDE': '_format',
-}
 
 JOB_PROCESSING_MODE_IMMEDIATE = False
+
+LQL_DELIMITER = '_'
 
 try:
     from settings_local import *
 except ImportError:
     pass
 
+REST_FRAMEWORK = {
+    'URL_FORMAT_OVERRIDE': LQL_DELIMITER + 'format',
+}
 
 if DEVELOPMENT:
     INTERNAL_IPS = ('127.0.0.1',)
