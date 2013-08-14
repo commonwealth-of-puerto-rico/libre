@@ -18,13 +18,13 @@ from django.template.defaultfilters import slugify, truncatechars
 
 import fiona
 from suds.client import Client
-import jsonfield
 import xlrd
 from model_utils.managers import InheritanceManager
 from pyproj import Proj, transform
 
 from db_drivers.models import DatabaseConnection
 from lock_manager import Lock, LockError
+from messagepack_field.fields import MessagePackField
 
 from .exceptions import Http400
 from .job_processing import Job
@@ -321,6 +321,12 @@ class SourceTabularBased(models.Model):
             else:
                 self.import_regex_map[name] = self.__class__.AlwaysTrueSearch()
 
+    def process_regex(self, row):
+        skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.skip_regex_map]
+        import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.import_regex_map]
+
+        return all(cell_skip is False for cell_skip in skip_result) and all(import_result)
+
     class Meta:
         abstract = True
 
@@ -363,12 +369,6 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
                 row_dict = dict(zip(column_names, row))
                 if self.process_regex(row_dict):
                     yield self.apply_datatypes(row_dict, functions_map)
-
-    def process_regex(self, row):
-        skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.skip_regex_map]
-        import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.import_regex_map]
-
-        return all(cell_skip is False for cell_skip in skip_result) and all(import_result)
 
     @transaction.commit_on_success
     def import_data(self, source_data_version):
@@ -674,7 +674,7 @@ class SourceDataVersion(models.Model):
     checksum = models.CharField(max_length=64, verbose_name=_('checksum'))
     ready = models.BooleanField(default=False, verbose_name=_('ready'))
     active = models.BooleanField(default=False, verbose_name=_('active'))
-    metadata = jsonfield.JSONField(blank=True, verbose_name=_('metadata'))
+    metadata = MessagePackField(blank=True, verbose_name=_('metadata'))
 
     def save(self, *args, **kwargs):
         self.timestamp = datetime.datetime.strftime(self.datetime, '%Y%m%d%H%M%S%f')
@@ -693,7 +693,7 @@ class SourceDataVersion(models.Model):
 
 class SourceData(models.Model):
     source_data_version = models.ForeignKey(SourceDataVersion, verbose_name=_('source data version'), related_name='data')
-    row = jsonfield.JSONField(verbose_name=_('row'))
+    row = MessagePackField(verbose_name=_('row'))
     row_id = models.PositiveIntegerField(verbose_name=_('row id'), db_index=True)
 
     def __unicode__(self):
