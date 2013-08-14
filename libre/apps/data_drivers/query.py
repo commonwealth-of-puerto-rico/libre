@@ -53,7 +53,6 @@ class Query():
             for row_id, item in enumerate(self.source.queryset):
                 try:
                     value = item.row
-
                     for index, part in enumerate(filter_entry['field'].split('.')):
                         if part == '_length':
                             value = geometry.shape(value).length
@@ -61,6 +60,8 @@ class Query():
                             value = geometry.shape(value).area
                         elif part == '_type':
                             value = geometry.shape(value).geom_type
+                        elif part == 'year':
+                            value = value.year
                         else:
                             value = value[part]
                 except (AttributeError, TypeError, KeyError):
@@ -91,22 +92,16 @@ class Query():
 
         return self.data
 
-    def process_json_path(self):
-        if self.json_path:
+    def get_filter_functions_map(self):
+        for filter_entry in self.filters:
+            filters_dictionary = {'field': filter_entry['field'], 'filter_name': filter_entry['filter_name'], 'filter_value': filter_entry['filter_value']}
             try:
-                expression = jsonpath_rw.parse(self.json_path)
-
-                if isinstance(self.data, (types.GeneratorType)):
-                    results = [match.value for match in expression.find(list(self.data))]
-                else:
-                    results = [match.value for match in expression.find(self.data)]
-            except Exception as exception:
-                raise Http400('JSON query error; %s' % exception)
+                filter_identifier = FILTER_NAMES[filter_entry['filter_name']]
+            except KeyError:
+                raise Http400('Unknown filter: %s' % filter_entry['filter_name'])
             else:
-                if len(results) == 1:
-                    self.data = results[0]
-                else:
-                    self.data = results
+                filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
+                self.filters_function_map.append(filters_dictionary)
 
     def get_data(self, query_results):
         if self.filters:
@@ -241,16 +236,22 @@ class Query():
                 else:
                     self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': value})
 
-    def get_filter_functions_map(self):
-        for filter_entry in self.filters:
-            filters_dictionary = {'field': filter_entry['field'], 'filter_name': filter_entry['filter_name'], 'filter_value': filter_entry['filter_value']}
+    def process_json_path(self):
+        if self.json_path:
             try:
-                filter_identifier = FILTER_NAMES[filter_entry['filter_name']]
-            except KeyError:
-                raise Http400('Unknown filter: %s' % filter_entry['filter_name'])
+                expression = jsonpath_rw.parse(self.json_path)
+
+                if isinstance(self.data, (types.GeneratorType)):
+                    results = [match.value for match in expression.find(list(self.data))]
+                else:
+                    results = [match.value for match in expression.find(self.data)]
+            except Exception as exception:
+                raise Http400('JSON query error; %s' % exception)
             else:
-                filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
-                self.filters_function_map.append(filters_dictionary)
+                if len(results) == 1:
+                    self.data = results[0]
+                else:
+                    self.data = results
 
     def process_transform(self):
         if self.as_dict_list:
