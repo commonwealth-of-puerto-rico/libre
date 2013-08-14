@@ -229,5 +229,8 @@ PENDING
 
 ----------
   * Dynamic icons
-  * Rename field name
   * Favicon
+  * Sort generator
+
+    * https://gist.github.com/rbonvall/18896
+    * http://www.ics.uci.edu/~eppstein/161/python/mergesort-generators.py
