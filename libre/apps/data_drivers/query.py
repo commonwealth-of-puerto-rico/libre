@@ -15,7 +15,7 @@ from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
     JOIN_TYPE_OR, LQL_DELIMITER)
-from .utils import parse_value
+from .utils import attrib_sorter, parse_value
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,9 @@ class Query():
                     if filter_operation.evaluate(value):
                         filter_results.append(row_id)
 
+            # Store filter results as a list of row id numbers
+            # Not a generator based system, but shouldn't use too much memory
+            # up to several millions ids
             if query_results:
                 if self.join_type == JOIN_TYPE_AND:
                     query_results &= set(filter_results)
@@ -122,7 +125,8 @@ class Query():
             for group in self.groups:
                 self.data, backup = tee(self.data)
                 # Make a backup of the generator
-                sorted_data = sorted(backup, key=itemgetter(group))
+                sorted_data = attrib_sorter(backup, key=group)
+
                 group_dictionary = {'name': group, 'values': []}
 
                 for key, group_data in groupby(sorted_data, lambda x: x[group]):
@@ -174,7 +178,10 @@ class Query():
                 elif parameter.startswith(LQL_DELIMITER + 'aggregate'):
                     # TODO: Use QueryDict lists instead of Regex
                     # example: _aggregate__count=Count(*)
-                    name = parameter.split(DOUBLE_DELIMITER)[1]
+                    try:
+                        name = parameter.split(DOUBLE_DELIMITER)[1]
+                    except IndexError:
+                        raise Http400('Must specify a result name separated by a double delimiter')
 
                     if value.startswith('Count('):
                         self.aggregates.append({
@@ -202,7 +209,7 @@ class Query():
                             'function': Average(value.replace('Average(', '').replace(')', ''))
                         })
                     else:
-                        raise Http400('Unkown aggregate: %s' % value)
+                        raise Http400('Unknown aggregate: %s' % value)
             elif DOUBLE_DELIMITER in parameter:
                 # Not an aggregate? Then it is a filter
                 try:

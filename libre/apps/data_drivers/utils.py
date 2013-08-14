@@ -3,7 +3,10 @@ from __future__ import absolute_import
 import csv
 from HTMLParser import HTMLParser
 import logging
+from operator import itemgetter
 import types
+
+from django.conf import settings
 
 from dateutil.parser import parse
 import pyparsing
@@ -290,3 +293,31 @@ def parse_qs(string):
             result[key] = value
 
     return result
+
+
+def return_attrib(obj, attrib, arguments=None):
+    if isinstance(attrib, types.FunctionType):
+        return attrib(obj)
+    elif isinstance(obj, types.DictType) or isinstance(obj, types.DictionaryType):
+        return obj[attrib]
+    else:
+        result = reduce(getattr, attrib.split(u'.'), obj)
+        if isinstance(result, types.MethodType):
+            if arguments:
+                return result(**arguments)
+            else:
+                return result()
+        else:
+            return result
+
+
+def attrib_sorter(data, key):
+    try:
+        if '.' in key:
+            # Sort by an element property
+            variable, properties = key.split('.', 1)
+            data = (dict(item, **{key: return_attrib(item, properties)}) for item in data)
+
+        return sorted(data, key=itemgetter(key))
+    except KeyError:
+        raise Http400('Unknown field name or field property: %s' % key)
