@@ -315,9 +315,10 @@ def attrib_sorter(data, key):
     try:
         if '.' in key:
             # Sort by an element property
+            logger.debug('has point')
             variable, properties = key.split('.', 1)
-            data = (dict(item, **{key: return_attrib(item, properties)}) for item in data)
-
+            logger.debug('variable, properties: %s, %s' % (variable, properties))
+            data = (dict(item, **{key: return_attrib(itemgetter(variable)(item), properties)}) for item in data)
         return sorted(data, key=itemgetter(key))
     except KeyError:
         raise Http400('Unknown field name or field property: %s' % key)
