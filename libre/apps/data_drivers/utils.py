@@ -14,7 +14,7 @@ from shapely import geometry
 
 from .literals import (DATA_TYPE_DATE, DATA_TYPE_DATETIME, DATA_TYPE_NUMBER, DATA_TYPE_STRING,
     DATA_TYPE_TIME, THOUSAND_SYMBOL, DECIMAL_SYMBOL)
-from .exceptions import Http400
+from .exceptions import LIBREValueError
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,7 @@ DATA_TYPE_FUNCTIONS = {
     DATA_TYPE_DATE: lambda x: parse(x).date(),
     DATA_TYPE_TIME: lambda x: parse(x).time(),
 }
+html_parser = HTMLParser()
 
 
 def parse_enclosed(string):
@@ -91,87 +92,20 @@ class UnicodeReader:
 
 
 def parse_value(string):
+    # Hidden import to avoid circular imports between model.py <- query.py <- this module <- model.py
     from .models import Source
 
-    html_parser = HTMLParser()
-    string = html_parser.unescape(string)
+    string = html_parser.unescape(string).strip()
 
     logger.debug('parsing: %s' % string)
     if string[0] == '"' and string[-1] == '"':
         # Strip quotes
         return unicode(string[1:-1])
-    elif string.startswith('Point'):
-        # Is a point geometry data type
-        x, y = string.strip().replace('Point(', '').replace(')', '').split(',')
 
-        # Check if the Point data type is also specifing a buffer
-        buffer_size = None
-        if '.buffer(' in y:
-            y, buffer_size = y.split('.buffer(')
+    elif any(map(string.startswith, ['Point', 'LineString', 'LinearRings', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'Geometry'])):
+        logger.debug('is a geometry')
+        return parse_as_geometry(string)
 
-        value = geometry.Point(float(x), float(y))
-
-        if buffer_size:
-            value = value.buffer(float(buffer_size[:-1]))
-
-        return value
-    elif string.startswith('LineStrings'):
-        # Is a point geometry data type
-        points = string.strip().replace('LineStrings(', '').replace(')', '')
-
-        value = geometry.LineStrings(parse_value(points))
-
-        return value
-    elif string.startswith('LinearRings'):
-        # Is a point geometry data type
-        points = string.strip().replace('LinearRings(', '').replace(')', '')
-
-        value = geometry.LinearRings(parse_value(points))
-
-        return value
-    elif string.startswith('Polygon'):
-        # Is a point geometry data type
-        points = string.strip().replace('Polygon(', '').replace(')', '')
-
-        value = geometry.Polygon(parse_value(points))
-
-        return value
-    elif string.startswith('MultiPoint'):
-        # Is a point geometry data type
-        points = string.strip().replace('MultiPoint(', '').replace(')', '')
-
-        value = geometry.MultiPoint(parse_value(points))
-
-        return value
-    elif string.startswith('MultiLineString'):
-        # Is a point geometry data type
-        points = string.strip().replace('MultiLineString(', '').replace(')', '')
-
-        value = geometry.MultiLineString(parse_value(points))
-
-        return value
-    elif string.startswith('MultiPolygon'):
-        # Is a point geometry data type
-        points = string.strip().replace('MultiPolygon(', '').replace(')', '')
-
-        value = geometry.MultiPolygon(parse_value(points))
-
-        return value
-    elif string.startswith('Geometry'):
-        # Is a point geometry data type
-        points = string.strip().replace('Geometry(', '').replace(')', '')
-
-        # Check if the geometry data type is also specifing a buffer
-        buffer_size = None
-        if '.buffer(' in points:
-            points, buffer_size = points.split('.buffer(')
-
-        value = geometry.shape(parse_value(points))
-
-        if buffer_size:
-            value = value.buffer(float(buffer_size[:-1]))
-
-        return value
     elif string[0] == '[' and string[-1] == ']':
         # Is a list of values
         logger.debug('Is a list')
@@ -214,8 +148,8 @@ def parse_value(string):
         try:
             new_source = Source.objects.get_subclass(slug=source_slug)
         except Source.DoesNotExist:
-            logger.debug('no source named: %s' % source_slug)
-            raise Http400('no source named: %s' % source_slug)
+            logger.error('no source named: %s' % source_slug)
+            raise LIBREValueError('no source named: %s' % source_slug)
         else:
             logger.debug('got new source named: %s' % source_slug)
             # Rebuild the parameters for this enclosed value, omitting the source slug
@@ -236,7 +170,34 @@ def parse_value(string):
         try:
             return convert_to_number(string)
         except ValueError:
-            raise Http400('Invalid value or unknown source: %s' % string)
+            logger.error('Invalid value or unknown source: %s' % string)
+            raise LIBREValueError('Invalid value or unknown source: %s' % string)
+
+
+def parse_as_geometry(string):
+    geometry_name, value = string.split('(', 1)
+    logger.debug('geometry name: %s' % geometry_name)
+
+    # Get the geometry class from the 'shapely.geometry' module
+    geometry_class = getattr(geometry, geometry_name, geometry.shape)
+
+    # Check if the geometry data is also specifing a buffer
+    buffer_size = None
+    if '.buffer(' in value:
+        value, buffer_size = value.split('.buffer(')
+        buffer_size = buffer_size[:-1]  # Strip closing parenthesis
+
+    value = value[:-1]  # Strip closing parenthesis
+
+    try:
+        value = geometry_class(parse_value(value))
+    except Exception as exception:
+        raise LIBREValueError('Unable to parse value: %s as a geometry' % value)
+
+    if buffer_size:
+        value = value.buffer(float(buffer_size))
+
+    return value
 
 
 def split_qs(string, delimiter='&'):
@@ -321,4 +282,4 @@ def attrib_sorter(data, key):
             data = (dict(item, **{key: return_attrib(itemgetter(variable)(item), properties)}) for item in data)
         return sorted(data, key=itemgetter(key))
     except KeyError:
-        raise Http400('Unknown field name or field property: %s' % key)
+        raise LIBREValueError('Unknown field name or field property: %s' % key)
