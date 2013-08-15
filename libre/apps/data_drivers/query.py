@@ -36,7 +36,7 @@ class Query():
         if not parameters:
             parameters = {}
 
-        self.parse_parameters(parameters)
+        self.parse_query(parameters)
         self.get_filter_functions_map()
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[self.join_type])
@@ -92,63 +92,7 @@ class Query():
 
         return self.data
 
-    def get_filter_functions_map(self):
-        for filter_entry in self.filters:
-            filters_dictionary = {'field': filter_entry['field'], 'filter_name': filter_entry['filter_name'], 'filter_value': filter_entry['filter_value']}
-            try:
-                filter_identifier = FILTER_NAMES[filter_entry['filter_name']]
-            except KeyError:
-                raise Http400('Unknown filter: %s' % filter_entry['filter_name'])
-            else:
-                filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
-                self.filters_function_map.append(filters_dictionary)
-
-    def get_data(self, query_results):
-        if self.filters:
-            if len(query_results) == 1:
-                # Special case because itemgetter doesn't returns a list but a value
-                self.data = (item.row for item in [itemgetter(*list(query_results))(self.source.queryset)])
-            elif len(query_results) == 0:
-                self.data = []
-            else:
-                self.data = (item.row for item in itemgetter(*list(query_results))(self.source.queryset)[0:self.source.limit])
-        else:
-            self.data = (item.row for item in self.source.queryset[0:self.source.limit])
-
-    def process_groups(self):
-        if self.groups:
-            result = []
-            for group in self.groups:
-                self.data, backup = tee(self.data)
-                # Make a backup of the generator
-                sorted_data = attrib_sorter(backup, key=group)
-
-                group_dictionary = {'name': group, 'values': []}
-
-                for key, group_data in groupby(sorted_data, lambda x: x[group]):
-                    group_dictionary['values'].append({'value': key, 'elements': list(group_data)})
-
-                result.append(group_dictionary)
-            self.data = result
-
-    def process_aggregates(self):
-        if self.aggregates:
-            if self.groups:
-                result = []
-                for group in self.data:
-                    for group_value in group['values']:
-                        group_value['aggregates'] = []
-                        for aggregate in self.aggregates:
-                            group_value['aggregates'].append({aggregate['name']: aggregate['function'].execute(group_value['elements'])})
-            else:
-                result = {}
-                for aggregate in self.aggregates:
-                    # Make a backup of the generator
-                    self.data, backup = tee(self.data)
-                    result[aggregate['name']] = aggregate['function'].execute(backup)
-                self.data = result
-
-    def parse_parameters(self, parameters):
+    def parse_query(self, parameters):
         for parameter, value in parameters.items():
             logger.debug('parameter: %s' % parameter)
             logger.debug('value: %s' % value)
@@ -235,6 +179,64 @@ class Query():
                         raise Http400('Malformed query: %s' % exception)
                 else:
                     self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': value})
+
+    def get_filter_functions_map(self):
+        for filter_entry in self.filters:
+            filters_dictionary = {'field': filter_entry['field'], 'filter_name': filter_entry['filter_name'], 'filter_value': filter_entry['filter_value']}
+            try:
+                filter_identifier = FILTER_NAMES[filter_entry['filter_name']]
+            except KeyError:
+                raise Http400('Unknown filter: %s' % filter_entry['filter_name'])
+            else:
+                filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
+                self.filters_function_map.append(filters_dictionary)
+
+    def get_data(self, query_results):
+        if self.filters:
+            if len(query_results) == 1:
+                # Special case because itemgetter doesn't returns a list but a value
+                self.data = (item.row for item in [itemgetter(*list(query_results))(self.source.queryset)])
+            elif len(query_results) == 0:
+                self.data = []
+            else:
+                self.data = (item.row for item in itemgetter(*list(query_results))(self.source.queryset)[0:self.source.limit])
+        else:
+            self.data = (item.row for item in self.source.queryset[0:self.source.limit])
+
+    def process_groups(self):
+        if self.groups:
+            result = []
+            for group in self.groups:
+                self.data, backup = tee(self.data)
+                # Make a backup of the generator
+                print '!!!!!!!!!!!!!!!!!pre-sort'
+                sorted_data = attrib_sorter(backup, key=group)
+                print '!!!!!!!!!!!!!!!!!sorted!'
+
+                group_dictionary = {'name': group, 'values': []}
+
+                for key, group_data in groupby(sorted_data, lambda x: x[group]):
+                    group_dictionary['values'].append({'value': key, 'elements': list(group_data)})
+
+                result.append(group_dictionary)
+            self.data = result
+
+    def process_aggregates(self):
+        if self.aggregates:
+            if self.groups:
+                result = []
+                for group in self.data:
+                    for group_value in group['values']:
+                        group_value['aggregates'] = []
+                        for aggregate in self.aggregates:
+                            group_value['aggregates'].append({aggregate['name']: aggregate['function'].execute(group_value['elements'])})
+            else:
+                result = {}
+                for aggregate in self.aggregates:
+                    # Make a backup of the generator
+                    self.data, backup = tee(self.data)
+                    result[aggregate['name']] = aggregate['function'].execute(backup)
+                self.data = result
 
     def process_json_path(self):
         if self.json_path:
