@@ -24,7 +24,7 @@ from pyproj import Proj, transform
 
 from db_drivers.models import DatabaseConnection
 from lock_manager import Lock, LockError
-from messagepack_field.fields import MessagePackField
+from picklefield.fields import PickledObjectField
 
 from .exceptions import Http400
 from .job_processing import Job
@@ -674,7 +674,7 @@ class SourceDataVersion(models.Model):
     checksum = models.CharField(max_length=64, verbose_name=_('checksum'))
     ready = models.BooleanField(default=False, verbose_name=_('ready'))
     active = models.BooleanField(default=False, verbose_name=_('active'))
-    metadata = MessagePackField(blank=True, verbose_name=_('metadata'))
+    metadata = PickledObjectField(blank=True, verbose_name=_('metadata'))
 
     def save(self, *args, **kwargs):
         self.timestamp = datetime.datetime.strftime(self.datetime, '%Y%m%d%H%M%S%f')
@@ -693,7 +693,7 @@ class SourceDataVersion(models.Model):
 
 class SourceData(models.Model):
     source_data_version = models.ForeignKey(SourceDataVersion, verbose_name=_('source data version'), related_name='data')
-    row = MessagePackField(verbose_name=_('row'))
+    row = PickledObjectField(verbose_name=_('row'))
     row_id = models.PositiveIntegerField(verbose_name=_('row id'), db_index=True)
 
     def __unicode__(self):

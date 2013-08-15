@@ -149,7 +149,6 @@ INSTALLED_APPS = (
     'db_drivers',
     'data_drivers',
     'main',
-    'messagepack_field',
 )
 
 # A sample logging configuration. The only tangible logging
