@@ -20,11 +20,12 @@ import fiona
 from suds.client import Client
 import xlrd
 from model_utils.managers import InheritanceManager
+from picklefield.fields import PickledObjectField
 from pyproj import Proj, transform
+from shapely import geometry
 
 from db_drivers.models import DatabaseConnection
 from lock_manager import Lock, LockError
-from picklefield.fields import PickledObjectField
 
 from .exceptions import Http400
 from .job_processing import Job
@@ -652,7 +653,7 @@ class SourceShape(Source, SourceFileBased):
                     if new_projection:
                         feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
 
-                    SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=feature)
+                    SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row={'geometry': geometry.shape(feature['geometry']), 'properties': feature['properties']}   )
 
         source_data_version.ready = True
         source_data_version.active = True
