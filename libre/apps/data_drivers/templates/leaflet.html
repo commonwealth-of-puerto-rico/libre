@@ -28,8 +28,6 @@
             // create a map in the "map" div, set the view to a given place and zoom
             var map = L.map('map')
 
-
-
             // add an OpenStreetMap tile layer
             L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="http://osm.org/copyright"></a>OpenStreetMap & contributors'
@@ -37,10 +35,18 @@
 
             var geoJSONdata = {{ data|safe }};
 
-            L.geoJson(geoJSONdata, {
+            // Features with custom marker
+            var main_features = L.geoJson(geoJSONdata, {
                 onEachFeature: function (feature, layer) {
                     layer.bindPopup(feature.properties.popup);
-                }
+                },
+                pointToLayer: function (feature, latlng) {
+                    if ('_icon_properties' in feature.properties) {
+                        return L.marker(latlng, {icon: L.icon(feature.properties._icon_properties)});
+                    } else {
+                        return L.marker(latlng);
+                    }
+                },
             }).addTo(map);
 
             {% if template_extra_context.geometry %}
@@ -70,7 +76,7 @@
                     [{{ template_extra_context.extents.1 }}, {{ template_extra_context.extents.0 }}],
                     [{{ template_extra_context.extents.3 }}, {{ template_extra_context.extents.2 }}]
                 ],
-                    {              
+                    {
                         padding: [7, 7]
                     }
                 );
