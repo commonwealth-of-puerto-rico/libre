@@ -16,7 +16,7 @@ from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
     JOIN_TYPE_OR)
 from .settings import LQL_DELIMITER
-from .utils import attrib_sorter, parse_value
+from .utils import attrib_sorter, parse_value, return_attrib
 
 logger = logging.getLogger(__name__)
 
@@ -52,18 +52,7 @@ class Query():
 
             for row_id, item in enumerate(self.source.queryset):
                 try:
-                    value = item.row
-                    for index, part in enumerate(filter_entry['field'].split('.')):
-                        if part == '_length':
-                            value = geometry.shape(value).length
-                        elif part == '_area':
-                            value = geometry.shape(value).area
-                        elif part == '_type':
-                            value = geometry.shape(value).geom_type
-                        elif part == 'year':
-                            value = value.year
-                        else:
-                            value = value[part]
+                    value = return_attrib(item.row, filter_entry['field'])
                 except (AttributeError, TypeError, KeyError):
                     # A dotted attribute is not found
                     raise Http400('Invalid element: %s' % filter_entry['field'])
