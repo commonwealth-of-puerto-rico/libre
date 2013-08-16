@@ -35,14 +35,28 @@
 
             var geoJSONdata = {{ data|safe }};
 
+            var markers = {
+                {% for marker in markers.all %}
+                    '{{ marker.slug }}': L.icon({
+                        iconUrl: '{{ marker.icon.get_absolute_url }}',
+                        //shadowUrl: 'leaf-shadow.png',
+
+                        //iconSize:     [38, 95], // size of the icon
+                        //shadowSize:   [50, 64], // size of the shadow
+                        iconAnchor:   [0, 0], // point of the icon which will correspond to marker's location
+                        shadowAnchor: [0, 0],  // the same for the shadow
+                        popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+                    }),
+                {% endfor %}
+            }
             // Features with custom marker
             var main_features = L.geoJson(geoJSONdata, {
                 onEachFeature: function (feature, layer) {
-                    layer.bindPopup(feature.properties.popup);
+                    layer.bindPopup(feature.properties._popup);
                 },
                 pointToLayer: function (feature, latlng) {
-                    if ('_icon_properties' in feature.properties) {
-                        return L.marker(latlng, {icon: L.icon(feature.properties._icon_properties)});
+                    if (feature.properties._marker in markers) {
+                        return L.marker(latlng, {icon: markers[feature.properties._marker]});
                     } else {
                         return L.marker(latlng);
                     }
@@ -83,7 +97,6 @@
             {% else %}
                 map.locate({setView: true, maxZoom: {{ template_extra_context.zoom_level|default:10 }}});
             {% endif %}
-
 
         </script>
     </body>

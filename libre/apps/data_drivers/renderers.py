@@ -22,11 +22,11 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
     exception_template_names = ['leaflet_exception.html']
     encoder_class = JSONEncoder
 
-    def process_feature(self, feature, template):
+    def process_feature(self, feature, popup_template, marker_template):
         new_feature = {'type': 'Feature'}
         new_feature.update(feature)
         new_feature['properties'] = {}
-        new_feature['properties']['popup'] = template.render(
+        new_feature['properties']['_popup'] = popup_template.render(
             Context(
                 {
                     'feature': feature,
@@ -34,6 +34,13 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
                 }
             )
         )
+        new_feature['properties']['_marker'] = marker_template.render(
+            Context(
+                {
+                    'feature': feature,
+                }
+            )
+        ).strip()
         return new_feature
 
     def setup_icons_dict(self):
@@ -54,6 +61,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         request = renderer_context['request']
         response = renderer_context['response']
         extra_context = renderer_context['extra_context']
+        obj = view.get_object()
 
         if response.exception:
             template = self.get_exception_template(response)
@@ -77,16 +85,21 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         self.setup_icons_dict()
 
         try:
-            popup_template = Template(getattr(view.get_object(), 'popup_template', None))
+            popup_template = Template(getattr(obj, 'popup_template', None))
         except TemplateSyntaxError as exception:
             popup_template = Template(exception)
 
+        try:
+            marker_template = Template(getattr(obj, 'marker_template', None))
+        except TemplateSyntaxError as exception:
+            marker_template = Template(exception)
+
         # TODO: fix this, use isinstace
         if type(data) == type({}):
-            features.append(self.process_feature(data, popup_template))
+            features.append(self.process_feature(data, popup_template, marker_template))
         else:
             for feature in data:
-                features.append(self.process_feature(feature, popup_template))
+                features.append(self.process_feature(feature, popup_template, marker_template))
 
         new_data['features'] = features
         if 'latitude' and 'longitude' not in extra_context:
@@ -106,7 +119,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         if isinstance(ret, six.text_type):
             ret = bytes(ret.encode(self.charset))
 
-        context.update({'data': ret})
+        context.update({'data': ret, 'markers': obj.markers})
         if 'geometry' in extra_context:
             extra_context['geometry'] = json.dumps(extra_context['geometry'].__geo_interface__)
         context.update({'template_extra_context': extra_context})

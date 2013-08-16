@@ -5,9 +5,9 @@ from django.utils.translation import ugettext_lazy as _
 
 from .forms import (SourceDatabaseForm, CSVColumnForm, ShapefileColumnForm,
     SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm, SourceWSForm, SourceShapeForm)
-from .models import (CSVColumn, DatabaseResultColumn, SourceDatabase, FixedWidthColumn, ShapefileColumn, SourceCSV,
-    SourceDataVersion, SourceFixedWidth, SourceShape, SourceSpreadsheet, SpreadsheetColumn,
-    SourceWS, WSArgument, WSResultField)
+from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
+    ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
+    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSArgument, WSResultField)
 
 
 class DatabaseResultColumnInline(admin.TabularInline):
@@ -249,12 +249,13 @@ class SourceShapeAdmin(admin.ModelAdmin):
         }),
         (_('Leaflet renderer'), {
             'classes': ('suit-tab suit-tab-renderers',),
-            'fields': ('popup_template',)
+            'fields': ('popup_template', 'markers', 'marker_template')
         }),
     )
 
     list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
     list_editable = ('published',)
+    filter_horizontal = ['markers']
     inlines = [SourceDataVersionInline, ShapefileColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceShapeForm
@@ -266,3 +267,4 @@ admin.site.register(SourceCSV, SourceCSVAdmin)
 admin.site.register(SourceShape, SourceShapeAdmin)
 admin.site.register(SourceFixedWidth, SourceFixedWidthAdmin)
 admin.site.register(SourceWS, SourceWSAdmin)
+admin.site.register(LeafletMarker)

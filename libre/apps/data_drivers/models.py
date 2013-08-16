@@ -25,6 +25,7 @@ from pyproj import Proj, transform
 from shapely import geometry
 
 from db_drivers.models import DatabaseConnection
+from icons.models import Icon
 from lock_manager import Lock, LockError
 
 from .exceptions import Http400
@@ -557,12 +558,37 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
         verbose_name_plural = _('spreadsheet sources')
 
 
+class LeafletMarker(models.Model):
+    slug = models.SlugField(verbose_name=_(u'slug'), unique=True)
+    label = models.CharField(max_length=48, verbose_name=_(u'label'), blank=True)
+    icon = models.ForeignKey(Icon, verbose_name=_('icon'), related_name='leafletmarker-icon')
+    shadow = models.ForeignKey(Icon, null=True, blank=True, verbose_name=_('shadow'), related_name='leafletmarker-shadow')
+    icon_anchor_x = models.IntegerField(verbose_name=_('icon anchor (horizontal)'), blank=True, null=True)
+    icon_anchor_y = models.IntegerField(verbose_name=_('icon anchor (vertical)'), blank=True, null=True)
+
+    #        //iconSize:     [38, 95], // size of the icon
+    #        //shadowSize:   [50, 64], // size of the shadow
+    #        //iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
+    #        //shadowAnchor: [4, 62],  // the same for the shadow
+    #        //popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+
+    def __unicode__(self):
+        return '%s%s' % (self.slug, ' (%s)' % self.label if self.label else '')
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.label)
+        super(LeafletMarker, self).save(*args, **kwargs)
+
+
 class SourceShape(Source, SourceFileBased):
     source_type = _('Shapefile')
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML,
         RENDERER_LEAFLET)
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
     new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
+    markers = models.ManyToManyField(LeafletMarker)
+    marker_template = models.TextField(blank=True, verbose_name=_('marker template'), help_text=_('Template to determine what marker each respective feature will use.'))
 
     @staticmethod
     def transform(old_projection, new_projection, geometry, geometry_type=None):

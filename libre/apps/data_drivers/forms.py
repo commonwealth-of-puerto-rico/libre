@@ -59,7 +59,8 @@ class SourceWSForm(SourceForm):
 class SourceShapeForm(SourceForm):
     class Meta:
         widgets = {
-            'popup_template': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
+            'popup_template': AutosizedTextarea(attrs={'rows': 20, 'class': 'input-xlarge'}),
+            'marker_template': AutosizedTextarea(attrs={'rows': 20, 'class': 'input-xlarge'}),
             'limit': NumberInput(attrs={'class': 'input-mini'}),
             'path': EnclosedInput(prepend='icon-folder-open'),
             'url': EnclosedInput(prepend='icon-globe'),
