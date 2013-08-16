@@ -10,7 +10,7 @@ from django.conf import settings
 from shapely import geometry
 import jsonpath_rw
 
-from .aggregates import Average, Count, Max, Min, Sum
+from .aggregates import AGGREGATES_NAMES
 from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
@@ -116,37 +116,20 @@ class Query():
                 elif parameter == LQL_DELIMITER + 'group_by':
                     self.groups = value.split(',')
                 elif parameter.startswith(LQL_DELIMITER + 'aggregate'):
-                    # TODO: Use QueryDict lists instead of Regex
                     # example: _aggregate__count=Count(*)
                     try:
-                        name = parameter.split(DOUBLE_DELIMITER)[1]
+                        output_name = parameter.split(DOUBLE_DELIMITER, 1)[1]
                     except IndexError:
                         raise Http400('Must specify a result name separated by a double delimiter')
 
-                    if value.startswith('Count('):
+
+                    if any(map(value.startswith, AGGREGATES_NAMES)):  # Is it any of the known aggregate names?
+                        aggregate_name, value = value.split('(', 1)
+                        value = value [:-1]  # remove last parentheses from value
+
                         self.aggregates.append({
-                            'name': name,
-                            'function': Count(value.replace('Count(', '').replace(')', ''))
-                        })
-                    elif value.startswith('Sum('):
-                        self.aggregates.append({
-                            'name': name,
-                            'function': Sum(value.replace('Sum(', '').replace(')', ''))
-                        })
-                    elif value.startswith('Max('):
-                        self.aggregates.append({
-                            'name': name,
-                            'function': Max(value.replace('Max(', '').replace(')', ''))
-                        })
-                    elif value.startswith('Min('):
-                        self.aggregates.append({
-                            'name': name,
-                            'function': Min(value.replace('Min(', '').replace(')', ''))
-                        })
-                    elif value.startswith('Average('):
-                        self.aggregates.append({
-                            'name': name,
-                            'function': Average(value.replace('Average(', '').replace(')', ''))
+                            'name': output_name,
+                            'function': AGGREGATES_NAMES[aggregate_name](value)
                         })
                     else:
                         raise Http400('Unknown aggregate: %s' % value)
@@ -209,10 +192,7 @@ class Query():
             for group in self.groups:
                 self.data, backup = tee(self.data)
                 # Make a backup of the generator
-                print '!!!!!!!!!!!!!!!!!pre-sort'
                 sorted_data = attrib_sorter(backup, key=group)
-                print '!!!!!!!!!!!!!!!!!sorted!'
-
                 group_dictionary = {'name': group, 'values': []}
 
                 for key, group_data in groupby(sorted_data, lambda x: x[group]):
