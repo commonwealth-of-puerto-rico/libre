@@ -11,3 +11,7 @@ class LIBREError(ParseError):
 
 class LIBREValueError(LIBREError):
     pass
+
+
+class LIBREFieldError(LIBREError):
+    pass
