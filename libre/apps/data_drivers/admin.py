@@ -1,75 +1,13 @@
 from __future__ import absolute_import
 
 from django.contrib import admin, messages
-from django.forms import ModelForm, widgets
 from django.utils.translation import ugettext_lazy as _
 
-from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput, SuitSplitDateTimeWidget
-
+from .forms import (SourceDatabaseForm, CSVColumnForm, ShapefileColumnForm,
+    SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm, SourceWSForm, SourceShapeForm)
 from .models import (CSVColumn, DatabaseResultColumn, SourceDatabase, FixedWidthColumn, ShapefileColumn, SourceCSV,
     SourceDataVersion, SourceFixedWidth, SourceShape, SourceSpreadsheet, SpreadsheetColumn,
     SourceWS, WSArgument, WSResultField)
-
-
-class SourceDatabaseForm(ModelForm):
-    class Meta:
-        widgets = {
-            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'query': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-        }
-
-
-class SourceSpreadsheetForm(ModelForm):
-    class Meta:
-        widgets = {
-            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
-            'sheet': NumberInput(attrs={'class': 'input-mini'}),
-            'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-        }
-
-
-class SourceFixedWidthForm(ModelForm):
-    class Meta:
-        widgets = {
-            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
-            'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-        }
-
-
-class SourceCSVForm(ModelForm):
-    class Meta:
-        widgets = {
-            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
-            'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-        }
-
-
-class SourceWSForm(ModelForm):
-    class Meta:
-        widgets = {
-            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'wsdl_url': EnclosedInput(prepend='icon-globe'),
-        }
-
-
-class SourceShapeForm(ModelForm):
-    class Meta:
-        widgets = {
-            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'popup_template': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
-        }
 
 
 class DatabaseResultColumnInline(admin.TabularInline):
@@ -93,16 +31,6 @@ class FixedWidthColumnInline(admin.TabularInline):
     suit_classes = 'suit-tab suit-tab-configuration'
 
 
-class CSVColumnForm(ModelForm):
-    class Meta:
-        widgets = {
-            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
-            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
-            'name': widgets.TextInput(attrs={'class': 'input-small'}),
-            'default': EnclosedInput(attrs={'class': 'input-mini'}),
-            'data_type': widgets.Select(attrs={'class': 'input-small'}),
-        }
-
 class CSVColumnInline(admin.TabularInline):
     model = CSVColumn
     extra = 1
@@ -114,16 +42,6 @@ class SpreadsheetColumnInline(admin.TabularInline):
     model = SpreadsheetColumn
     extra = 1
     suit_classes = 'suit-tab suit-tab-configuration'
-
-
-class ShapefileColumnForm(ModelForm):
-    class Meta:
-        widgets = {
-            'name': widgets.TextInput(attrs={'class': 'input-small'}),
-            'new_name': widgets.TextInput(attrs={'class': 'input-small'}),
-            'default': EnclosedInput(attrs={'class': 'input-mini'}),
-            'data_type': widgets.Select(attrs={'class': 'input-small'}),
-        }
 
 
 class ShapefileColumnInline(admin.TabularInline):
@@ -309,7 +227,7 @@ class SourceWSAdmin(admin.ModelAdmin):
 
 
 class SourceShapeAdmin(admin.ModelAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')))
+    suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')), ('renderers', _('Renderers')))
 
     fieldsets = (
         (_('Basic information'), {
@@ -329,8 +247,8 @@ class SourceShapeAdmin(admin.ModelAdmin):
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('new_projection',)
         }),
-        (_('Map rendering'), {
-            'classes': ('suit-tab suit-tab-configuration',),
+        (_('Leaflet renderer'), {
+            'classes': ('suit-tab suit-tab-renderers',),
             'fields': ('popup_template',)
         }),
     )
