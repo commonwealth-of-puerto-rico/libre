@@ -653,7 +653,8 @@ class SourceShape(Source, SourceFileBased):
                     if new_projection:
                         feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
 
-                    SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row={'geometry': geometry.shape(feature['geometry']), 'properties': feature['properties']}   )
+                    feature['geometry'] = geometry.shape(feature['geometry'])
+                    SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=feature)
 
         source_data_version.ready = True
         source_data_version.active = True
