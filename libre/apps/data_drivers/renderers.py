@@ -8,16 +8,19 @@ import types
 from django.template import Context, Template, TemplateSyntaxError
 
 from rest_framework import renderers
-from rest_framework.compat import StringIO, smart_text, six
+from rest_framework.compat import smart_text, six
 from shapely import geometry
 
 from icons.models import Icon
+
+from .encoders import JSONEncoder
 
 
 class LeafletRenderer(renderers.TemplateHTMLRenderer):
     template_name = 'leaflet.html'
     format = 'map_leaflet'
     exception_template_names = ['leaflet_exception.html']
+    encoder_class = JSONEncoder
 
     def process_feature(self, feature, template):
         new_feature = {'type': 'Feature'}
@@ -89,9 +92,21 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         if 'latitude' and 'longitude' not in extra_context:
             # User didn't specified which latitude and longitude to move the map,
             # determine where to move the map ourselves
-            extra_context['extents'] = self.determine_extents(features)
+            try:
+                extra_context['extents'] = self.determine_extents(features)
+            except StopIteration:
+                pass
 
-        context.update({'data': json.dumps(new_data)})
+        ret = json.dumps(new_data, cls=self.encoder_class, ensure_ascii=True)
+
+        # On python 2.x json.dumps() returns bytestrings if ensure_ascii=True,
+        # but if ensure_ascii=False, the return type is underspecified,
+        # and may (or may not) be unicode.
+        # On python 3.x json.dumps() returns unicode strings.
+        if isinstance(ret, six.text_type):
+            ret = bytes(ret.encode(self.charset))
+
+        context.update({'data': ret})
         if 'geometry' in extra_context:
             extra_context['geometry'] = json.dumps(extra_context['geometry'].__geo_interface__)
         context.update({'template_extra_context': extra_context})
@@ -127,9 +142,16 @@ class CustomXMLRenderer(renderers.XMLRenderer):
                 self._to_xml(xml, value)
                 xml.endElement(key)
 
+        elif isinstance(data, (geometry.LineString, geometry.MultiLineString, geometry.MultiPoint, geometry.MultiPolygon, geometry.Point, geometry.Polygon)):
+            return self._to_xml(xml, data.__geo_interface__)
+
         elif data is None:
             # Don't output any value
             pass
 
         else:
             xml.characters(smart_text(data))
+
+
+class CustomJSONRenderer(renderers.JSONRenderer):
+    encoder_class = JSONEncoder

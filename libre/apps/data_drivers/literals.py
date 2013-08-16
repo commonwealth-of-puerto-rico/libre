@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import renderers
 
-from .renderers import CustomXMLRenderer, LeafletRenderer
+from .renderers import CustomJSONRenderer, CustomXMLRenderer, LeafletRenderer
 from .settings import LQL_DELIMITER
 
 # Row based
@@ -37,7 +37,7 @@ RENDERER_LEAFLET = 5
 
 RENDERER_MAPPING = {
     RENDERER_BROWSEABLE_API: renderers.BrowsableAPIRenderer,
-    RENDERER_JSON: renderers.JSONRenderer,
+    RENDERER_JSON: CustomJSONRenderer,
     RENDERER_XML: CustomXMLRenderer,
     RENDERER_YAML: renderers.YAMLRenderer,
     RENDERER_LEAFLET: LeafletRenderer,
