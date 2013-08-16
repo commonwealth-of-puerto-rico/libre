@@ -256,20 +256,15 @@ def parse_qs(string):
     return result
 
 
-def return_attrib(obj, attrib, arguments=None):
-    if isinstance(attrib, types.FunctionType):
-        return attrib(obj)
-    elif isinstance(obj, types.DictType) or isinstance(obj, types.DictionaryType):
+def get_value(obj, attrib):
+    try:
         return obj[attrib]
-    else:
-        result = reduce(getattr, attrib.split(u'.'), obj)
-        if isinstance(result, types.MethodType):
-            if arguments:
-                return result(**arguments)
-            else:
-                return result()
-        else:
-            return result
+    except (KeyError, TypeError):
+        return getattr(obj, attrib)
+
+
+def return_attrib(obj, attrib):
+    return reduce(get_value, attrib.split(u'.'), obj)
 
 
 def attrib_sorter(data, key):
