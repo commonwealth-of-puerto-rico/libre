@@ -19,9 +19,6 @@ FILTER_GTE = 10
 FILTER_IN = 11
 FILTER_EQUALS = 12
 FILTER_RANGE = 13
-FILTER_YEAR = 14
-FILTER_MONTH = 15
-FILTER_DAY = 16
 FILTER_HAS = 17
 FILTER_DISJOINT = 18
 FILTER_INTERSECTS = 19
@@ -46,9 +43,6 @@ FILTER_NAMES = {
     'not_in': FILTER_NOT_IN,
     'equals': FILTER_EQUALS,  # TODO: Add support for aliases  '='
     'range': FILTER_RANGE,
-    'year': FILTER_YEAR,
-    'month': FILTER_MONTH,
-    'day': FILTER_DAY,
     'has': FILTER_HAS,
     'disjoint': FILTER_DISJOINT,
     'intersects': FILTER_INTERSECTS,
@@ -170,39 +164,12 @@ class Equals(Filter):
         return self.filter_value == value
 
 
-# Date filters
 class Range(Filter):
     def evaluate(self, value):
         try:
-            return parse(value) >= self.filter_value[0] and parse(value) <= self.filter_value[1]
-        except AttributeError:
-            raise Http400('field: %s is not a date' % self.field)
+            return value >= self.filter_value[0] and value <= self.filter_value[1]
         except (TypeError, IndexError):
-            raise Http400('Range filter value must be a list of 2 dates.')
-
-
-class Year(Filter):
-    def evaluate(self, value):
-        try:
-            return parse(value).year == self.filter_value
-        except (ValueError, AttributeError):
-            raise Http400('field: %s, is not a date or time field' % self.field)
-
-
-class Month(Filter):
-    def evaluate(self, value):
-        try:
-            return parse(value).month == self.filter_value
-        except (ValueError, AttributeError):
-            raise Http400('field: %s, is not a date or time field' % self.field)
-
-
-class Day(Filter):
-    def evaluate(self, value):
-        try:
-            return parse(value).day == self.filter_value
-        except (ValueError, AttributeError):
-            raise Http400('field: %s, is not a date or time field' % self.field)
+            raise Http400('Range filter value must be a list of 2 values.')
 
 
 # Spatial filters
@@ -264,11 +231,7 @@ FILTER_CLASS_MAP = {
     # Other
     FILTER_NOT_IN: NotIn,
     FILTER_EQUALS: Equals,
-    # Date
     FILTER_RANGE: Range,
-    FILTER_YEAR: Year,
-    FILTER_MONTH: Month,
-    FILTER_DAY: Day,
     # Spatial
     FILTER_HAS: Has,
     FILTER_DISJOINT: Disjoint,

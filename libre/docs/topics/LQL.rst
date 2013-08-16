@@ -162,40 +162,6 @@ Return the elements whose field values are greater than or equal than the specif
 Example: ``month_sales__gte=200000``
 
 
-Date filters
-~~~~~~~~~~~~
-
-year
-----
-
-``year=<number>``
-
-Return the elements whose field values's years are the same as the specified number.
-
-Example: ``crimes__year=2012``
-
-
-month
------
-
-``month=<number>``
-
-Return the elements whose field values's months are the same as the specified number.
-
-Example: ``travels__month=3``
-
-
-day
----
-
-``day=<number>``
-
-Return the elements whose field values's day are the same as the specified number.
-
-Example: ``party__day=1``
-
-
-
 Spatial filters
 ~~~~~~~~~~~~~~~
 
