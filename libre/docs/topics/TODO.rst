@@ -142,7 +142,6 @@ PENDING
   * Delete stored source files when a source is deleted
   * Delete stored source files when a new file is uploaded
   * Fix JsonField not returning dates or times only datetimes
-  * Return a {'status': } dictionary with error message
   * Move _fields parsing to allow being parsed on get_one method
   * Optimize AND type join
   * Use islice
@@ -180,8 +179,6 @@ PENDING
   * Regex support for Fixed width sources
   * Add view type source
   * Improve _flatten predicate
-  * Label & titles
-  * pagination
   * Add dumb result caching
 
    * Hash query + hash of sources = key: value = result
@@ -232,4 +229,3 @@ PENDING
     * http://www.ics.uci.edu/~eppstein/161/python/mergesort-generators.py
 
   * Dynamic icons
-  * Favicon
