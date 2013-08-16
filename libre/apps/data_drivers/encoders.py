@@ -8,8 +8,6 @@ import json
 from django.utils.datastructures import SortedDict
 from django.utils.functional import Promise
 
-import geojson
-
 from rest_framework.compat import timezone, force_text
 from rest_framework.serializers import DictWithMetadata, SortedDictWithMetadata
 
