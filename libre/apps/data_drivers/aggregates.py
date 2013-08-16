@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from itertools import tee
 from operator import itemgetter
 
 from .exceptions import LIBREFieldError

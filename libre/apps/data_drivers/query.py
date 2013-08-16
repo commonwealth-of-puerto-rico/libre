@@ -7,7 +7,6 @@ import types
 
 from django.conf import settings
 
-from shapely import geometry
 import jsonpath_rw
 
 from .aggregates import AGGREGATES_NAMES
@@ -111,10 +110,9 @@ class Query():
                     except IndexError:
                         raise Http400('Must specify a result name separated by a double delimiter')
 
-
                     if any(map(value.startswith, AGGREGATES_NAMES)):  # Is it any of the known aggregate names?
                         aggregate_name, value = value.split('(', 1)
-                        value = value [:-1]  # remove last parentheses from value
+                        value = value[:-1]  # remove last parentheses from value
 
                         self.aggregates.append({
                             'name': output_name,

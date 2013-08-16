@@ -2,14 +2,11 @@ from __future__ import unicode_literals
 
 import datetime
 import decimal
-import types
 import json
 
-from django.utils.datastructures import SortedDict
 from django.utils.functional import Promise
 
 from rest_framework.compat import timezone, force_text
-from rest_framework.serializers import DictWithMetadata, SortedDictWithMetadata
 
 from shapely import geometry
 

@@ -6,8 +6,6 @@ import logging
 from operator import itemgetter
 import types
 
-from django.conf import settings
-
 from dateutil.parser import parse
 import pyparsing
 from shapely import geometry
@@ -74,6 +72,7 @@ class UnicodeReader:
 
     def __init__(self, f, dialect=csv.excel, encoding='utf-8', **kwds):
         self.reader = csv.reader(f, dialect=dialect, **kwds)
+
     def next(self):
         row = self.reader.next()
         if row:
