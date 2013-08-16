@@ -226,11 +226,10 @@ PENDING
         yield row_dict
     return
 
-
-----------
-  * Dynamic icons
-  * Favicon
-  * Sort generator
+  * Improve sort with Sort generators
 
     * https://gist.github.com/rbonvall/18896
     * http://www.ics.uci.edu/~eppstein/161/python/mergesort-generators.py
+
+  * Dynamic icons
+  * Favicon
