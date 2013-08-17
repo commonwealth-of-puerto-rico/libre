@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from itertools import groupby, imap, izip, tee
+from itertools import groupby, imap, islice, izip, tee
 import logging
 from operator import itemgetter
 import types
@@ -49,7 +49,7 @@ class Query():
 
             filter_operation = filter_entry['operation']
 
-            for row_id, item in enumerate(self.source.queryset):
+            for row_id, item in enumerate(self.source.queryset.iterator()):
                 try:
                     value = return_attrib(item.row, filter_entry['field'])
                 except (AttributeError, TypeError, KeyError):
@@ -71,14 +71,17 @@ class Query():
             else:
                 query_results = set(filter_results)
 
-        #logger.debug('query_results: %s' % query_results)
-        self.get_data(query_results)
-        self.process_groups()
-        self.process_aggregates()
-        self.process_json_path()
-        self.process_transform()
+        iterator = self.process_transform(
+            self.process_json_path(
+                self.process_aggregates(
+                    self.process_groups(
+                        self.data_iterator(query_results)
+                    )
+                )
+            )
+        )
 
-        return self.data
+        return iterator
 
     def parse_query(self, parameters):
         for parameter, value in parameters.items():
@@ -161,71 +164,82 @@ class Query():
                 filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
                 self.filters_function_map.append(filters_dictionary)
 
-    def get_data(self, query_results):
-        if self.filters:
-            if len(query_results) == 1:
-                # Special case because itemgetter doesn't returns a list but a value
-                self.data = (item.row for item in [itemgetter(*list(query_results))(self.source.queryset)])
-            elif len(query_results) == 0:
-                self.data = []
-            else:
-                self.data = (item.row for item in itemgetter(*list(query_results))(self.source.queryset)[0:self.source.limit])
-        else:
-            self.data = (item.row for item in self.source.queryset[0:self.source.limit])
+    def data_iterator(self, query_results):
+        count = 0
+        for row_id, item in enumerate(self.source.queryset.iterator()):
+            if row_id in query_results or not self.filters_function_map:
+                count += 1
+                yield item.row
+                if count >= self.source.limit:
+                    break
 
-    def process_groups(self):
+    def process_groups(self, iterator):
+        if self.groups:
+            return self._group_generator(iterator)
+        else:
+            return iterator
+
+    def _group_generator(self, iterator):
+        for group in self.groups:
+            iterator, backup = tee(iterator)
+            # Make a backup of the generator
+            sorted_data = attrib_sorter(backup, key=group)
+            group_dictionary = {'name': group, 'values': []}
+
+            for key, group_data in groupby(sorted_data, lambda x: x[group]):
+                group_dictionary['values'].append({'value': key, 'elements': list(group_data)})
+
+            yield group_dictionary
+
+    def process_aggregates(self, iterator):
+        if self.aggregates:
+            return self._aggregates_generator(iterator)
+        else:
+            return iterator
+
+    def _aggregates_generator(self, iterator):
         if self.groups:
             result = []
-            for group in self.groups:
-                self.data, backup = tee(self.data)
+            for group in iterator:
+                for group_value in group['values']:
+                    group_value['aggregates'] = []
+                    for aggregate in self.aggregates:
+                        group_value['aggregates'].append({aggregate['name']: aggregate['function'].execute(group_value['elements'])})
+                yield group
+        else:
+            result = {}
+            for aggregate in self.aggregates:
                 # Make a backup of the generator
-                sorted_data = attrib_sorter(backup, key=group)
-                group_dictionary = {'name': group, 'values': []}
+                iterator, backup = tee(iterator)
+                result[aggregate['name']] = aggregate['function'].execute(backup)
+            yield result
 
-                for key, group_data in groupby(sorted_data, lambda x: x[group]):
-                    group_dictionary['values'].append({'value': key, 'elements': list(group_data)})
-
-                result.append(group_dictionary)
-            self.data = result
-
-    def process_aggregates(self):
-        if self.aggregates:
-            if self.groups:
-                result = []
-                for group in self.data:
-                    for group_value in group['values']:
-                        group_value['aggregates'] = []
-                        for aggregate in self.aggregates:
-                            group_value['aggregates'].append({aggregate['name']: aggregate['function'].execute(group_value['elements'])})
-            else:
-                result = {}
-                for aggregate in self.aggregates:
-                    # Make a backup of the generator
-                    self.data, backup = tee(self.data)
-                    result[aggregate['name']] = aggregate['function'].execute(backup)
-                self.data = result
-
-    def process_json_path(self):
+    def process_json_path(self, iterator):
         if self.json_path:
             try:
                 expression = jsonpath_rw.parse(self.json_path)
 
-                if isinstance(self.data, (types.GeneratorType)):
-                    results = [match.value for match in expression.find(list(self.data))]
+                # TODO: test this with the new iterator based pipeline
+                if isinstance(iterator, (types.GeneratorType)):
+                    results = [match.value for match in expression.find(list(iterator))]
                 else:
-                    results = [match.value for match in expression.find(self.data)]
+                    results = [match.value for match in expression.find(iterator)]
             except Exception as exception:
                 raise Http400('JSON query error; %s' % exception)
             else:
                 if len(results) == 1:
-                    self.data = results[0]
+                    return results[0]
                 else:
-                    self.data = results
+                    return results
+        else:
+            return iterator
 
-    def process_transform(self):
+    def process_transform(self, iterator):
         if self.as_dict_list:
-            data_iterable = iter(self.data)
-            self.data = imap(lambda x: {x[0]: x[1]}, izip(data_iterable, data_iterable))
+            data_iterable = iter(iterator)
+            return imap(lambda x: {x[0]: x[1]}, izip(data_iterable, data_iterable))
         elif self.as_nested_list:
-            data_iterable = iter(self.data)
-            self.data = izip(data_iterable, data_iterable)
+            data_iterable = iter(iterator)
+            return izip(data_iterable, data_iterable)
+        else:
+            return iterator
