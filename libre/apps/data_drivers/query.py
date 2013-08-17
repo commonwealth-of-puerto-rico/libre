@@ -40,42 +40,13 @@ class Query():
 
         logger.debug('join type: %s' % JOIN_TYPE_CHOICES[self.join_type])
 
-        query_results = set()
-
         logger.debug('self.filters_function_map: %s' % self.filters_function_map)
-
-        for filter_entry in self.filters_function_map:
-            filter_results = []
-
-            filter_operation = filter_entry['operation']
-
-            for row_id, item in enumerate(self.source.queryset.iterator()):
-                try:
-                    value = return_attrib(item.row, filter_entry['field'])
-                except (AttributeError, TypeError, KeyError):
-                    # A dotted attribute is not found
-                    raise Http400('Invalid element: %s' % filter_entry['field'])
-                else:
-                    # Evaluate row values against the established filters
-                    if filter_operation.evaluate(value):
-                        filter_results.append(row_id)
-
-            # Store filter results as a list of row id numbers
-            # Not a generator based system, but shouldn't use too much memory
-            # up to several millions ids
-            if query_results:
-                if self.join_type == JOIN_TYPE_AND:
-                    query_results &= set(filter_results)
-                else:
-                    query_results |= set(filter_results)
-            else:
-                query_results = set(filter_results)
 
         iterator = self.process_transform(
             self.process_json_path(
                 self.process_aggregates(
                     self.process_groups(
-                        self.data_iterator(query_results)
+                        self.data_iterator()
                     )
                 )
             )
@@ -164,10 +135,39 @@ class Query():
                 filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
                 self.filters_function_map.append(filters_dictionary)
 
-    def data_iterator(self, query_results):
+    def data_iterator(self):
         count = 0
+
         for row_id, item in enumerate(self.source.queryset.iterator()):
-            if row_id in query_results or not self.filters_function_map:
+            row_results = []
+
+            if self.filters_function_map:
+                filter_results = []
+                for filter_entry in self.filters_function_map:
+
+                    try:
+                        value = return_attrib(item.row, filter_entry['field'])
+                    except (AttributeError, TypeError, KeyError):
+                        # A dotted attribute is not found
+                        raise Http400('Invalid element: %s' % filter_entry['field'])
+                    else:
+                        # Evaluate row values against the established filters
+                        # TODO: further optimization: if join == AND and result == False and len(filter_map) > 1 then break
+                        filter_results.append(filter_entry['operation'].evaluate(value))
+
+                if self.join_type == JOIN_TYPE_AND:
+                    if all(filter_results):
+                        count += 1
+                        yield item.row
+                        if count >= self.source.limit:
+                            break
+                else:
+                    if any(filter_results):
+                        count += 1
+                        yield item.row
+                        if count >= self.source.limit:
+                            break
+            else:
                 count += 1
                 yield item.row
                 if count >= self.source.limit:
