@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
-from dateutil.parser import parse
-from shapely import geometry
+from shapely.prepared import prep
 
 from .exceptions import Http400
 
@@ -206,9 +205,14 @@ class Touches(Filter):
 
 
 class Within(Filter):
+    def __init__(self, field, filter_value):
+        self.field = field
+        self.filter_value = filter_value
+        self.prepared = prep(self.filter_value)
+
     def evaluate(self, value):
         try:
-            return value.within(self.filter_value)
+            return self.prepared.contains(value)
         except AttributeError:
             raise Http400('field: %s, is not a geometry' % self.field)
 
