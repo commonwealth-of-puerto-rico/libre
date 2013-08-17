@@ -176,7 +176,7 @@ class Range(Filter):
 class Has(Filter):
     def evaluate(self, value):
         try:
-            return geometry.shape(value).contains(self.filter_value)
+            return value.contains(self.filter_value)
         except AttributeError:
             raise Http400('field: %s, is not a geometry' % self.field)
 
@@ -184,7 +184,7 @@ class Has(Filter):
 class Disjoint(Filter):
     def evaluate(self, value):
         try:
-            return geometry.shape(value).disjoint(self.filter_value)
+            return value.disjoint(self.filter_value)
         except AttributeError:
             raise Http400('field: %s, is not a geometry' % self.field)
 
@@ -192,7 +192,7 @@ class Disjoint(Filter):
 class Intersects(Filter):
     def evaluate(self, value):
         try:
-            return geometry.shape(value).intersects(self.filter_value)
+            return value.intersects(self.filter_value)
         except AttributeError:
             raise Http400('field: %s, is not a geometry' % self.field)
 
@@ -200,7 +200,7 @@ class Intersects(Filter):
 class Touches(Filter):
     def evaluate(self, value):
         try:
-            return geometry.shape(value).touches(self.filter_value)
+            return value.touches(self.filter_value)
         except AttributeError:
             raise Http400('field: %s, is not a geometry' % self.field)
 
@@ -208,7 +208,7 @@ class Touches(Filter):
 class Within(Filter):
     def evaluate(self, value):
         try:
-            return geometry.shape(value).within(self.filter_value)
+            return value.within(self.filter_value)
         except AttributeError:
             raise Http400('field: %s, is not a geometry' % self.field)
 
