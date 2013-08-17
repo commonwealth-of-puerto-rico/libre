@@ -126,7 +126,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         return template.render(context)
 
     def determine_extents(self, features):
-        bounds_generator = (geometry.shape(feature['geometry']).bounds for feature in features)
+        bounds_generator = (feature['geometry'].bounds for feature in features)
         iterator = iter(bounds_generator)
 
         first_feature_bounds = iterator.next()
