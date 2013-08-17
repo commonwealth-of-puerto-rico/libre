@@ -80,6 +80,7 @@ class Source(models.Model):
     class Meta:
         verbose_name = _('source')
         verbose_name_plural = _('sources')
+        ordering = ['name', 'slug']
 
 
 class SourceWS(Source):
@@ -580,6 +581,11 @@ class LeafletMarker(models.Model):
             self.slug = slugify(self.label)
         super(LeafletMarker, self).save(*args, **kwargs)
 
+    class Meta:
+        verbose_name = _('leaflet marker')
+        verbose_name_plural = _('leaflet marker')
+        ordering = ['label', 'slug']
+
 
 class SourceShape(Source, SourceFileBased):
     source_type = _('Shapefile')
@@ -587,7 +593,7 @@ class SourceShape(Source, SourceFileBased):
         RENDERER_LEAFLET)
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
     new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
-    markers = models.ManyToManyField(LeafletMarker)
+    markers = models.ManyToManyField(LeafletMarker, blank=True, null=True)
     marker_template = models.TextField(blank=True, verbose_name=_('marker template'), help_text=_('Template to determine what marker each respective feature will use.'))
 
     @staticmethod

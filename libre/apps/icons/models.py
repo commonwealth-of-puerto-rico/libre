@@ -50,3 +50,4 @@ class Icon(models.Model):
     class Meta:
         verbose_name = _(u'icon')
         verbose_name_plural = _(u'icons')
+        ordering = ['label', 'name']
