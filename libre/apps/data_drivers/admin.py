@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from django.contrib import admin, messages
 from django.utils.translation import ugettext_lazy as _
 
-from .forms import (SourceDatabaseForm, CSVColumnForm, ShapefileColumnForm,
+from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
     SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm, SourceWSForm, SourceShapeForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
@@ -261,10 +261,17 @@ class SourceShapeAdmin(admin.ModelAdmin):
     form = SourceShapeForm
 
 
+class LeafletMarkerAdmin(admin.ModelAdmin):
+    list_display = ('slug', 'label', 'icon', 'shadow', 'icon_anchor_x', 'icon_anchor_y', 'shadow_anchor_x', 'shadow_anchor_y', 'popup_anchor_x', 'popup_anchor_y')
+    list_display_links = ('slug',)
+    list_editable = ('icon', 'shadow', 'icon_anchor_x', 'icon_anchor_y', 'shadow_anchor_x', 'shadow_anchor_y', 'popup_anchor_x', 'popup_anchor_y')
+    form = LeafletMarkerForm
+
+
 admin.site.register(SourceDatabase, SourceDatabaseAdmin)
 admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
 admin.site.register(SourceCSV, SourceCSVAdmin)
 admin.site.register(SourceShape, SourceShapeAdmin)
 admin.site.register(SourceFixedWidth, SourceFixedWidthAdmin)
 admin.site.register(SourceWS, SourceWSAdmin)
-admin.site.register(LeafletMarker)
+admin.site.register(LeafletMarker, LeafletMarkerAdmin)

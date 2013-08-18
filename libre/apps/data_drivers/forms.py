@@ -86,3 +86,16 @@ class ShapefileColumnForm(ModelForm):
             'default': EnclosedInput(attrs={'class': 'input-mini'}),
             'data_type': widgets.Select(attrs={'class': 'input-small'}),
         }
+
+
+class LeafletMarkerForm(ModelForm):
+    class Meta:
+        widgets = {
+            'icon_anchor_x': widgets.TextInput(attrs={'class': 'input-small'}),
+            'icon_anchor_y': widgets.TextInput(attrs={'class': 'input-small'}),
+            'shadow_anchor_x': widgets.TextInput(attrs={'class': 'input-small'}),
+            'shadow_anchor_y': widgets.TextInput(attrs={'class': 'input-small'}),
+            'popup_anchor_x': widgets.TextInput(attrs={'class': 'input-small'}),
+            'popup_anchor_y': widgets.TextInput(attrs={'class': 'input-small'}),
+        }
+
