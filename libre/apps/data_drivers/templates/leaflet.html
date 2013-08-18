@@ -39,13 +39,15 @@
                 {% for marker in markers.all %}
                     '{{ marker.slug }}': L.icon({
                         iconUrl: '{{ marker.icon.get_absolute_url }}',
-                        //shadowUrl: 'leaf-shadow.png',
+                        {% if marker.shadow %}
+                            shadowUrl: '{{ marker.shadow.get_absolute_url }}',
+                        {% endif %}
 
                         //iconSize:     [38, 95], // size of the icon
                         //shadowSize:   [50, 64], // size of the shadow
-                        iconAnchor:   [0, 0], // point of the icon which will correspond to marker's location
-                        shadowAnchor: [0, 0],  // the same for the shadow
-                        popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+                        iconAnchor:   [{{ marker.icon_anchor_x }}, {{ marker.icon_anchor_y }}], // point of the icon which will correspond to marker's location
+                        shadowAnchor: [{{ marker.shadow_anchor_x }}, {{ marker.shadow_anchor_y }}],  // the same for the shadow
+                        popupAnchor:  [{{ marker.popup_anchor_x }}, {{ marker.popup_anchor_y }}] // point from which the popup should open relative to the iconAnchor
                     }),
                 {% endfor %}
             }

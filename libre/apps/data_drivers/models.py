@@ -564,14 +564,12 @@ class LeafletMarker(models.Model):
     label = models.CharField(max_length=48, verbose_name=_(u'label'), blank=True)
     icon = models.ForeignKey(Icon, verbose_name=_('icon'), related_name='leafletmarker-icon')
     shadow = models.ForeignKey(Icon, null=True, blank=True, verbose_name=_('shadow'), related_name='leafletmarker-shadow')
-    icon_anchor_x = models.IntegerField(verbose_name=_('icon anchor (horizontal)'), blank=True, null=True)
-    icon_anchor_y = models.IntegerField(verbose_name=_('icon anchor (vertical)'), blank=True, null=True)
-
-    #        //iconSize:     [38, 95], // size of the icon
-    #        //shadowSize:   [50, 64], // size of the shadow
-    #        //iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
-    #        //shadowAnchor: [4, 62],  // the same for the shadow
-    #        //popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+    icon_anchor_x = models.IntegerField(verbose_name=_('icon anchor (horizontal)'), default=0)
+    icon_anchor_y = models.IntegerField(verbose_name=_('icon anchor (vertical)'), default=0)
+    shadow_anchor_x = models.IntegerField(verbose_name=_('shadow anchor (horizontal)'), default=0)
+    shadow_anchor_y = models.IntegerField(verbose_name=_('shadow anchor (vertical)'), default=0)
+    popup_anchor_x = models.IntegerField(verbose_name=_('popup anchor (horizontal)'), default=0)
+    popup_anchor_y = models.IntegerField(verbose_name=_('popup anchor (vertical)'), default=0)
 
     def __unicode__(self):
         return '%s%s' % (self.slug, ' (%s)' % self.label if self.label else '')
