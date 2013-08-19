@@ -70,7 +70,7 @@ class Source(models.Model):
 
     def clean(self):
         if not self.slug:
-            self.slug = slugify(self.label)
+            self.slug = slugify(self.name)
 
     @models.permalink
     def get_absolute_url(self):
