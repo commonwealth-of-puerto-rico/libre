@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from django.contrib import admin, messages
+from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
@@ -8,6 +9,34 @@ from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, Shapef
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
     SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSArgument, WSResultField)
+
+
+#clone_objects Copyright (C) 2009  Rune Bromer
+#http://www.bromer.eu/2009/05/23/a-generic-copyclone-action-for-django-11/
+def clone_objects(objects, title_fieldnames):
+    def clone(from_object, title_fieldnames):
+        args = dict([(fld.name, getattr(from_object, fld.name))
+                     for fld in from_object._meta.fields
+                     if fld is not from_object._meta.pk])
+
+        args.pop('id')
+
+        for field in from_object._meta.fields:
+            if field.name in title_fieldnames:
+                if isinstance(field, models.CharField):
+                    args[field.name] = getattr(from_object, field.name) + (' (%s) ' % unicode(_('copy')))
+
+        return from_object.__class__.objects.create(**args)
+
+    if not hasattr(objects, '__iter__'):
+        objects = [objects]
+
+    # We always have the objects in a list now
+    objs = []
+    for obj in objects:
+        obj = clone(obj, title_fieldnames)
+        obj.save()
+        objs.append(obj)
 
 
 class DatabaseResultColumnInline(admin.TabularInline):
@@ -87,7 +116,21 @@ def clear_versions(modeladmin, request, queryset):
 clear_versions.short_description = _('Clear all source versions')
 
 
-class SourceDatabaseAdmin(admin.ModelAdmin):
+class SourceAdmin(admin.ModelAdmin):
+    def clone(self, request, queryset):
+        clone_objects(queryset, ('name', 'slug'))
+
+        if queryset.count() == 1:
+            message_bit = _('1 source was')
+        else:
+            message_bit = _('%s sources were') % queryset.count()
+        self.message_user(request, _('%s copied.') % message_bit)
+
+    clone.short_description = _('Copy the selected source')
+    actions = [clone]
+
+
+class SourceDatabaseAdmin(SourceAdmin):
     suit_form_tabs = (('configuration', _('Configuration')),)
 
     fieldsets = (
@@ -102,7 +145,7 @@ class SourceDatabaseAdmin(admin.ModelAdmin):
     form = SourceDatabaseForm
 
 
-class SourceSpreadsheetAdmin(admin.ModelAdmin):
+class SourceSpreadsheetAdmin(SourceAdmin):
     suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')))
 
     fieldsets = (
@@ -135,7 +178,7 @@ class SourceSpreadsheetAdmin(admin.ModelAdmin):
     form = SourceSpreadsheetForm
 
 
-class SourceCSVAdmin(admin.ModelAdmin):
+class SourceCSVAdmin(SourceAdmin):
     suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')))
 
     fieldsets = (
@@ -167,7 +210,7 @@ class SourceCSVAdmin(admin.ModelAdmin):
     form = SourceCSVForm
 
 
-class SourceFixedWidthAdmin(admin.ModelAdmin):
+class SourceFixedWidthAdmin(SourceAdmin):
     suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')))
 
     fieldsets = (
@@ -207,7 +250,7 @@ class WSResultFieldInline(admin.TabularInline):
     extra = 1
 
 
-class SourceWSAdmin(admin.ModelAdmin):
+class SourceWSAdmin(SourceAdmin):
     suit_form_tabs = (('configuration', _('Configuration')),)
 
     fieldsets = (
@@ -226,7 +269,7 @@ class SourceWSAdmin(admin.ModelAdmin):
     form = SourceWSForm
 
 
-class SourceShapeAdmin(admin.ModelAdmin):
+class SourceShapeAdmin(SourceAdmin):
     suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')), ('renderers', _('Renderers')))
 
     fieldsets = (
