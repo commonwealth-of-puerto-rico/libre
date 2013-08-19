@@ -9,7 +9,7 @@ import string
 import struct
 import urllib2
 
-from django.core.exceptions import FieldError
+from django.core.exceptions import FieldError, ValidationError
 from django.db import models, transaction
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
@@ -43,7 +43,7 @@ class Source(models.Model):
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
 
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
-    slug = models.SlugField(blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
+    slug = models.SlugField(unique=True, blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
     description = models.TextField(blank=True, verbose_name=_('description'))
     published = models.BooleanField(default=False, verbose_name=_('published'))
 
@@ -68,10 +68,9 @@ class Source(models.Model):
     def __unicode__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         if not self.slug:
-            self.slug = slugify(self.name)
-        super(Source, self).save(*args, **kwargs)
+            self.slug = slugify(self.label)
 
     @models.permalink
     def get_absolute_url(self):
@@ -560,7 +559,7 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
 
 
 class LeafletMarker(models.Model):
-    slug = models.SlugField(verbose_name=_(u'slug'), unique=True)
+    slug = models.SlugField(blank=True, verbose_name=_(u'slug'), unique=True)
     label = models.CharField(max_length=48, verbose_name=_(u'label'), blank=True)
     icon = models.ForeignKey(Icon, verbose_name=_('icon'), related_name='leafletmarker-icon')
     shadow = models.ForeignKey(Icon, null=True, blank=True, verbose_name=_('shadow'), related_name='leafletmarker-shadow')
@@ -574,10 +573,9 @@ class LeafletMarker(models.Model):
     def __unicode__(self):
         return '%s%s' % (self.slug, ' (%s)' % self.label if self.label else '')
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         if not self.slug:
             self.slug = slugify(self.label)
-        super(LeafletMarker, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name = _('leaflet marker')
