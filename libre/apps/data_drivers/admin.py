@@ -292,7 +292,7 @@ class SourceShapeAdmin(SourceAdmin):
         }),
         (_('Leaflet renderer'), {
             'classes': ('suit-tab suit-tab-renderers',),
-            'fields': ('popup_template', 'markers', 'marker_template')
+            'fields': ('template_header', 'popup_template', 'markers', 'marker_template')
         }),
     )
 

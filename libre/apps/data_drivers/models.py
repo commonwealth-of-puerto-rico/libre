@@ -591,6 +591,7 @@ class SourceShape(Source, SourceFileBased):
     new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
     markers = models.ManyToManyField(LeafletMarker, blank=True, null=True)
     marker_template = models.TextField(blank=True, verbose_name=_('marker template'), help_text=_('Template to determine what marker each respective feature will use.'))
+    template_header = models.TextField(blank=True, verbose_name=_('template header'), help_text=_('Place here custom styles, javascript or asset loading.'))
 
     @staticmethod
     def transform(old_projection, new_projection, geometry, geometry_type=None):

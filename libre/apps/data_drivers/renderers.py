@@ -119,7 +119,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         if isinstance(ret, six.text_type):
             ret = bytes(ret.encode(self.charset))
 
-        context.update({'data': ret, 'markers': obj.markers})
+        context.update({'data': ret, 'markers': obj.markers, 'header': obj.template_header})
         if 'geometry' in extra_context:
             extra_context['geometry'] = json.dumps(extra_context['geometry'].__geo_interface__)
         context.update({'template_extra_context': extra_context})
