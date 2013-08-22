@@ -107,7 +107,7 @@ class LIBREView(generics.GenericAPIView):
 
     def get_renderer_extra_variables(self, request):
         result = {}
-        for key, value in parse_qs(unquote_plus(request.META['QUERY_STRING'])).items():
+        for key, value in parse_request(request).items():
             if key.startswith(LQL_DELIMITER + 'renderer'):
                 try:
                     renderer_variables = key.split(DOUBLE_DELIMITER)[1]
