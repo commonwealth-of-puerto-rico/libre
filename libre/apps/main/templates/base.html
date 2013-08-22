@@ -26,6 +26,14 @@
         margin: 30px 0;
       }
 
+      .container-wide {
+        margin: 0 auto;
+        max-width: 99%;
+      }
+      .container-wide > hr {
+        margin: 30px 0;
+      }
+
       /* Main marketing message and sign up button */
       .jumbotron {
         margin: 60px 0;
@@ -53,8 +61,16 @@
   <body>
     <div class="container-narrow">
         {% block content %}{% endblock %}
+    </div> <!-- /container -->
+
+    <div class="container-wide">
+        {% block content_wide %}{% endblock %}
+    </div> <!-- /container -->
+
+    <div class="container-narrow">
         <hr>
         {% block footer %}{% endblock %}
     </div> <!-- /container -->
+
   </body>
 </html>
