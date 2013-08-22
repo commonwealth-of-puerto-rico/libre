@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import datetime
 import logging
-from urllib import unquote_plus
 
 from django.views.generic import TemplateView
 
@@ -17,7 +16,7 @@ from .exceptions import Http400
 from .literals import DOUBLE_DELIMITER, LQL_DELIMITER, RENDERER_MAPPING, RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML
 from .models import Source, SourceDataVersion
 from .serializers import SourceDataVersionSerializer, SourceSerializer
-from .utils import parse_value, parse_qs
+from .utils import parse_value, parse_request
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +130,7 @@ class SourceGetAll(LIBREView):
 
         source = self.get_object()
         self.get_renderer_extra_variables(request)
-        result = source.get_all(parameters=parse_qs(unquote_plus(request.META['QUERY_STRING'])))
+        result = source.get_all(parameters=parse_request(request))
         logger.debug('Total view elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
         return Response(result)
@@ -143,7 +142,7 @@ class SourceGetOne(LIBREView):
 
         source = self.get_object()
         self.get_renderer_extra_variables(request)
-        result = source.get_one(int(kwargs['id']), parameters=parse_qs(unquote_plus(request.META['QUERY_STRING'])))
+        result = source.get_one(int(kwargs['id']), parameters=parse_request(request))
         logger.debug('Total view elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
         return Response(result)

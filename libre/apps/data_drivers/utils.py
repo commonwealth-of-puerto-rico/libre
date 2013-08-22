@@ -5,6 +5,7 @@ from HTMLParser import HTMLParser
 import logging
 from operator import itemgetter
 import types
+from urllib import unquote_plus
 
 from dateutil.parser import parse
 import pyparsing
@@ -253,6 +254,10 @@ def parse_qs(string):
             result[key] = value
 
     return result
+
+
+def parse_request(request):
+    return parse_qs(unquote_plus(request.META['QUERY_STRING']))
 
 
 def get_value(obj, attrib):
