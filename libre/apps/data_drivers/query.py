@@ -12,7 +12,7 @@ import jsonpath_rw
 from .aggregates import AGGREGATES_NAMES
 from .exceptions import Http400
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
-from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPE_CHOICES,
+from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPES,
     JOIN_TYPE_OR)
 from .settings import LQL_DELIMITER
 from .utils import attrib_sorter, parse_value, return_attrib
@@ -38,7 +38,7 @@ class Query():
         self.parse_query(parameters)
         self.get_filter_functions_map()
 
-        logger.debug('join type: %s' % JOIN_TYPE_CHOICES[self.join_type])
+        logger.debug('join type: %s' % JOIN_TYPES[self.join_type])
 
         logger.debug('self.filters_function_map: %s' % self.filters_function_map)
 
@@ -115,7 +115,7 @@ class Query():
             else:
                 # Otherwise it is an 'equality (=)' filter
                 try:
-                    value = parse_value(value)
+                    filter_value = parse_value(value)
                 except Exception as exception:
                     if getattr(settings, 'DEBUG', False):
                         raise
