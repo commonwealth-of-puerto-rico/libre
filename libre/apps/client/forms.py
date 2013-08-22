@@ -1,78 +1,95 @@
 from __future__ import absolute_import
 
 import datetime
+import HTMLParser
+import logging
 
 from django import forms
+from django.core.urlresolvers import reverse, resolve
 from django.utils.translation import ugettext_lazy as _
 
 import furl
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field
-from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions
+from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, MultiField
+from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, InlineRadios
 
 from data_drivers.query import Query
-from data_drivers.utils import parse_request
+from data_drivers.literals import JOIN_TYPE_OR, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPES
+from data_drivers.models import Source
+from data_drivers.utils import parse_request, parse_qs
+
+logger = logging.getLogger(__name__)
+htmlparser = HTMLParser.HTMLParser()
+renderer_choices = (
+    ('api', _('API')),
+    ('json', _('JSON')),
+    ('xml', _('XML')),
+    ('map_leaflet', _('Leaflet')),
+)
 
 
 class ClientForm(forms.Form):
-    #data_source = forms.
-    query_string = forms.CharField(widget=forms.Textarea, required=False)
-    as_nested_list = forms.BooleanField()
-    as_dict_list = forms.BooleanField()
-    json_path = forms.CharField(widget=forms.Textarea, required=False)
-    result = forms.CharField(widget=forms.Textarea, required=False)
-    groups = forms.CharField(widget=forms.Textarea, required=False)
-    aggregates = forms.CharField(widget=forms.Textarea, required=False)
+    server = forms.CharField(label=_('Server'), initial='http://127.0.0.1:8000')
+    source = forms.ModelChoiceField(label=_('Source'), queryset=Source.objects.filter(published=True).select_subclasses(), to_field_name='slug')
+    filters = forms.CharField(label=_('Filter'), widget=forms.Textarea, required=False)
+    as_nested_list = forms.BooleanField(label=_('As nested list'), required=False)
+    as_dict_list = forms.BooleanField(label=_('As dictionay list'), required=False)
+    json_path = forms.CharField(label=_('JSON path'), required=False)
+    groups = forms.CharField(label=_('Groups'), required=False)
+    aggregates = forms.CharField(label=_('Aggregates'), required=False)
+    renderer = forms.ChoiceField(label=_('Format'), choices=renderer_choices)
+    query_string = forms.CharField(label=_('Query string'), widget=forms.Textarea, required=False)
 
     join_type = forms.ChoiceField(
-        choices = (
-            (1, _('OR')),
-            (2, _('AND'))
-        ),
+        choices = JOIN_TYPE_CHOICES,
         widget = forms.RadioSelect,
-        initial = '1',
+        initial = JOIN_TYPE_AND,
+        required=False
     )
 
-    # Uni-form
     helper = FormHelper()
-    helper.form_class = 'form-horizontal'
     helper.layout = Layout(
-        Field('query_string', css_class='input-xxlarge'),
-        Field('join_type', css_class='input-xxlarge'),
-        Field('groups', rows='3', css_class='input-xxlarge'),
-        Field('aggregates', rows='3', css_class='input-xxlarge'),
-        Field('json_path', rows='1', css_class='input-xxlarge'),
-        'as_nested_list',
-        'as_dict_list',
-        Field('result', css_class='input-xxlarge'),
+        Div(
+            Div('server', css_class='span5'),
+            Div('source', css_class='span5'),
+            Div(InlineRadios('join_type'), css_class='span2'),
 
+            Div(Field('filters', rows=2, css_class='span12'), css_class='span12'),
+            Div(Field('groups', rows='1', css_class='span4'), css_class='span4'),
+            Div(Field('aggregates', rows='1', css_class='span4'), css_class='span4'),
+            Div(Field('json_path', rows='1', css_class='span4'), css_class='span4'),
 
-        FormActions(
-            Submit('save_changes', _('Commit'), css_class="btn-primary"),
-            Submit('clear', _('Clear')),
-        )
+            Div(MultiField(_('Result flattening'), Field('as_nested_list'), Field('as_dict_list')), css_class='span2'),
+            Div(Field('renderer', rows='3', css_class='span1'), css_class='span1'),
+
+            Div(Field('query_string', rows='3', css_class='span7'), css_class='span7'),
+
+            Div(
+                FormActions(
+                    Submit('save_changes', _('Commit'), css_class="btn-primary"),
+                    #Submit('clear', _('Clear')),
+                ),
+            css_class='span2'),
+
+        css_class='controls controls-row'),
     )
 
-    def __init__(self, *args, **kwargs):
-        request = kwargs.pop('request')
-        super(ClientForm, self).__init__(*args, **kwargs)
-        if request:
-            self.parse_request(request)
-
-    def parse_request(self, request):
-        query = Query(None)
-        query.parse_query(parse_request(request))
+    def capture_request(self, request):
+        self.query = Query(None)
+        self.query.parse_query(parse_request(request))
 
         initial={
-            'query_string': u'&'.join(['%(field)s__%(filter_name)s=%(original_value)s' % filter for filter in query.filters]),
-            'as_nested_list': query.as_nested_list,
-            'as_dict_list': query.as_dict_list,
-            'json_path': query.json_path,
-            'join_type': query.join_type,
-            'groups': u'&'.join(query.groups),
-            'aggregates': u'&'.join(query.aggregates),
+            'filters': u'&'.join(['%(field)s__%(filter_name)s=%(original_value)s' % filter for filter in self.query.filters]),
+            'as_nested_list': self.query.as_nested_list,
+            'as_dict_list': self.query.as_dict_list,
+            'json_path': self.query.json_path,
+            'join_type': self.query.join_type,
+            'groups': u'&'.join(self.query.groups),
+            'aggregates': u'&'.join(self.query.aggregates),
         }
+
+        logger.debug('initial: %s' % initial)
 
         for field, value in initial.items():
             try:
@@ -82,6 +99,49 @@ class ClientForm(forms.Form):
 
         self.fields['result'].initial = _('No results')
 
+    def __init__(self, *args, **kwargs):
+        super(ClientForm, self).__init__(*args, **kwargs)
+        if self.is_valid():
+            new_data = self.data.copy()
+            new_data['query_string'] = self.compose_query_string()
+            self.data = new_data
+
     def compose_query_string(self):
-        result = furl.furl()
-        return result
+        cleaned_data = self.data
+        result = []
+
+        if cleaned_data.get('filters'):
+            result.append(cleaned_data['filters'])
+
+        if cleaned_data.get('groups'):
+            result.append('_group_by=%s' % cleaned_data['groups'])
+
+        if cleaned_data.get('aggregates'):
+            for aggregate in cleaned_data['aggregates'].split(','):
+                try:
+                    result.append('_aggregate__%s=%s' % tuple(aggregate.split('=')))
+                except TypeError:
+                    pass
+
+        if cleaned_data.get('json_path'):
+            result.append('_json_path=%s' % cleaned_data['json_path'])
+
+        if cleaned_data.get('as_nested_list'):
+            result.append('_as_nested_list')
+
+        if cleaned_data.get('as_dict_list'):
+            result.append('_as_dict_list')
+
+        result.append('_format=%s' % cleaned_data['renderer'])
+
+        result.append('_join_type=%s' % JOIN_TYPES[int(cleaned_data['join_type'])])
+
+        query_string = self.unescape_html('&'.join(result))
+
+        if cleaned_data.get('source'):
+            query_string = cleaned_data['server'] + reverse('source-get_all', args=[cleaned_data['source']]) + '?' + query_string
+
+        return query_string
+
+    def unescape_html(self, string):
+        return htmlparser.unescape(string).replace('%5B', '[').replace('%5D', ']')
