@@ -104,14 +104,14 @@ class Query():
                     raise Http400('Only one filter per field is supported')
                 else:
                     try:
-                        value = parse_value(value)
+                        filter_value = parse_value(value)
                     except Exception as exception:
                         if getattr(settings, 'DEBUG', False):
                             raise
                         else:
                             raise Http400('Malformed query: %s' % exception)
                     else:
-                        self.filters.append({'field': field, 'filter_name': filter_name, 'filter_value': value})
+                        self.filters.append({'field': field, 'filter_name': filter_name, 'filter_value': filter_value, 'original_value': value})
             else:
                 # Otherwise it is an 'equality (=)' filter
                 try:
@@ -122,7 +122,7 @@ class Query():
                     else:
                         raise Http400('Malformed query: %s' % exception)
                 else:
-                    self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': value})
+                    self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': filter_value, 'original_value': value})
 
     def get_filter_functions_map(self):
         for filter_entry in self.filters:
