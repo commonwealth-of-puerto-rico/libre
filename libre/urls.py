@@ -14,6 +14,7 @@ urlpatterns = patterns('',
     url(r'^', include('main.urls')),
     url(r'^api/', include('data_drivers.urls')),
     url(r'^icons_app/', include('icons.urls')),
+    url(r'^client/', include('client.urls')),
 )
 
 if settings.DEVELOPMENT:

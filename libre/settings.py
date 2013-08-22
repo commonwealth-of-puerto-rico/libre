@@ -144,10 +144,12 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'south',
     'rest_framework',
+    'crispy_forms',
     'lock_manager',
     'icons',
     'db_drivers',
     'data_drivers',
+    'client',
     'main',
 )
 
