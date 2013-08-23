@@ -59,17 +59,8 @@
     <link href="{% static 'css/bootstrap-responsive.css' %}" rel="stylesheet">
   </head>
   <body>
-    <div class="container-narrow">
-        {% block content %}{% endblock %}
-    </div> <!-- /container -->
-
     <div class="container-wide">
         {% block content_wide %}{% endblock %}
-    </div> <!-- /container -->
-
-    <div class="container-narrow">
-        <hr>
-        {% block footer %}{% endblock %}
     </div> <!-- /container -->
 
   </body>
