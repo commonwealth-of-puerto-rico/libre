@@ -5,7 +5,8 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
-    SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm, SourceWSForm, SourceShapeForm)
+    SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
+    SourceWSForm, SourceShapeForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
     SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSArgument, WSResultField)
@@ -71,6 +72,7 @@ class SpreadsheetColumnInline(admin.TabularInline):
     model = SpreadsheetColumn
     extra = 1
     suit_classes = 'suit-tab suit-tab-configuration'
+    form = SpreadsheetColumnForm
 
 
 class ShapefileColumnInline(admin.TabularInline):
