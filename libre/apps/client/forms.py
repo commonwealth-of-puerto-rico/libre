@@ -1,21 +1,20 @@
 from __future__ import absolute_import
 
-import datetime
 import HTMLParser
 import logging
 
 from django import forms
-from django.core.urlresolvers import reverse, resolve
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, MultiField
-from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, InlineRadios
+from crispy_forms.layout import Layout, Div, Submit, Field, MultiField
+from crispy_forms.bootstrap import FormActions, InlineRadios
 
 from data_drivers.query import Query
-from data_drivers.literals import JOIN_TYPE_OR, JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPES
+from data_drivers.literals import JOIN_TYPE_AND, JOIN_TYPE_CHOICES, JOIN_TYPES
 from data_drivers.models import Source
-from data_drivers.utils import parse_request, parse_qs
+from data_drivers.utils import parse_request
 
 logger = logging.getLogger(__name__)
 htmlparser = HTMLParser.HTMLParser()
@@ -40,9 +39,9 @@ class ClientForm(forms.Form):
     query_string = forms.CharField(label=_('Query string'), widget=forms.Textarea, required=False)
 
     join_type = forms.ChoiceField(
-        choices = JOIN_TYPE_CHOICES,
-        widget = forms.RadioSelect,
-        initial = JOIN_TYPE_AND,
+        choices=JOIN_TYPE_CHOICES,
+        widget=forms.RadioSelect,
+        initial=JOIN_TYPE_AND,
         required=False
     )
 
@@ -68,16 +67,15 @@ class ClientForm(forms.Form):
                     Submit('save_changes', _('Commit'), css_class="btn-primary"),
                     #Submit('clear', _('Clear')),
                 ),
-            css_class='span2'),
-
-        css_class='controls controls-row'),
+                css_class='span2'),
+            css_class='controls controls-row'),
     )
 
     def capture_request(self, request):
         self.query = Query(None)
         self.query.parse_query(parse_request(request))
 
-        initial={
+        initial = {
             'filters': u'&'.join(['%(field)s__%(filter_name)s=%(original_value)s' % filter for filter in self.query.filters]),
             'as_nested_list': self.query.as_nested_list,
             'as_dict_list': self.query.as_dict_list,

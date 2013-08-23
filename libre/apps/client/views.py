@@ -3,8 +3,6 @@ from __future__ import absolute_import
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
-from data_drivers.utils import parse_request, parse_qs
-
 from .forms import ClientForm
 
 
