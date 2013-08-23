@@ -7,6 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
     SourceWSForm, SourceShapeForm)
+from .exceptions import SourceFileError
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
     SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSArgument, WSResultField)
@@ -87,8 +88,8 @@ def check_updated(modeladmin, request, queryset):
     for source in queryset:
         try:
             source.check_file()
-        except IOError:
-            messages.error(request, _('Error opening file for source: %s') % source)
+        except SourceFileError as exception:
+            messages.error(request, _('Error opening file for source: %s; %s') % (source, str(exception)))
         else:
             count += 1
 

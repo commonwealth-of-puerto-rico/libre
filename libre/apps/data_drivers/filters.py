@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from shapely.prepared import prep
 
-from .exceptions import Http400
+from .exceptions import LQLFilterError
 
 # Discreet values
 FILTER_CONTAINS = 1
@@ -63,7 +63,7 @@ class Contains(Filter):
             return self.filter_value in value
         except TypeError:
             if not isinstance(self.filter_value, basestring):
-                raise Http400('This filter is meant to be used with string data type values.')
+                raise LQLFilterError('This filter is meant to be used with string data type values.')
 
 
 class IContains(Filter):
@@ -72,7 +72,7 @@ class IContains(Filter):
             return self.filter_value.upper() in value.upper()
         except (TypeError, AttributeError):
             if not isinstance(self.filter_value, basestring):
-                raise Http400('This filter is meant to be used with string data type values.')
+                raise LQLFilterError('This filter is meant to be used with string data type values.')
 
 
 class Startswith(Filter):
@@ -81,7 +81,7 @@ class Startswith(Filter):
             return value.startswith(self.filter_value)
         except TypeError:
             if not isinstance(self.filter_value, basestring):
-                raise Http400('This filter is meant to be used with string data type values.')
+                raise LQLFilterError('This filter is meant to be used with string data type values.')
 
 
 class IStartswith(Filter):
@@ -90,7 +90,7 @@ class IStartswith(Filter):
             return value.upper().startswith(self.filter_value.upper())
         except (TypeError, AttributeError):
             if not isinstance(self.filter_value, basestring):
-                raise Http400('This filter is meant to be used with string data type values.')
+                raise LQLFilterError('This filter is meant to be used with string data type values.')
 
 
 class Endswith(Filter):
@@ -99,7 +99,7 @@ class Endswith(Filter):
             return value.endswith(self.filter_value)
         except TypeError:
             if not isinstance(self.filter_value, basestring):
-                raise Http400('This filter is meant to be used with string data type values.')
+                raise LQLFilterError('This filter is meant to be used with string data type values.')
 
 
 class IEndswith(Filter):
@@ -108,7 +108,7 @@ class IEndswith(Filter):
             return value.upper().endswith(self.filter_value.upper())
         except (TypeError, AttributeError):
             if not isinstance(self.filter_value, basestring):
-                raise Http400('This filter is meant to be used with string data type values.')
+                raise LQLFilterError('This filter is meant to be used with string data type values.')
 
 
 class IEquals(Filter):
@@ -117,7 +117,7 @@ class IEquals(Filter):
             return value.upper() == self.filter_value.upper()
         except (TypeError, AttributeError):
             if not isinstance(self.filter_value, basestring):
-                raise Http400('This filter is meant to be used with string data type values.')
+                raise LQLFilterError('This filter is meant to be used with string data type values.')
 
 
 # Number filters
@@ -147,7 +147,7 @@ class In(Filter):
         try:
             return value in self.filter_value
         except TypeError:
-            raise Http400('Invalid value type for specified filter or field.')
+            raise LQLFilterError('Invalid value type for specified filter or field.')
 
 
 class NotIn(Filter):
@@ -155,7 +155,7 @@ class NotIn(Filter):
         try:
             return value not in self.filter_value
         except TypeError:
-            raise Http400('Invalid value type for specified filter or field.')
+            raise LQLFilterError('Invalid value type for specified filter or field.')
 
 
 class Equals(Filter):
@@ -168,7 +168,7 @@ class Range(Filter):
         try:
             return value >= self.filter_value[0] and value <= self.filter_value[1]
         except (TypeError, IndexError):
-            raise Http400('Range filter value must be a list of 2 values.')
+            raise LQLFilterError('Range filter value must be a list of 2 values.')
 
 
 # Spatial filters
@@ -177,7 +177,7 @@ class Has(Filter):
         try:
             return value.contains(self.filter_value)
         except AttributeError:
-            raise Http400('field: %s, is not a geometry' % self.field)
+            raise LQLFilterError('field: %s, is not a geometry' % self.field)
 
 
 class Disjoint(Filter):
@@ -185,7 +185,7 @@ class Disjoint(Filter):
         try:
             return value.disjoint(self.filter_value)
         except AttributeError:
-            raise Http400('field: %s, is not a geometry' % self.field)
+            raise LQLFilterError('field: %s, is not a geometry' % self.field)
 
 
 class Intersects(Filter):
@@ -193,7 +193,7 @@ class Intersects(Filter):
         try:
             return value.intersects(self.filter_value)
         except AttributeError:
-            raise Http400('field: %s, is not a geometry' % self.field)
+            raise LQLFilterError('field: %s, is not a geometry' % self.field)
 
 
 class Touches(Filter):
@@ -201,7 +201,7 @@ class Touches(Filter):
         try:
             return value.touches(self.filter_value)
         except AttributeError:
-            raise Http400('field: %s, is not a geometry' % self.field)
+            raise LQLFilterError('field: %s, is not a geometry' % self.field)
 
 
 class Within(Filter):
@@ -214,7 +214,7 @@ class Within(Filter):
         try:
             return self.prepared.contains(value)
         except AttributeError:
-            raise Http400('field: %s, is not a geometry' % self.field)
+            raise LQLFilterError('field: %s, is not a geometry' % self.field)
 
 
 FILTER_CLASS_MAP = {

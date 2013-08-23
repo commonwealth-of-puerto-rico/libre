@@ -10,7 +10,7 @@ from django.conf import settings
 import jsonpath_rw
 
 from .aggregates import AGGREGATES_NAMES
-from .exceptions import Http400
+from .exceptions import LQLParseError
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
 from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPES,
     JOIN_TYPE_OR)
@@ -82,7 +82,7 @@ class Query():
                     try:
                         output_name = parameter.split(DOUBLE_DELIMITER, 1)[1]
                     except IndexError:
-                        raise Http400('Must specify a result name separated by a double delimiter')
+                        raise LQLParseError('Must specify a result name separated by a double delimiter')
 
                     if any(map(value.startswith, AGGREGATES_NAMES)):  # Is it any of the known aggregate names?
                         aggregate_name, value = value.split('(', 1)
@@ -93,7 +93,7 @@ class Query():
                             'function': AGGREGATES_NAMES[aggregate_name](value)
                         })
                     else:
-                        raise Http400('Unknown aggregate: %s' % value)
+                        raise LQLParseError('Unknown aggregate: %s' % value)
             elif DOUBLE_DELIMITER in parameter:
                 # Not an aggregate? Then it is a filter
                 try:
@@ -101,7 +101,7 @@ class Query():
                 except ValueError:
                     # Trying more than one filter per field
                     # This could be supported eventually, for now it's an error
-                    raise Http400('Only one filter per field is supported')
+                    raise LQLParseError('Only one filter per field is supported')
                 else:
                     try:
                         filter_value = parse_value(value)
@@ -109,7 +109,7 @@ class Query():
                         if getattr(settings, 'DEBUG', False):
                             raise
                         else:
-                            raise Http400('Malformed query: %s' % exception)
+                            raise LQLParseError('Malformed query: %s' % exception)
                     else:
                         self.filters.append({'field': field, 'filter_name': filter_name, 'filter_value': filter_value, 'original_value': value})
             else:
@@ -120,7 +120,7 @@ class Query():
                     if getattr(settings, 'DEBUG', False):
                         raise
                     else:
-                        raise Http400('Malformed query: %s' % exception)
+                        raise LQLParseError('Malformed query: %s' % exception)
                 else:
                     self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': filter_value, 'original_value': value})
 
@@ -130,7 +130,7 @@ class Query():
             try:
                 filter_identifier = FILTER_NAMES[filter_entry['filter_name']]
             except KeyError:
-                raise Http400('Unknown filter: %s' % filter_entry['filter_name'])
+                raise LQLParseError('Unknown filter: %s' % filter_entry['filter_name'])
             else:
                 filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
                 self.filters_function_map.append(filters_dictionary)
@@ -149,7 +149,7 @@ class Query():
                         value = return_attrib(item.row, filter_entry['field'])
                     except (AttributeError, TypeError, KeyError):
                         # A dotted attribute is not found
-                        raise Http400('Invalid element: %s' % filter_entry['field'])
+                        raise LQLParseError('Invalid element: %s' % filter_entry['field'])
                     else:
                         # Evaluate row values against the established filters
                         # TODO: further optimization: if join == AND and result == False and len(filter_map) > 1 then break
@@ -225,7 +225,7 @@ class Query():
                 else:
                     results = [match.value for match in expression.find(iterator)]
             except Exception as exception:
-                raise Http400('JSON query error; %s' % exception)
+                raise LQLParseError('JSON query error; %s' % exception)
             else:
                 if len(results) == 1:
                     return results[0]

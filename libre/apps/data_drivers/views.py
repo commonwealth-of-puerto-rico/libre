@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view
 
 import main
 
-from .exceptions import Http400
+from .exceptions import LIBREAPIError
 from .literals import DOUBLE_DELIMITER, LQL_DELIMITER, RENDERER_MAPPING, RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML
 from .models import Source, SourceDataVersion
 from .serializers import SourceDataVersionSerializer, SourceSerializer
@@ -119,7 +119,7 @@ class LIBREView(generics.GenericAPIView):
                         result[renderer_variables] = parse_value(value)
                     except Exception as exception:
                         raise
-                        raise Http400('Invalid renderer value; %s' % exception)
+                        raise LIBREAPIError('Invalid renderer value; %s' % exception)
 
         self.renderer_extra_context = result
 

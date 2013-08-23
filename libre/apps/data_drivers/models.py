@@ -28,7 +28,7 @@ from db_drivers.models import DatabaseConnection
 from icons.models import Icon
 from lock_manager import Lock, LockError
 
-from .exceptions import Http400
+from .exceptions import LIBREAPIError, SourceFileError
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
@@ -100,7 +100,7 @@ class SourceWS(Source):
     def get_one(self, id, timestamp=None, parameters=None):
         # ID are all base 1
         if id == 0:
-            raise Http400('Invalid ID; IDs are base 1')
+            raise LIBREAPIError('Invalid ID; IDs are base 1')
 
         return self.get_all(timestamp, parameters)[id - 1]
 
@@ -222,14 +222,27 @@ class SourceFileBased(models.Model):
                     new_hash = HASH_FUNCTION(handle.read())
             except IOError as exception:
                 logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
-                raise
+                raise SourceFileError(unicode(exception))
         elif self.file:
-            new_hash = HASH_FUNCTION(self.file.read())
-            self.file.seek(0)
+            try:
+                new_hash = HASH_FUNCTION(self.file.read())
+            except IOError as exception:
+                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
+                raise SourceFileError(unicode(exception))
+            else:
+                self.file.seek(0)
         elif self.url:
-            handle = urllib2.urlopen(self.url)
-            new_hash = HASH_FUNCTION(handle.read())
-            handle.close()
+            try:
+                handle = urllib2.urlopen(self.url)
+            except urllib2.URLError as exception:
+                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
+                raise SourceFileError(unicode(exception))
+            else:
+                new_hash = HASH_FUNCTION(handle.read())
+                handle.close()
+        else:
+            # No file provided
+            raise SourceFileError('No file provided.')
 
         logger.debug('new_hash: %s' % new_hash)
 
@@ -260,7 +273,7 @@ class SourceFileBased(models.Model):
     def get_one(self, id, parameters=None):
         # ID are all base 1
         if id == 0:
-            raise Http400('Invalid ID; IDs are base 1')
+            raise LIBREAPIError('Invalid ID; IDs are base 1')
 
         # TODO: return a proper response when no sourcedataversion is found
         timestamp, parameters = self.analyze_request(parameters)
@@ -794,7 +807,7 @@ class SourceDatabase(Source):
     def get_one(self, id, timestamp=None, parameters=None):
         # ID are all base 1
         if id == 0:
-            raise Http400('Invalid ID; IDs are base 1')
+            raise LIBREAPIError('Invalid ID; IDs are base 1')
 
         return self.get_all(timestamp, parameters, get_id=id)
 
