@@ -5,6 +5,22 @@
 {% load crispy_forms_tags %}
 
 {% block content_wide %}
+    <style>
+
+        body {
+            padding-top: 4px;
+            padding-bottom: 0px;
+        }
+
+        .control-group {
+            margin-bottom: -5px;
+        }
+
+        .control-label {
+            margin-bottom: 0px;
+        }
+    </style>
+
     {% crispy form %}
 
     <iframe class="input-xxlarge textarea" src='{{ form.query_string.value|default:"" }}' style="width: 100%; height: 400px;"></iframe>
