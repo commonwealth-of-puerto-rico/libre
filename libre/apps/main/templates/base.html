@@ -62,6 +62,10 @@
     <div class="container-wide">
         {% block content_wide %}{% endblock %}
     </div> <!-- /container -->
-
+    <div class="container-narrow">
+        {% block content %}{% endblock %}
+        <hr />
+        {% block footer %}{% endblock %}
+    </div> <!-- /container -->
   </body>
 </html>
