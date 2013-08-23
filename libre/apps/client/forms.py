@@ -19,10 +19,10 @@ from data_drivers.utils import parse_request
 logger = logging.getLogger(__name__)
 htmlparser = HTMLParser.HTMLParser()
 renderer_choices = (
-    ('api', _('API')),
     ('json', _('JSON')),
     ('xml', _('XML')),
     ('map_leaflet', _('Leaflet')),
+    ('api', _('Browseable API')),
 )
 
 
