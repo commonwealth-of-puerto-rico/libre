@@ -136,6 +136,8 @@ class ClientForm(forms.Form):
 
         if cleaned_data.get('source'):
             query_string = cleaned_data['server'] + reverse('source-get_all', args=[cleaned_data['source']]) + '?' + query_string
+            if 'http://' not in cleaned_data['server']:
+                query_string = 'http://' + query_string
 
         return query_string
 
