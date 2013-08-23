@@ -10,7 +10,7 @@ def libre_client(request):
     if request.POST:
         form = ClientForm(data=request.POST)
     else:
-        form = ClientForm()
+        form = ClientForm(initial={'server': request.get_host()})
 
     context = {
         'form': form,

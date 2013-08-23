@@ -27,7 +27,7 @@ renderer_choices = (
 
 
 class ClientForm(forms.Form):
-    server = forms.CharField(label=_('Server'), initial='http://127.0.0.1:8000')
+    server = forms.CharField(label=_('Server'))
     source = forms.ModelChoiceField(label=_('Source'), queryset=Source.objects.filter(published=True).select_subclasses(), to_field_name='slug')
     filters = forms.CharField(label=_('Filter'), widget=forms.Textarea, required=False)
     as_nested_list = forms.BooleanField(label=_('As nested list'), required=False)
