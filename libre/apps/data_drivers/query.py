@@ -118,7 +118,11 @@ class Query():
                     else:
                         if negation:
                             # If filter is being negates remove the 'not' form the filter_name
-                            filter_name = filter_name.split(DOUBLE_DELIMITER)[1]
+                            try:
+                                filter_name = filter_name.split(DOUBLE_DELIMITER)[1]
+                            except IndexError:
+                                # Most probable cause is that the 'equality (=)' filter is being used
+                                filter_name = 'equals'
 
                         self.filters.append({'field': field, 'filter_name': filter_name, 'negation': negation, 'filter_value': filter_value, 'original_value': value})
             else:
@@ -254,10 +258,16 @@ class Query():
 
     def process_transform(self, iterator):
         if self.as_dict_list:
-            data_iterable = iter(iterator)
+            try:
+                data_iterable = iter(iterator)
+            except TypeError:
+                raise LQLParseError('Data is not in a form suitable for transformation, must be value pairs.')
             return imap(lambda x: {x[0]: x[1]}, izip(data_iterable, data_iterable))
         elif self.as_nested_list:
-            data_iterable = iter(iterator)
+            try:
+                data_iterable = iter(iterator)
+            except TypeError:
+                raise LQLParseError('Data is not in a form suitable for transformation, must be value pairs.')
             return izip(data_iterable, data_iterable)
         else:
             return iterator
