@@ -24,7 +24,6 @@ FILTER_INTERSECTS = 19
 FILTER_TOUCHES = 20
 FILTER_WITHIN = 21
 FILTER_IEQUALS = 22
-FILTER_NOT_IN = 23
 
 FILTER_NAMES = {
     'contains': FILTER_CONTAINS,
@@ -39,7 +38,6 @@ FILTER_NAMES = {
     'gt': FILTER_GT,
     'gte': FILTER_GTE,
     'in': FILTER_IN,
-    'not_in': FILTER_NOT_IN,
     'equals': FILTER_EQUALS,  # TODO: Add support for aliases  '='
     'range': FILTER_RANGE,
     'has': FILTER_HAS,
@@ -51,14 +49,19 @@ FILTER_NAMES = {
 
 
 class Filter():
-    def __init__(self, field, filter_value):
+    def __init__(self, field, filter_value, negation):
         self.field = field
         self.filter_value = filter_value
+        self.negation = negation
+        if negation:
+            self.evaluate = lambda x: not(self._evaluate(x))
+        else:
+            self.evaluate = self._evaluate
 
 
 # String filters
 class Contains(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return self.filter_value in value
         except TypeError:
@@ -67,7 +70,7 @@ class Contains(Filter):
 
 
 class IContains(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return self.filter_value.upper() in value.upper()
         except (TypeError, AttributeError):
@@ -76,7 +79,7 @@ class IContains(Filter):
 
 
 class Startswith(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.startswith(self.filter_value)
         except TypeError:
@@ -85,7 +88,7 @@ class Startswith(Filter):
 
 
 class IStartswith(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.upper().startswith(self.filter_value.upper())
         except (TypeError, AttributeError):
@@ -94,7 +97,7 @@ class IStartswith(Filter):
 
 
 class Endswith(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.endswith(self.filter_value)
         except TypeError:
@@ -103,7 +106,7 @@ class Endswith(Filter):
 
 
 class IEndswith(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.upper().endswith(self.filter_value.upper())
         except (TypeError, AttributeError):
@@ -112,7 +115,7 @@ class IEndswith(Filter):
 
 
 class IEquals(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.upper() == self.filter_value.upper()
         except (TypeError, AttributeError):
@@ -122,49 +125,41 @@ class IEquals(Filter):
 
 # Number filters
 class LessThan(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         return value < self.filter_value
 
 
 class LessThanOrEqual(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         return value <= self.filter_value
 
 
 class GreaterThan(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         return value > self.filter_value
 
 
 class GreaterThanOrEqual(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         return value >= self.filter_value
 
 
 # Other
 class In(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value in self.filter_value
         except TypeError:
             raise LQLFilterError('Invalid value type for specified filter or field.')
 
 
-class NotIn(Filter):
-    def evaluate(self, value):
-        try:
-            return value not in self.filter_value
-        except TypeError:
-            raise LQLFilterError('Invalid value type for specified filter or field.')
-
-
 class Equals(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         return self.filter_value == value
 
 
 class Range(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value >= self.filter_value[0] and value <= self.filter_value[1]
         except (TypeError, IndexError):
@@ -173,7 +168,7 @@ class Range(Filter):
 
 # Spatial filters
 class Has(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.contains(self.filter_value)
         except AttributeError:
@@ -181,7 +176,7 @@ class Has(Filter):
 
 
 class Disjoint(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.disjoint(self.filter_value)
         except AttributeError:
@@ -189,7 +184,7 @@ class Disjoint(Filter):
 
 
 class Intersects(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.intersects(self.filter_value)
         except AttributeError:
@@ -197,20 +192,26 @@ class Intersects(Filter):
 
 
 class Touches(Filter):
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return value.touches(self.filter_value)
         except AttributeError:
             raise LQLFilterError('field: %s, is not a geometry' % self.field)
 
 
+
 class Within(Filter):
-    def __init__(self, field, filter_value):
+    def __init__(self, field, filter_value, negation):
         self.field = field
         self.filter_value = filter_value
         self.prepared = prep(self.filter_value)
+        self.negation = negation
+        if negation:
+            self.evaluate = lambda x: not(self._evaluate(x))
+        else:
+            self.evaluate = self._evaluate
 
-    def evaluate(self, value):
+    def _evaluate(self, value):
         try:
             return self.prepared.contains(value)
         except AttributeError:
@@ -233,7 +234,6 @@ FILTER_CLASS_MAP = {
     FILTER_GTE: GreaterThanOrEqual,
     FILTER_IN: In,
     # Other
-    FILTER_NOT_IN: NotIn,
     FILTER_EQUALS: Equals,
     FILTER_RANGE: Range,
     # Spatial

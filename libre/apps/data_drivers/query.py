@@ -96,8 +96,13 @@ class Query():
                         raise LQLParseError('Unknown aggregate: %s' % value)
             elif DOUBLE_DELIMITER in parameter:
                 # Not an aggregate? Then it is a filter
+                # Check for negation literal
+                if DOUBLE_DELIMITER + 'not' in parameter:
+                    negation = True
+                else:
+                    negation = False
                 try:
-                    field, filter_name = parameter.split(DOUBLE_DELIMITER)
+                    field, filter_name = parameter.split(DOUBLE_DELIMITER, 1)
                 except ValueError:
                     # Trying more than one filter per field
                     # This could be supported eventually, for now it's an error
@@ -111,9 +116,18 @@ class Query():
                         else:
                             raise LQLParseError('Malformed query: %s' % exception)
                     else:
-                        self.filters.append({'field': field, 'filter_name': filter_name, 'filter_value': filter_value, 'original_value': value})
+                        if negation:
+                            # If filter is being negates remove the 'not' form the filter_name
+                            filter_name = filter_name.split(DOUBLE_DELIMITER)[1]
+
+                        self.filters.append({'field': field, 'filter_name': filter_name, 'negation': negation, 'filter_value': filter_value, 'original_value': value})
             else:
                 # Otherwise it is an 'equality (=)' filter
+                # Check for negation literal
+                if DOUBLE_DELIMITER + 'not' in parameter:
+                    negation = True
+                else:
+                    negation = False
                 try:
                     filter_value = parse_value(value)
                 except Exception as exception:
@@ -122,7 +136,11 @@ class Query():
                     else:
                         raise LQLParseError('Malformed query: %s' % exception)
                 else:
-                    self.filters.append({'field': parameter, 'filter_name': 'equals', 'filter_value': filter_value, 'original_value': value})
+                    if negation:
+                        # If filter is being negates remove the 'not' form the filter_name
+                        filter_name = filter_name.split(DOUBLE_DELIMITER)[1]
+
+                    self.filters.append({'field': parameter, 'filter_name': 'equals', 'negation': negation, 'filter_value': filter_value, 'original_value': value})
 
     def get_filter_functions_map(self):
         for filter_entry in self.filters:
@@ -132,7 +150,7 @@ class Query():
             except KeyError:
                 raise LQLParseError('Unknown filter: %s' % filter_entry['filter_name'])
             else:
-                filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'])
+                filters_dictionary['operation'] = FILTER_CLASS_MAP[filter_identifier](filter_entry['field'], filter_entry['filter_value'], filter_entry['negation'])
                 self.filters_function_map.append(filters_dictionary)
 
     def data_iterator(self):

@@ -232,16 +232,6 @@ Return the elements whose field values match one entry in the specified list of 
 Example: ``crime_type_id__in=[1,4,8]``
 
 
-not_in
-------
-
-``not_in=<list of strings or numbers>``
-
-Return the elements whose field values do not match one entry in the specified list of strings or numbers.
-
-Example: ``city_id__not_in=[41,3,142]``
-
-
 range
 -----
 
@@ -250,6 +240,16 @@ range
 Return the elements whose field values's months are within the the specified values.
 
 Example: ``purchases_date__range=[Date(2013-01-01), Date(2013-03-01)]``
+
+
+negation
+~~~~~~~~
+
+All filter can be negated by adding ``__not `` before the filter name, this will cause their logic to be inverted.
+
+Return the elements whose field values do not match one entry in the specified list of strings or numbers.
+
+Example: ``city_id__not_in=[41,3,142]``
 
 
 Directives
