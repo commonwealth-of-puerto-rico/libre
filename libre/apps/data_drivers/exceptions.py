@@ -9,7 +9,7 @@ class SourceFileError(LIBREError):
     pass
 
 
-class LIBREAPIError(APIException):
+class LIBREAPIError(ParseError):
     pass
 
 
