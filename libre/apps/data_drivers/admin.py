@@ -4,47 +4,49 @@ from django.contrib import admin, messages
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from .actions import check_updated, clear_versions, clone
 from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
     SourceWSForm, SourceShapeForm)
-from .exceptions import SourceFileError
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
     SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSArgument, WSResultField)
 
 
-#clone_objects Copyright (C) 2009  Rune Bromer
-#http://www.bromer.eu/2009/05/23/a-generic-copyclone-action-for-django-11/
-def clone_objects(objects, title_fieldnames):
-    def clone(from_object, title_fieldnames):
-        args = dict([(fld.name, getattr(from_object, fld.name))
-                     for fld in from_object._meta.fields
-                     if fld is not from_object._meta.pk])
-
-        args.pop('id')
-
-        for field in from_object._meta.fields:
-            if field.name in title_fieldnames:
-                if isinstance(field, models.CharField):
-                    args[field.name] = getattr(from_object, field.name) + (' (%s) ' % unicode(_('copy')))
-
-        return from_object.__class__.objects.create(**args)
-
-    if not hasattr(objects, '__iter__'):
-        objects = [objects]
-
-    # We always have the objects in a list now
-    objs = []
-    for obj in objects:
-        obj = clone(obj, title_fieldnames)
-        obj.save()
-        objs.append(obj)
-
-
-class DatabaseResultColumnInline(admin.TabularInline):
-    model = DatabaseResultColumn
+class SourceColumnInline(admin.TabularInline):
     extra = 1
-    suit_classes = 'suit-tab suit-tab-configuration'
+    suit_classes = 'suit-tab suit-tab-fields'
+
+
+class DatabaseResultColumnInline(SourceColumnInline):
+    model = DatabaseResultColumn
+
+
+class FixedWidthColumnInline(SourceColumnInline):
+    model = FixedWidthColumn
+
+
+class CSVColumnInline(SourceColumnInline):
+    model = CSVColumn
+    form = CSVColumnForm
+
+
+class SpreadsheetColumnInline(SourceColumnInline):
+    model = SpreadsheetColumn
+    form = SpreadsheetColumnForm
+
+
+class ShapefileColumnInline(SourceColumnInline):
+    model = ShapefileColumn
+    form = ShapefileColumnForm
+
+
+class WSArgumentInline(SourceColumnInline):
+    model = WSArgument
+
+
+class WSResultFieldInline(SourceColumnInline):
+    model = WSResultField
 
 
 class SourceDataVersionInline(admin.TabularInline):
@@ -56,100 +58,8 @@ class SourceDataVersionInline(admin.TabularInline):
     suit_classes = 'suit-tab suit-tab-versions'
 
 
-class FixedWidthColumnInline(admin.TabularInline):
-    model = FixedWidthColumn
-    extra = 1
-    suit_classes = 'suit-tab suit-tab-configuration'
-
-
-class CSVColumnInline(admin.TabularInline):
-    model = CSVColumn
-    extra = 1
-    suit_classes = 'suit-tab suit-tab-configuration'
-    form = CSVColumnForm
-
-
-class SpreadsheetColumnInline(admin.TabularInline):
-    model = SpreadsheetColumn
-    extra = 1
-    suit_classes = 'suit-tab suit-tab-configuration'
-    form = SpreadsheetColumnForm
-
-
-class ShapefileColumnInline(admin.TabularInline):
-    model = ShapefileColumn
-    extra = 1
-    suit_classes = 'suit-tab suit-tab-configuration'
-    form = ShapefileColumnForm
-
-
-def check_updated(modeladmin, request, queryset):
-    count = 0
-    for source in queryset:
-        try:
-            source.check_file()
-        except SourceFileError as exception:
-            messages.error(request, _('Error opening file for source: %s; %s') % (source, str(exception)))
-        else:
-            count += 1
-
-    if len(queryset) == 1:
-        message_bit = 'Source file was checked for update.'
-    else:
-        message_bit = '%s sources were checked for update.' % len(queryset)
-    modeladmin.message_user(request, message_bit)
-check_updated.short_description = _('Check for updated source file')
-
-
-def clear_versions(modeladmin, request, queryset):
-    count = 0
-    for source in queryset:
-        try:
-            source.clear_versions()
-        except IOError:
-            messages.error(request, _('Error opening file for source: %s') % source)
-        else:
-            count += 1
-
-    if len(queryset) == 1:
-        message_bit = 'Source versions were deleted.'
-    else:
-        message_bit = '%s sources versions were deleted.' % len(queryset)
-    modeladmin.message_user(request, message_bit)
-clear_versions.short_description = _('Clear all source versions')
-
-
 class SourceAdmin(admin.ModelAdmin):
-    def clone(self, request, queryset):
-        clone_objects(queryset, ('name', 'slug'))
-
-        if queryset.count() == 1:
-            message_bit = _('1 source was')
-        else:
-            message_bit = _('%s sources were') % queryset.count()
-        self.message_user(request, _('%s copied.') % message_bit)
-
-    clone.short_description = _('Copy the selected source')
-    actions = [clone]
-
-
-class SourceDatabaseAdmin(SourceAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')),)
-
-    fieldsets = (
-        (_('Basic information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'database_connection', 'query', 'limit', 'published')
-        }),
-    )
-    list_display = ('name', 'slug', 'description', 'published')
-    list_editable = ('published',)
-    inlines = [DatabaseResultColumnInline]
-    form = SourceDatabaseForm
-
-
-class SourceSpreadsheetAdmin(SourceAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')))
+    suit_form_tabs = (('configuration', _('Configuration')), ('fields', _('Fields')), ('authorization', _('Authorization')))
 
     fieldsets = (
         (_('Basic information'), {
@@ -160,6 +70,40 @@ class SourceSpreadsheetAdmin(SourceAdmin):
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('limit',)
         }),
+        (_('Authorized groups'), {
+            'classes': ('suit-tab suit-tab-authorization',),
+            'fields': ('allowed_groups',)
+        }),
+    )
+
+    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
+    list_editable = ('published',)
+    filter_horizontal = ['allowed_groups']
+
+    actions = [clone]
+
+
+class SourceDatabaseAdmin(SourceAdmin):
+    fieldsets = SourceAdmin.fieldsets + (
+        (_('Source information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('database_connection',)
+        }),
+        (_('Specific information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('query',)
+        }),
+    )
+    inlines = [DatabaseResultColumnInline]
+    form = SourceDatabaseForm
+
+
+class SourceSpreadsheetAdmin(SourceAdmin):
+    suit_form_tabs = SourceAdmin.suit_form_tabs + (
+        ('versions', _('Versions')),
+    )
+
+    fieldsets = SourceAdmin.fieldsets + (
         (_('Source data (choose one)'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('path', 'file', 'url')
@@ -174,25 +118,17 @@ class SourceSpreadsheetAdmin(SourceAdmin):
         }),
     )
 
-    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
-    list_editable = ('published',)
     inlines = [SourceDataVersionInline, SpreadsheetColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceSpreadsheetForm
 
 
 class SourceCSVAdmin(SourceAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')))
+    suit_form_tabs = SourceAdmin.suit_form_tabs + (
+        ('versions', _('Versions')),
+    )
 
-    fieldsets = (
-        (_('Basic information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published')
-        }),
-        (_('Result limiting'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('limit',)
-        }),
+    fieldsets = SourceAdmin.fieldsets + (
         (_('Source data (choose one)'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('path', 'file', 'url',)
@@ -206,25 +142,17 @@ class SourceCSVAdmin(SourceAdmin):
             'fields': ('delimiter', 'quote_character',)
         }),
     )
-    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
-    list_editable = ('published',)
     inlines = [SourceDataVersionInline, CSVColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceCSVForm
 
 
 class SourceFixedWidthAdmin(SourceAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')))
+    suit_form_tabs = SourceAdmin.suit_form_tabs + (
+        ('versions', _('Versions')),
+    )
 
-    fieldsets = (
-        (_('Basic information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published')
-        }),
-        (_('Result limiting'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('limit',)
-        }),
+    fieldsets = SourceAdmin.fieldsets + (
         (_('Source data (choose one)'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('path', 'file', 'url',)
@@ -234,27 +162,13 @@ class SourceFixedWidthAdmin(SourceAdmin):
             'fields': ('import_rows',)
         }),
     )
-    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
-    list_editable = ('published',)
     inlines = [SourceDataVersionInline, FixedWidthColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceFixedWidthForm
 
 
-class WSArgumentInline(admin.TabularInline):
-    suit_classes = 'suit-tab suit-tab-configuration'
-    model = WSArgument
-    extra = 1
-
-
-class WSResultFieldInline(admin.TabularInline):
-    suit_classes = 'suit-tab suit-tab-configuration'
-    model = WSResultField
-    extra = 1
-
-
 class SourceWSAdmin(SourceAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')),)
+    suit_form_tabs = SourceAdmin.suit_form_tabs
 
     fieldsets = (
         (_('Basic information'), {
@@ -265,25 +179,23 @@ class SourceWSAdmin(SourceAdmin):
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('wsdl_url', 'endpoint')
         }),
+        (_('Authorized groups'), {
+            'classes': ('suit-tab suit-tab-authorization',),
+            'fields': ('allowed_groups',)
+        }),
     )
     list_display = ('name', 'slug', 'wsdl_url', 'endpoint', 'published')
-    list_editable = ('published',)
     inlines = [WSArgumentInline, WSResultFieldInline]
     form = SourceWSForm
 
 
 class SourceShapeAdmin(SourceAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')), ('versions', _('Versions')), ('renderers', _('Renderers')))
+    suit_form_tabs = SourceAdmin.suit_form_tabs + (
+        ('versions', _('Versions')),
+        ('renderers', _('Renderers')),
+    )
 
-    fieldsets = (
-        (_('Basic information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published')
-        }),
-        (_('Result limiting'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('limit',)
-        }),
+    fieldsets = SourceAdmin.fieldsets + (
         (_('Source data (choose one)'), {
             'classes': ('suit-tab suit-tab-configuration',),
             #'fields': ('path', 'file', 'url') #Disables until file handle support is added
@@ -299,9 +211,7 @@ class SourceShapeAdmin(SourceAdmin):
         }),
     )
 
-    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
-    list_editable = ('published',)
-    filter_horizontal = ['markers']
+    filter_horizontal = SourceAdmin.filter_horizontal + ['markers']
     inlines = [SourceDataVersionInline, ShapefileColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceShapeForm
