@@ -144,6 +144,7 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'south',
     'rest_framework',
+    'rest_framework.authtoken',
     'crispy_forms',
     'lock_manager',
     'icons',
@@ -190,6 +191,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
 )
 
+# Django SUIT
 SUIT_CONFIG = {
     'ADMIN_NAME': PROJECT_TITLE,
     'MENU_OPEN_FIRST_CHILD': False,
@@ -201,17 +203,24 @@ SUIT_CONFIG = {
     ),
 }
 
-
+# Job processing
 JOB_PROCESSING_MODE_IMMEDIATE = False
 
+# LQL
 LQL_DELIMITER = '_'
 
+# Overwrite defaults with local settings
 try:
     from settings_local import *
 except ImportError:
     pass
 
+# REST FRAMEWORK
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
     'URL_FORMAT_OVERRIDE': LQL_DELIMITER + 'format',
 }
 

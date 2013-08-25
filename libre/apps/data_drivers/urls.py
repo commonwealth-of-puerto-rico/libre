@@ -7,8 +7,9 @@ from .views import (LibreMetadataList, SourceDataVersionList, SourceDataVersionD
 
 urlpatterns = patterns('data_drivers.views',
     url(r'^$', 'api_root', name='api_root'),
-    url(r'^auth/', include('rest_framework.urls',
-                               namespace='rest_framework')),
+
+    url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
+
     url(r'^libre/$', LibreMetadataList.as_view(), name='libremetadata-list'),
 
     url(r'^sources/$', SourceList.as_view(), name='source-list'),
@@ -18,7 +19,8 @@ urlpatterns = patterns('data_drivers.views',
 
     url(r'^sources/data_version/$', SourceDataVersionList.as_view(), name='sourcedataversion-list'),
     url(r'^sources/data_versions/(?P<pk>[0-9]+)/$', SourceDataVersionDetail.as_view(), name='sourcedataversion-detail'),
-
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)
+
+urlpatterns += url(r'^obtain_auth_token/', 'rest_framework.authtoken.views.obtain_auth_token'),
