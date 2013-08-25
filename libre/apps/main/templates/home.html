@@ -10,8 +10,8 @@
                 <li><span>{% blocktrans with request.user as user %}Not logged in{% endblocktrans %}<a href="{% url 'rest_framework:login' %}?next=/"> ({% trans 'Login' %})</a></span></li>
             {% else %}
                 <li><span>{% blocktrans with request.user as user %}Logged in as: {{ user }}{% endblocktrans %}<a href="{% url 'rest_framework:logout' %}?next=/"> ({% trans 'Logout' %})</a></span></li>
-
             {% endif %}
+            <li><span><a href="{% url 'auth_token_obtain' %}">{% trans 'Obtain API token' %}</a></span></li>
         </ul>
         <h3><a href='{% url "home" %}'>{% trans 'LIBRE' %}</a></h3>
       </div>

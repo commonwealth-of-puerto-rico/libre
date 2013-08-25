@@ -2,13 +2,13 @@ from django.conf.urls.defaults import patterns, url, include
 
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from .views import (LibreMetadataList, SourceDataVersionList, SourceDataVersionDetail, SourceList, SourceDetail,
-    SourceGetAll, SourceGetOne)
+
+from .views import (LibreMetadataList, SourceDataVersionList, SourceDataVersionDetail,
+    SourceDetail, SourceList, SourceGetAll, SourceGetOne)
+
 
 urlpatterns = patterns('data_drivers.views',
     url(r'^$', 'api_root', name='api_root'),
-
-    url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
 
     url(r'^libre/$', LibreMetadataList.as_view(), name='libremetadata-list'),
 
@@ -22,5 +22,3 @@ urlpatterns = patterns('data_drivers.views',
 )
 
 urlpatterns = format_suffix_patterns(urlpatterns)
-
-urlpatterns += url(r'^obtain_auth_token/', 'rest_framework.authtoken.views.obtain_auth_token'),
