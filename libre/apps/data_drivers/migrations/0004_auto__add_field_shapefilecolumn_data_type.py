@@ -66,7 +66,7 @@ class Migration(SchemaMigration):
         u'data_drivers.sourcedata': {
             'Meta': {'object_name': 'SourceData'},
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'row': ('jsonfield.fields.JSONField', [], {'default': '{}'}),
+            'row': ('django.db.models.fields.TextField', [], {'default': '{}'}),
             'row_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'source_data_version': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'data'", 'to': u"orm['data_drivers.SourceDataVersion']"})
         },
@@ -76,7 +76,7 @@ class Migration(SchemaMigration):
             'checksum': ('django.db.models.fields.CharField', [], {'max_length': '64'}),
             'datetime': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 7, 18, 0, 0)'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'metadata': ('jsonfield.fields.JSONField', [], {'default': '{}', 'blank': 'True'}),
+            'metadata': ('django.db.models.fields.TextField', [], {'default': '{}', 'blank': 'True'}),
             'ready': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'source': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'versions'", 'to': u"orm['data_drivers.Source']"}),
             'timestamp': ('django.db.models.fields.CharField', [], {'max_length': '20', 'blank': 'True'})

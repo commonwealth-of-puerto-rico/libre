@@ -29,10 +29,10 @@ class Migration(SchemaMigration):
 
 
         # Changing field 'SourceData.row'
-        db.alter_column(u'data_drivers_sourcedata', 'row', self.gf('jsonfield.fields.JSONField')())
+        db.alter_column(u'data_drivers_sourcedata', 'row', self.gf('django.db.models.fields.TextField')())
 
         # Changing field 'SourceDataVersion.metadata'
-        db.alter_column(u'data_drivers_sourcedataversion', 'metadata', self.gf('jsonfield.fields.JSONField')())
+        db.alter_column(u'data_drivers_sourcedataversion', 'metadata', self.gf('django.db.models.fields.TextField')())
 
     models = {
         u'data_drivers.csvcolumn': {
