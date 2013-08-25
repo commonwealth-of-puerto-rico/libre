@@ -15,6 +15,7 @@ import main
 from .exceptions import LIBREAPIError
 from .literals import DOUBLE_DELIMITER, LQL_DELIMITER, RENDERER_MAPPING, RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML
 from .models import Source, SourceDataVersion
+from .permissions import IsAllowedGroupMember
 from .serializers import SourceDataVersionSerializer, SourceSerializer
 from .utils import parse_value, parse_request
 
@@ -57,14 +58,17 @@ class CustomRetrieveAPIView(CustomAPIView, generics.RetrieveAPIView):
 
 class SourceList(CustomListAPIView):
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
-    queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
+    def get_queryset(self):
+        return Source.objects.filter(published=True).filter(allowed_groups__in=self.request.user.groups.all()).select_subclasses()
 
 
 class SourceDetail(CustomRetrieveAPIView):
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
-    queryset = Source.objects.filter(published=True).select_subclasses()
     serializer_class = SourceSerializer
+    permission_classes = (IsAllowedGroupMember,)
+    def get_queryset(self):
+        return Source.objects.filter(published=True).select_subclasses()
 
 
 class SourceDataVersionList(CustomListAPIView):
@@ -77,10 +81,12 @@ class SourceDataVersionDetail(CustomRetrieveAPIView):
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
+    permission_classes = (IsAllowedGroupMember,)
 
 
 class LIBREView(generics.GenericAPIView):
     queryset = Source.objects.filter(published=True).select_subclasses()
+    permission_classes = (IsAllowedGroupMember,)
 
     def get_renderers(self):
         """
