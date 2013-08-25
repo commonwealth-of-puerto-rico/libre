@@ -9,6 +9,7 @@ import string
 import struct
 import urllib2
 
+from django.contrib.auth.models import Group
 from django.core.exceptions import FieldError, ValidationError
 from django.db import models, transaction
 from django.http import Http404
@@ -46,8 +47,28 @@ class Source(models.Model):
     slug = models.SlugField(unique=True, blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
     description = models.TextField(blank=True, verbose_name=_('description'))
     published = models.BooleanField(default=False, verbose_name=_('published'))
+    allowed_groups = models.ManyToManyField(Group, verbose_name=_('allowed groups'), blank=True, null=True)
 
     objects = InheritanceManager()
+
+    def get_stream_type(self):
+        result = _('Unknown')
+        try:
+            if self.file:
+                result = _('Uploaded file')
+            elif self.path:
+                result = _('Filesystem path')
+            elif self.url:
+                result = _('URL')
+            else:
+                result = _('None')
+        except AttributeError:
+            # Might be a database type
+            if self.database_connection:
+                result = _('Database connection')
+
+        return result
+    get_stream_type.short_description = 'stream type'
 
     def get_column_names(self):
         if self.columns.count():
@@ -156,17 +177,6 @@ class SourceFileBased(models.Model):
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
     url = models.URLField(blank=True, verbose_name=_('URL'), help_text=_('Import a file from an URL.'))
-
-    def get_stream_type(self):
-        if self.file:
-            return _('Uploaded file')
-        elif self.path:
-            return _('Filesystem path')
-        elif self.url:
-            return _('URL')
-        else:
-            return _('None')
-    get_stream_type.short_description = 'stream type'
 
     def get_functions_map(self):
         return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
