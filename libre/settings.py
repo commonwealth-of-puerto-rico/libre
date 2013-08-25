@@ -196,9 +196,10 @@ SUIT_CONFIG = {
     'ADMIN_NAME': PROJECT_TITLE,
     'MENU_OPEN_FIRST_CHILD': False,
     'MENU': (
-        {'label': _('Database drivers'), 'icon':'icon-cog', 'app': 'db_drivers'},
-        {'label': _('Icons'), 'icon':'icon-cog', 'app': 'icons'},
-        {'label': _('Data drivers'), 'icon':'icon-cog', 'app': 'data_drivers'},
+        {'label': _('Auth'), 'icon':'icon-user', 'app': 'auth'},
+        {'label': _('Database drivers'), 'icon':'icon-hdd', 'app': 'db_drivers'},
+        {'label': _('Icons'), 'icon':'icon-picture', 'app': 'icons'},
+        {'label': _('Data drivers'), 'icon':'icon-folder-open', 'app': 'data_drivers'},
         {'label': _('Homepage'), 'icon':'icon-globe', 'url': 'https://github.com/commonwealth-of-puerto-rico/libre/'},
     ),
 }

@@ -4,7 +4,7 @@ South==0.8.1
 django-model-utils==1.4.0
 pytz==2013b
 suds==0.4
-django-suit==0.2.2
+django-suit==0.2.4
 Fiona==0.16.1
 djangorestframework==2.3.6
 PyYAML==3.10
