@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import datetime
 import logging
 
-from django.views.generic import TemplateView
 
 from rest_framework import generics
 from rest_framework.reverse import reverse
@@ -20,15 +19,6 @@ from .serializers import SourceDataVersionSerializer, SourceSerializer
 from .utils import parse_value, parse_request
 
 logger = logging.getLogger(__name__)
-
-
-class DashboardWelcomeView(TemplateView):
-    template_name = 'admin/dashboard/welcome.html'
-
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
-
-        return self.render_to_response(context=context)
 
 
 @api_view(('GET',))
