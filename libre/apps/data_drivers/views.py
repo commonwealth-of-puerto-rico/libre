@@ -58,28 +58,26 @@ class CustomRetrieveAPIView(CustomAPIView, generics.RetrieveAPIView):
 
 
 class SourceList(CustomListAPIView):
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     serializer_class = SourceSerializer
     def get_queryset(self):
         if self.request.user.is_superuser or self.request.user.is_staff:
             return Source.objects.all().select_subclasses()
         else:
-            return Source.objects.filter(published=True).filter(allowed_groups__in=self.request.user.groups.all()).select_subclasses()
+            # Typecast as list to avoid unresolved "'NoneType' object has no attribute '_meta'" error = "Marronazo!"
+            return Source.objects.filter(published=True).filter(allowed_groups__in=list(self.request.user.groups.all())).select_subclasses()
 
 
 class SourceDetail(CustomRetrieveAPIView):
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     serializer_class = SourceSerializer
-    permission_classes = (IsAllowedGroupMember,)
     def get_queryset(self):
         if self.request.user.is_superuser or self.request.user.is_staff:
             return Source.objects.all().select_subclasses()
         else:
-            return Source.objects.filter(published=True).filter(allowed_groups__in=self.request.user.groups.all()).select_subclasses()
+            # Typecast as list to avoid unresolved "'NoneType' object has no attribute '_meta'" error = "Marronazo!"
+            return Source.objects.filter(published=True).filter(allowed_groups__in=list(self.request.user.groups.all())).select_subclasses()
 
 
 class SourceDataVersionList(CustomListAPIView):
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     serializer_class = SourceDataVersionSerializer
 
     def get_queryset(self):
@@ -87,16 +85,13 @@ class SourceDataVersionList(CustomListAPIView):
 
 
 class SourceDataVersionDetail(CustomRetrieveAPIView):
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     serializer_class = SourceDataVersionSerializer
-    permission_classes = (IsAllowedGroupMember,)
     def get_queryset(self):
         return SourceDataVersion.objects.filter(ready=True)
 
 
 class LIBREView(CustomAPIView, generics.GenericAPIView):
     queryset = Source.objects.filter(published=True).select_subclasses()
-    permission_classes = (IsAllowedGroupMember,)
 
     def get_renderer_context(self):
         """
