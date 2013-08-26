@@ -721,6 +721,8 @@ class SourceShape(Source, SourceFileBased):
 
 
 class SourceDataVersion(models.Model):
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
+
     source = models.ForeignKey(Source, verbose_name=_('source'), related_name='versions')
     datetime = models.DateTimeField(default=lambda: now())
     timestamp = models.CharField(blank=True, max_length=20, verbose_name=_('timestamp'))

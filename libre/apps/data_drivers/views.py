@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import datetime
 import logging
 
+from django.core.exceptions import ImproperlyConfigured
 
 from rest_framework import generics
 from rest_framework.reverse import reverse
@@ -30,12 +31,22 @@ def api_root(request, format=None):
 
 
 class CustomAPIView(generics.GenericAPIView):
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
+    permission_classes = (IsAllowedGroupMember,)
+
     def get_renderers(self):
         """
         Instantiates and returns the list of renderers that this view can use.
         """
-        self.renderer_classes = [RENDERER_MAPPING[i] for i in self.__class__.renderers]
-        return [RENDERER_MAPPING[i]() for i in self.__class__.renderers]
+        try:
+            source = self.get_object()
+        except ImproperlyConfigured:
+            self.renderer_classes = [RENDERER_MAPPING[i] for i in self.__class__.renderers]
+            return [RENDERER_MAPPING[i]() for i in self.__class__.renderers]
+        else:
+            self.renderer_classes = [RENDERER_MAPPING[i] for i in source.__class__.renderers]
+            return [RENDERER_MAPPING[i]() for i in source.__class__.renderers]
+
 
 
 class CustomListAPIView(CustomAPIView, generics.ListAPIView):
@@ -50,7 +61,10 @@ class SourceList(CustomListAPIView):
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     serializer_class = SourceSerializer
     def get_queryset(self):
-        return Source.objects.filter(published=True).filter(allowed_groups__in=self.request.user.groups.all()).select_subclasses()
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            return Source.objects.all().select_subclasses()
+        else:
+            return Source.objects.filter(published=True).filter(allowed_groups__in=self.request.user.groups.all()).select_subclasses()
 
 
 class SourceDetail(CustomRetrieveAPIView):
@@ -58,33 +72,31 @@ class SourceDetail(CustomRetrieveAPIView):
     serializer_class = SourceSerializer
     permission_classes = (IsAllowedGroupMember,)
     def get_queryset(self):
-        return Source.objects.filter(published=True).select_subclasses()
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            return Source.objects.all().select_subclasses()
+        else:
+            return Source.objects.filter(published=True).filter(allowed_groups__in=self.request.user.groups.all()).select_subclasses()
 
 
 class SourceDataVersionList(CustomListAPIView):
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
-    queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
+
+    def get_queryset(self):
+        return SourceDataVersion.objects.filter(ready=True)
 
 
 class SourceDataVersionDetail(CustomRetrieveAPIView):
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
-    queryset = SourceDataVersion.objects.filter(ready=True)
     serializer_class = SourceDataVersionSerializer
     permission_classes = (IsAllowedGroupMember,)
+    def get_queryset(self):
+        return SourceDataVersion.objects.filter(ready=True)
 
 
-class LIBREView(generics.GenericAPIView):
+class LIBREView(CustomAPIView, generics.GenericAPIView):
     queryset = Source.objects.filter(published=True).select_subclasses()
     permission_classes = (IsAllowedGroupMember,)
-
-    def get_renderers(self):
-        """
-        Instantiates and returns the list of renderers that this view can use.
-        """
-        source = self.get_object()
-        self.renderer_classes = [RENDERER_MAPPING[i] for i in source.__class__.renderers]
-        return [RENDERER_MAPPING[i]() for i in source.__class__.renderers]
 
     def get_renderer_context(self):
         """
