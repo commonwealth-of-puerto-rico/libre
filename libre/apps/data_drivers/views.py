@@ -6,6 +6,7 @@ import logging
 from django.core.exceptions import ImproperlyConfigured
 
 from rest_framework import generics
+from rest_framework.exceptions import APIException
 from rest_framework.reverse import reverse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -16,6 +17,7 @@ from .exceptions import LIBREAPIError
 from .literals import DOUBLE_DELIMITER, LQL_DELIMITER, RENDERER_MAPPING, RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML
 from .models import Source, SourceDataVersion
 from .permissions import IsAllowedGroupMember
+from .response import CustomResponse
 from .serializers import SourceDataVersionSerializer, SourceSerializer
 from .utils import parse_value, parse_request
 
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 @api_view(('GET',))
 def api_root(request, format=None):
-    return Response({
+    return CustomResponse({
         'sources': reverse('source-list', request=request, format=format),
         'libre': reverse('libremetadata-list', request=request, format=format)
     })
@@ -40,13 +42,12 @@ class CustomAPIView(generics.GenericAPIView):
         """
         try:
             source = self.get_object()
-        except ImproperlyConfigured:
+        except (ImproperlyConfigured, APIException):
             self.renderer_classes = [RENDERER_MAPPING[i] for i in self.__class__.renderers]
             return [RENDERER_MAPPING[i]() for i in self.__class__.renderers]
         else:
             self.renderer_classes = [RENDERER_MAPPING[i] for i in source.__class__.renderers]
             return [RENDERER_MAPPING[i]() for i in source.__class__.renderers]
-
 
 
 class CustomListAPIView(CustomAPIView, generics.ListAPIView):
@@ -136,7 +137,7 @@ class SourceGetAll(LIBREView):
         result = source.get_all(parameters=parse_request(request))
         logger.debug('Total view elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
-        return Response(result)
+        return CustomResponse(result)
 
 
 class SourceGetOne(LIBREView):
@@ -148,7 +149,7 @@ class SourceGetOne(LIBREView):
         result = source.get_one(int(kwargs['id']), parameters=parse_request(request))
         logger.debug('Total view elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
 
-        return Response(result)
+        return CustomResponse(result)
 
 
 class LibreMetadataList(generics.GenericAPIView):
