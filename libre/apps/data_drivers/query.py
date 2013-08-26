@@ -160,7 +160,7 @@ class Query():
     def data_iterator(self):
         count = 0
 
-        for row_id, item in enumerate(self.source.queryset.iterator()):
+        for item in self.source.queryset.iterator():
             row_results = []
 
             if self.filters_function_map:
