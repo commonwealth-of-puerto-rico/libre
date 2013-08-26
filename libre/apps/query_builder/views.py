@@ -6,7 +6,7 @@ from django.template import RequestContext
 from .forms import ClientForm
 
 
-def libre_client(request):
+def index(request):
     if request.POST:
         form = ClientForm(data=request.POST)
     else:
@@ -16,5 +16,5 @@ def libre_client(request):
         'form': form,
     }
 
-    return render_to_response('client.html', context,
+    return render_to_response('query_builder.html', context,
         context_instance=RequestContext(request))

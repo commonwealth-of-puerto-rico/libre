@@ -24,7 +24,7 @@
         <h5>{% trans '(Large Information Batch Restructuring Engine)' %}</h5>
         <p class="lead">{% trans 'FOSS data restructuring, versioning and exporting tool' %}</p>
         <a class="btn btn-large btn-success" href="{% url 'api_root' %}">{% trans 'API' %}</a>
-        <a class="btn btn-large btn-success" href="{% url 'libre_client' %}">{% trans 'Query builder' %}</a>
+        <a class="btn btn-large btn-success" href="{% url 'query_builder:index' %}">{% trans 'Query builder' %}</a>
         <a class="btn btn-large btn-success" href="{% url 'admin:index' %}">{% trans 'Admin interface' %}</a>
       </div>
 {% endblock %}

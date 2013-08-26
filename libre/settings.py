@@ -150,7 +150,7 @@ INSTALLED_APPS = (
     'icons',
     'db_drivers',
     'data_drivers',
-    'client',
+    'query_builder',
     'main',
 )
 

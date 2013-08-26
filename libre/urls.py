@@ -19,7 +19,7 @@ urlpatterns = patterns('',
     url(r'^auth/token/obtain/', CustomObtainAuthToken.as_view(), name='auth_token_obtain'),
 
     url(r'^icons_app/', include('icons.urls')),
-    url(r'^client/', include('client.urls')),
+    url(r'^query_builder/', include('query_builder.urls', namespace='query_builder')),
 )
 
 if settings.DEVELOPMENT:
