@@ -33,6 +33,7 @@ from .exceptions import LIBREAPIError, SourceFileError
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
+from .managers import SourceAccessManager
 from .query import Query
 from .utils import DATA_TYPE_FUNCTIONS, UnicodeReader, parse_range
 
@@ -50,6 +51,7 @@ class Source(models.Model):
     allowed_groups = models.ManyToManyField(Group, verbose_name=_('allowed groups'), blank=True, null=True)
 
     objects = InheritanceManager()
+    allowed = SourceAccessManager()
 
     def get_stream_type(self):
         result = _('Unknown')

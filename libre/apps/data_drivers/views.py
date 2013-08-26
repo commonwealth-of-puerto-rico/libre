@@ -61,21 +61,13 @@ class CustomRetrieveAPIView(CustomAPIView, generics.RetrieveAPIView):
 class SourceList(CustomListAPIView):
     serializer_class = SourceSerializer
     def get_queryset(self):
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            return Source.objects.all().select_subclasses()
-        else:
-            # Typecast as list to avoid unresolved "'NoneType' object has no attribute '_meta'" error = "Marronazo!"
-            return Source.objects.filter(published=True).filter(allowed_groups__in=list(self.request.user.groups.all())).select_subclasses()
+        return Source.allowed.for_user(self.request.user)
 
 
 class SourceDetail(CustomRetrieveAPIView):
     serializer_class = SourceSerializer
     def get_queryset(self):
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            return Source.objects.all().select_subclasses()
-        else:
-            # Typecast as list to avoid unresolved "'NoneType' object has no attribute '_meta'" error = "Marronazo!"
-            return Source.objects.filter(published=True).filter(allowed_groups__in=list(self.request.user.groups.all())).select_subclasses()
+        return Source.allowed.for_user(self.request.user)
 
 
 class SourceDataVersionList(CustomListAPIView):
