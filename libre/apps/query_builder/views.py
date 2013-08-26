@@ -6,11 +6,11 @@ from django.template import RequestContext
 from .forms import ClientForm
 
 
-def index(request):
+def query_builder_index_view(request):
     if request.POST:
-        form = ClientForm(data=request.POST)
+        form = ClientForm(data=request.POST, request=request)
     else:
-        form = ClientForm(initial={'server': request.get_host()})
+        form = ClientForm(initial={'server': request.get_host()}, request=request)
 
     context = {
         'form': form,

@@ -28,7 +28,7 @@ renderer_choices = (
 
 class ClientForm(forms.Form):
     server = forms.CharField(label=_('Server'))
-    source = forms.ModelChoiceField(label=_('Source'), queryset=Source.objects.filter(published=True).select_subclasses(), to_field_name='slug')
+    source = forms.ModelChoiceField(label=_('Source'), queryset=Source.objects.none(), to_field_name='slug')
     filters = forms.CharField(label=_('Filter'), widget=forms.Textarea, required=False)
     as_nested_list = forms.BooleanField(label=_('As nested list'), required=False)
     as_dict_list = forms.BooleanField(label=_('As dictionay list'), required=False)
@@ -96,7 +96,10 @@ class ClientForm(forms.Form):
         self.fields['result'].initial = _('No results')
 
     def __init__(self, *args, **kwargs):
+        request = kwargs.pop('request')
         super(ClientForm, self).__init__(*args, **kwargs)
+        self.fields['source'].queryset = Source.allowed.for_user(request.user)
+
         if self.is_valid():
             new_data = self.data.copy()
             new_data['query_string'] = self.compose_query_string()
