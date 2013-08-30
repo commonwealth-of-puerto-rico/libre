@@ -149,6 +149,7 @@ INSTALLED_APPS = (
     'lock_manager',
     'icons',
     'db_drivers',
+    'origins',
     'data_drivers',
     'query_builder',
     'main',
