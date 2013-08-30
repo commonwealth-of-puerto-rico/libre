@@ -43,16 +43,32 @@ logger = logging.getLogger(__name__)
 
 
 class Source(models.Model):
+    source_type = _('Base source class')
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
+    supports_versioning = False
 
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
     slug = models.SlugField(unique=True, blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
     description = models.TextField(blank=True, verbose_name=_('description'))
     published = models.BooleanField(default=False, verbose_name=_('published'))
     allowed_groups = models.ManyToManyField(Group, verbose_name=_('allowed groups'), blank=True, null=True)
+    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
 
     objects = InheritanceManager()
     allowed = SourceAccessManager()
+
+    def analyze_request(self, parameters=None):
+        kwargs = {}
+        if not parameters:
+            parameters = {}
+        else:
+            for i in parameters:
+                if not i.startswith('_'):
+                    kwargs[i] = parameters[i]
+
+        timestamp = parameters.get('_timestamp', None)
+
+        return timestamp, parameters
 
     def get_stream_type(self):
         result = _('Unknown')
@@ -93,8 +109,57 @@ class Source(models.Model):
         return self.name
 
     def clean(self):
+        """Validation method, to avoid adding a source without a slug value"""
         if not self.slug:
             self.slug = slugify(self.name)
+
+    def get_one(self, id, parameters=None):
+        # ID are all base 1
+        if id == 0:
+            raise LIBREAPIError('Invalid ID; IDs are base 1')
+
+        # TODO: return a proper response when no sourcedataversion is found
+        timestamp, parameters = self.analyze_request(parameters)
+        if timestamp:
+            source_data_version = self.versions.get(timestamp=timestamp)
+        else:
+            source_data_version = self.versions.get(active=True)
+
+        try:
+            return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
+        except SourceData.DoesNotExist:
+            raise Http404
+
+    #def get_one(self, id, timestamp=None, parameters=None):
+    #    # ID are all base 1
+    #    if id == 0:
+    #        raise LIBREAPIError('Invalid ID; IDs are base 1')
+    #    return self.get_all(timestamp, parameters)[id - 1]
+
+    def get_base_data(self, source_data_version):
+        return (item.row for item in SourceData.objects.filter(source_data_version=source_data_version).iterator())
+
+    def get_all(self, parameters=None):
+        initial_datetime = datetime.datetime.now()
+        timestamp, parameters = self.analyze_request(parameters)
+
+        if self.supports_versioning:
+            try:
+                if timestamp:
+                    source_data_version = self.versions.get(timestamp=timestamp)
+                else:
+                    source_data_version = self.versions.get(active=True)
+            except SourceDataVersion.DoesNotExist:
+                return []
+        else:
+            source_data_version = None
+
+        self.queryset = self.get_base_data(source_data_version)
+
+        results = Query(self).execute(parameters)
+        logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
+
+        return results
 
     @models.permalink
     def get_absolute_url(self):
@@ -108,6 +173,8 @@ class Source(models.Model):
 
 class SourceWS(Source):
     source_type = _('SOAP web service')
+    supports_versioning = False
+
     wsdl_url = models.URLField(verbose_name=_('WSDL URL'))
     endpoint = models.CharField(max_length=64, verbose_name=_('endpoint'), help_text=_('Endpoint, function or method to call.'))
 
@@ -176,7 +243,6 @@ class WSResultField (models.Model):
 
 
 class SourceFileBased(models.Model):
-    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
     file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
     url = models.URLField(blank=True, verbose_name=_('URL'), help_text=_('Import a file from an URL.'))
@@ -270,55 +336,6 @@ class SourceFileBased(models.Model):
             source_data_version.active = True
             source_data_version.save()
 
-    def analyze_request(self, parameters=None):
-        kwargs = {}
-        if not parameters:
-            parameters = {}
-        else:
-            for i in parameters:
-                if not i.startswith('_'):
-                    kwargs[i] = parameters[i]
-
-        timestamp = parameters.get('_timestamp', None)
-
-        return timestamp, parameters
-
-    def get_one(self, id, parameters=None):
-        # ID are all base 1
-        if id == 0:
-            raise LIBREAPIError('Invalid ID; IDs are base 1')
-
-        # TODO: return a proper response when no sourcedataversion is found
-        timestamp, parameters = self.analyze_request(parameters)
-        if timestamp:
-            source_data_version = self.versions.get(timestamp=timestamp)
-        else:
-            source_data_version = self.versions.get(active=True)
-
-        try:
-            return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
-        except SourceData.DoesNotExist:
-            raise Http404
-
-    def get_all(self, parameters=None):
-        initial_datetime = datetime.datetime.now()
-        timestamp, parameters = self.analyze_request(parameters)
-
-        try:
-            if timestamp:
-                source_data_version = self.versions.get(timestamp=timestamp)
-            else:
-                source_data_version = self.versions.get(active=True)
-        except SourceDataVersion.DoesNotExist:
-            return []
-
-        self.queryset = SourceData.objects.filter(source_data_version=source_data_version)
-
-        results = Query(self).execute(parameters)
-        logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
-
-        return results
-
     class Meta:
         abstract = True
 
@@ -361,6 +378,7 @@ class SourceTabularBased(models.Model):
 
 class SourceCSV(Source, SourceFileBased, SourceTabularBased):
     source_type = _('CSV file')
+    supports_versioning = True
 
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
@@ -431,6 +449,7 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
 
 class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
     source_type = _('Fixed width column file')
+    supports_versioning = True
 
     def _get_items(self):
         column_names = self.get_column_names()
@@ -488,6 +507,7 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
 
 class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
     source_type = _('Spreadsheet file')
+    supports_versioning = True
 
     sheet = models.CharField(max_length=32, default=DEFAULT_SHEET, verbose_name=_('sheet'), help_text=('Worksheet of the spreadsheet file to use.'))
 
@@ -600,6 +620,7 @@ class LeafletMarker(models.Model):
         return '%s%s' % (self.slug, ' (%s)' % self.label if self.label else '')
 
     def clean(self):
+        """Validation method, to avoid adding a new marker without a slug value"""
         if not self.slug:
             self.slug = slugify(self.label)
 
@@ -611,8 +632,9 @@ class LeafletMarker(models.Model):
 
 class SourceShape(Source, SourceFileBased):
     source_type = _('Shapefile')
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML,
-        RENDERER_LEAFLET)
+    supports_versioning = True
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
+
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
     new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
     markers = models.ManyToManyField(LeafletMarker, blank=True, null=True)
@@ -817,7 +839,6 @@ class SourceDatabase(Source):
 
     database_connection = models.ForeignKey(DatabaseConnection, verbose_name=_('database connection'))
     query = models.TextField(verbose_name=_('query'))
-    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
 
     def get_one(self, id, timestamp=None, parameters=None):
         # ID are all base 1
@@ -861,20 +882,8 @@ class SourceRESTAPI(Source):
     source_type = _('REST API')
     url = models.URLField(verbose_name=_('URL'), help_text=_('URL of the REST API, including the endpoint, function or method to call.'))
 
-    def get_one(self, id, timestamp=None, parameters=None):
-        # ID are all base 1
-        if id == 0:
-            raise LIBREAPIError('Invalid ID; IDs are base 1')
-
-        return self.get_all(timestamp, parameters)[id - 1]
-
-    def get_all(self, timestamp=None, parameters=None):
-        if not parameters:
-            parameters = {}
-
-        response = requests.get(API_URL, params=parameters)
-
-        return response.json()
+    def get_base_data(self, source_data_version):
+        return requests.get(self.url).json()
 
     class Meta:
         verbose_name = _('REST API source')
@@ -882,7 +891,7 @@ class SourceRESTAPI(Source):
 
 
 class DatabaseResultColumn(ColumnBase):
-    source = models.ForeignKey(SourceREST, verbose_name=_('REST API source'), related_name='columns')
+    source = models.ForeignKey(SourceRESTAPI, verbose_name=_('REST API source'), related_name='columns')
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
 
     class Meta:

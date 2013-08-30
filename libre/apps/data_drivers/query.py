@@ -160,7 +160,7 @@ class Query():
     def data_iterator(self):
         count = 0
 
-        for item in self.source.queryset.iterator():
+        for item in self.source.queryset:
             row_results = []
 
             if self.filters_function_map:
@@ -168,7 +168,7 @@ class Query():
                 for filter_entry in self.filters_function_map:
 
                     try:
-                        value = return_attrib(item.row, filter_entry['field'])
+                        value = return_attrib(item, filter_entry['field'])
                     except (AttributeError, TypeError, KeyError):
                         # A dotted attribute is not found
                         raise LQLParseError('Invalid element: %s' % filter_entry['field'])
@@ -180,18 +180,18 @@ class Query():
                 if self.join_type == JOIN_TYPE_AND:
                     if all(filter_results):
                         count += 1
-                        yield item.row
+                        yield item
                         if count >= self.source.limit:
                             break
                 else:
                     if any(filter_results):
                         count += 1
-                        yield item.row
+                        yield item
                         if count >= self.source.limit:
                             break
             else:
                 count += 1
-                yield item.row
+                yield item
                 if count >= self.source.limit:
                     break
 

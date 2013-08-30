@@ -9,7 +9,7 @@ from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, Shapef
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
     SourceWSForm, SourceShapeForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
-    ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
+    ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceRESTAPI, SourceShape,
     SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSArgument, WSResultField)
 
 
@@ -189,6 +189,28 @@ class SourceWSAdmin(SourceAdmin):
     form = SourceWSForm
 
 
+class SourceRESTAPIAdmin(SourceAdmin):
+    suit_form_tabs = SourceAdmin.suit_form_tabs
+
+    fieldsets = (
+        (_('Basic information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('name', 'slug', 'description', 'published')
+        }),
+        (_('Source data'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('url',)
+        }),
+        (_('Authorized groups'), {
+            'classes': ('suit-tab suit-tab-authorization',),
+            'fields': ('allowed_groups',)
+        }),
+    )
+    list_display = ('name', 'slug', 'url', 'published')
+    #inlines = [WSArgumentInline, WSResultFieldInline]
+    #form = SourceWSForm
+
+
 class SourceShapeAdmin(SourceAdmin):
     suit_form_tabs = SourceAdmin.suit_form_tabs + (
         ('versions', _('Versions')),
@@ -224,10 +246,11 @@ class LeafletMarkerAdmin(admin.ModelAdmin):
     form = LeafletMarkerForm
 
 
-admin.site.register(SourceDatabase, SourceDatabaseAdmin)
-admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
-admin.site.register(SourceCSV, SourceCSVAdmin)
-admin.site.register(SourceShape, SourceShapeAdmin)
-admin.site.register(SourceFixedWidth, SourceFixedWidthAdmin)
-admin.site.register(SourceWS, SourceWSAdmin)
 admin.site.register(LeafletMarker, LeafletMarkerAdmin)
+admin.site.register(SourceCSV, SourceCSVAdmin)
+admin.site.register(SourceDatabase, SourceDatabaseAdmin)
+admin.site.register(SourceFixedWidth, SourceFixedWidthAdmin)
+admin.site.register(SourceRESTAPI, SourceRESTAPIAdmin)
+admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
+admin.site.register(SourceShape, SourceShapeAdmin)
+admin.site.register(SourceWS, SourceWSAdmin)
