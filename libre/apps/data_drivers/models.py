@@ -161,6 +161,23 @@ class Source(models.Model):
 
         return results
 
+    def check_source_data(self):
+        try:
+            lock_id = u'check_source_data-%d' % self.pk
+            logger.debug('trying to acquire lock: %s' % lock_id)
+            lock = Lock.acquire_lock(lock_id, 60)
+            logger.debug('acquired lock: %s' % lock_id)
+            try:
+                self._check_source_data()
+            except Exception as exception:
+                logger.debug('unhandled exception: %s' % exception)
+                raise
+            finally:
+                lock.release()
+        except LockError:
+            logger.debug('unable to obtain lock')
+            pass
+
     @models.permalink
     def get_absolute_url(self):
         return ('source-detail', [self.pk])
@@ -277,24 +294,7 @@ class SourceFileBased(models.Model):
         for version in self.versions.all():
             version.delete()
 
-    def check_file(self):
-        try:
-            lock_id = u'check_file-%d' % self.pk
-            logger.debug('trying to acquire lock: %s' % lock_id)
-            lock = Lock.acquire_lock(lock_id, 60)
-            logger.debug('acquired lock: %s' % lock_id)
-            try:
-                self._check_file()
-            except Exception as exception:
-                logger.debug('unhandled exception: %s' % exception)
-                raise
-            finally:
-                lock.release()
-        except LockError:
-            logger.debug('unable to obtain lock')
-            pass
-
-    def _check_file(self):
+    def _check_source_data(self):
         if self.path:
             try:
                 with open(self.path) as handle:

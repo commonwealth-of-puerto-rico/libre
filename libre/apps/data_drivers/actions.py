@@ -11,7 +11,7 @@ def check_updated(modeladmin, request, queryset):
     count = 0
     for source in queryset:
         try:
-            source.check_file()
+            source.check_source_data()
         except SourceFileError as exception:
             messages.error(request, _('Error opening file for source: %s; %s') % (source, str(exception)))
         else:
