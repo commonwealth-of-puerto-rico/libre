@@ -18,12 +18,13 @@ from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
 
 import fiona
-from suds.client import Client
-import xlrd
 from model_utils.managers import InheritanceManager
 from picklefield.fields import PickledObjectField
 from pyproj import Proj, transform
+import requests
 from shapely import geometry
+from suds.client import Client
+import xlrd
 
 from db_drivers.models import DatabaseConnection
 from icons.models import Icon
@@ -854,3 +855,36 @@ class DatabaseResultColumn(ColumnBase):
     class Meta:
         verbose_name = _('database column')
         verbose_name_plural = _('database columns')
+
+
+class SourceRESTAPI(Source):
+    source_type = _('REST API')
+    url = models.URLField(verbose_name=_('URL'), help_text=_('URL of the REST API, including the endpoint, function or method to call.'))
+
+    def get_one(self, id, timestamp=None, parameters=None):
+        # ID are all base 1
+        if id == 0:
+            raise LIBREAPIError('Invalid ID; IDs are base 1')
+
+        return self.get_all(timestamp, parameters)[id - 1]
+
+    def get_all(self, timestamp=None, parameters=None):
+        if not parameters:
+            parameters = {}
+
+        response = requests.get(API_URL, params=parameters)
+
+        return response.json()
+
+    class Meta:
+        verbose_name = _('REST API source')
+        verbose_name_plural = _('REST API sources')
+
+
+class DatabaseResultColumn(ColumnBase):
+    source = models.ForeignKey(SourceREST, verbose_name=_('REST API source'), related_name='columns')
+    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+
+    class Meta:
+        verbose_name = _('REST API column')
+        verbose_name_plural = _('REST API columns')
