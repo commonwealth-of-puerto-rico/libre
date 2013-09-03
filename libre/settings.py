@@ -197,9 +197,8 @@ SUIT_CONFIG = {
     'MENU_OPEN_FIRST_CHILD': False,
     'MENU': (
         {'label': _('Auth'), 'icon':'icon-user', 'app': 'auth'},
-        {'label': _('Origins'), 'icon':'icon-hdd', 'app': 'origins'},
-        {'label': _('Database drivers'), 'icon':'icon-hdd', 'app': 'db_drivers'},
         {'label': _('Icons'), 'icon':'icon-picture', 'app': 'icons'},
+        {'label': _('Origins'), 'icon':'icon-hdd', 'app': 'origins'},
         {'label': _('Data drivers'), 'icon':'icon-folder-open', 'app': 'data_drivers'},
         {'label': _('Homepage'), 'icon':'icon-globe', 'url': 'https://github.com/commonwealth-of-puerto-rico/libre/'},
     ),
