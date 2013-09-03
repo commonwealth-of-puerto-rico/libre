@@ -50,10 +50,20 @@ class OriginPathAdmin(OriginAdmin):
     list_display = OriginAdmin.list_display + ('path',)
 
 
+class OriginRESTAPIAdmin(OriginAdmin):
+    fieldsets = OriginAdmin.fieldsets + (
+        (_('Specific information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('url',)
+        }),
+    )
+    list_display = OriginAdmin.list_display + ('url',)
+
+
 admin.site.register(OriginDatabase, OriginDatabaseAdmin)
 admin.site.register(OriginFTPFile)
 admin.site.register(OriginUploadedFile)
 admin.site.register(OriginURLFile, OriginURLFileAdmin)
 admin.site.register(OriginPath, OriginPathAdmin)
-admin.site.register(OriginRESTAPI)
+admin.site.register(OriginRESTAPI, OriginRESTAPIAdmin)
 admin.site.register(OriginSOAPWebService)
