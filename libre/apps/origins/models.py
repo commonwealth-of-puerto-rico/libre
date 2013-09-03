@@ -80,9 +80,10 @@ class Origin(models.Model):
         self.temporary_file.seek(0)
         self.copy_file.seek(0)
         self.new_hash = hash_function.hexdigest()
+        self.data_iterator = (dbsafe_decode(line[:-1]) for line in self.temporary_file)
 
         # Return the serialized content, an iterator to decode the serialized content, a handler to the raw content and the hash
-        return self.temporary_file, (dbsafe_decode(line[:-1]) for line in self.temporary_file), self.copy_file, self.new_hash
+        return self.temporary_file, self.data_iterator, self.copy_file, self.new_hash
 
     def discard_copy(self):
         """
