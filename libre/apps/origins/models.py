@@ -1,14 +1,9 @@
 from __future__ import absolute_import
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
-
 from ast import literal_eval
 import datetime
 import hashlib
-from itertools import islice
+from itertools import islice, izip
 import logging
 import re
 import string
@@ -26,6 +21,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
 
+from picklefield.fields import dbsafe_encode, dbsafe_decode
 import requests
 from suds.client import Client
 
@@ -35,7 +31,6 @@ from lock_manager import Lock, LockError
 from .exceptions import OriginDataError
 from .literals import BACKEND_CHOICES, BACKEND_CLASSES
 
-HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
 
 
@@ -58,14 +53,18 @@ class Origin(models.Model):
     label = models.CharField(max_length=128, verbose_name=_('label'), help_text=_('A text by which this origin will be identified.'))
     description = models.TextField(verbose_name=_('description'), blank=True)
 
-    def get_data(self):
-        tempfile = tempfile.TemporaryFile()
-        with self.get_handle() as handle:
-            for data in handle.next():
-                tempfile.write(data)
+    def copy_data(self):
+        hash_function = hashlib.sha256()
 
-        tempfile.seek(0)
-        new_hash = HASH_FUNCTION(tempfile.read())
+        temporary_file = tempfile.TemporaryFile(mode='w+')
+        for row in self.get_data_iteraror():
+            data = dbsafe_encode(row)
+            temporary_file.write(dbsafe_encode(row))
+            temporary_file.write('\n')
+            hash_function.update(data)
+
+        temporary_file.seek(0)
+        return temporary_file, hash_function.hexdigest()
 
     class Meta:
         abstract = True
@@ -79,14 +78,8 @@ class OriginURL(Origin):
     url = models.URLField(verbose_name=_('URL'), help_text=_('URL from which to read the data.'))
     # TODO Add support for credentials
 
-    def get_handle(self):
-        try:
-            handle = urllib2.urlopen(self.url)
-        except urllib2.URLError as exception:
-            logger.error('Unable to open file for origin: %s ;%s' % (self.name, exception))
-            raise OriginDataError(unicode(exception))
-        else:
-            return handle
+    def get_data_iteraror(self):
+        return (item for item in requests.get(self.url).iter_lines)
 
     class Meta:
         abstract = True
@@ -94,7 +87,7 @@ class OriginURL(Origin):
         verbose_name_plural = _('URL origins')
 
 
-class OriginURLFile(Origin, ContainerOrigin):
+class OriginURLFile(OriginURL, ContainerOrigin):
     origin_type = _('URL file origin')
 
     class Meta:
@@ -102,18 +95,13 @@ class OriginURLFile(Origin, ContainerOrigin):
         verbose_name_plural = _('URL file origins')
 
 
-class OriginPath(Origin, ContainerOrigin):
+class OriginPath(OriginURL, ContainerOrigin):
     origin_type = _('disk path origin')
 
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
 
-    def get_handle(self):
-        try:
-            with open(self.path) as handle:
-                handle.read(1)
-        except IOError as exception:
-            logger.error('Unable to open file for origin: %s ;%s' % (self.name, exception))
-            raise OriginDataError(unicode(exception))
+    def get_data_iteraror(self):
+        return open(self.path)
 
     class Meta:
         verbose_name = _('disk path origin')
@@ -123,8 +111,8 @@ class OriginPath(Origin, ContainerOrigin):
 class OriginFTPFile(OriginURL, ContainerOrigin):
     origin_type = _('FTP file origin')
 
-    def get_handle(self):
-        return requests.get(self.url)
+    def get_data_iteraror(self):
+        return (data for data in requests.get(self.url).text)
 
     class Meta:
         verbose_name = _('FTP file origin')
@@ -136,15 +124,9 @@ class OriginUploadedFile(Origin, ContainerOrigin):
 
     file = models.FileField(blank=True, null=True, upload_to='uploaded_files', verbose_name=_('uploaded file'))
 
-    def get_handle(self):
-        try:
-            self.file.read(1)
-        except IOError as exception:
-            logger.error('Unable to open file for origin: %s ;%s' % (self.name, exception))
-            raise OriginDataError(unicode(exception))
-        else:
-            self.file.seek(0)
-            return self.file
+    def get_data_iteraror(self):
+        self.file.seek(0)
+        return self.file
 
     class Meta:
         verbose_name = _('uploaded file origin')
@@ -162,11 +144,17 @@ class OriginDatabase(Origin):
     db_port = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('port'))
     db_query = models.TextField(verbose_name=_('query'))
 
-    def get_handle(self):
-        cursor = self.database_connection.load_backend().cursor()
-        cursor.execute(self.db_query, {})
+    def get_data_iteraror(self):
+        cursor = self.load_backend().cursor()
+        cursor.execute(self.db_query)
 
-        return cursor
+        columns_names = [description[0] for description in cursor.description]
+        while True:
+            row = cursor.fetchone()
+            if row is None:
+                break
+            row_dictionary = dict(izip(columns_names, row))
+            yield row_dictionary
 
     def load_backend(self):
         database_settings = {}
@@ -195,7 +183,7 @@ class OriginRESTAPI(OriginURL):
 
     # TODO Add support for parameters
 
-    def get_handle(self):
+    def get_data_iteraror(self):
         return (item for item in requests.get(self.url).json())
 
     class Meta:
@@ -210,7 +198,7 @@ class OriginSOAPWebService(OriginURL):
     parameters = models.TextField(blank=True, verbose_name=_('parameters'))
     # TODO: Implemente 'fields to return'
 
-    def get_handle(self):
+    def get_data_iteraror(self):
         client = Client(self.url)
         return (item for item in getattr(client.service, self.endpoint)(**literal_eval(self.parameters)))
 
