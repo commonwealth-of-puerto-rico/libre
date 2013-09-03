@@ -58,6 +58,114 @@ class Source(models.Model):
     objects = InheritanceManager()
     allowed = SourceAccessManager()
 
+    def check_source_data(self):
+        try:
+            lock_id = u'check_source_data-%d' % self.pk
+            logger.debug('trying to acquire lock: %s' % lock_id)
+            lock = Lock.acquire_lock(lock_id, 60)
+            logger.debug('acquired lock: %s' % lock_id)
+            try:
+                self.check_origin_data()
+            except Exception as exception:
+                logger.debug('unhandled exception: %s' % exception)
+                raise
+            finally:
+                lock.release()
+        except LockError:
+            logger.debug('unable to obtain lock')
+            pass
+
+    def check_origin_data(self):
+        self.origin_subclass_instance = Origin.objects.get_subclass(pk=self.origin.pk)
+        self.origin_subclass_instance.copy_data()
+
+        logger.debug('new_hash: %s' % self.origin_subclass_instance.new_hash)
+
+        try:
+            source_data_version = self.versions.get(checksum=self.origin_subclass_instance.new_hash)
+        except SourceDataVersion.DoesNotExist:
+            source_data_version = SourceDataVersion.objects.create(source=self, checksum=self.origin_subclass_instance.new_hash)
+            job = Job(target=self.import_origin_data, args=[source_data_version])
+            job.submit()
+            logger.debug('launching import job: %s' % job)
+        else:
+            source_data_version.active = True
+            source_data_version.save()
+
+    @transaction.commit_on_success
+    def import_origin_data(self, source_data_version):
+        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
+        self.get_regex_maps()
+
+        logger.debug('importing rows')
+
+        for row_id, row in enumerate(self._get_rows(), 1):
+            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=dict(row, **{'_id': row_id}))
+
+        logger.debug('finished importing rows')
+
+        source_data_version.ready = True
+        source_data_version.active = True
+        source_data_version.save()
+
+        self.origin_subclass_instance.discard_copy()
+        logger.debug('exiting')
+
+    class AlwaysFalseSearch(object):
+        def search(self, string):
+            return False
+
+    class AlwaysTrueSearch(object):
+        def search(self, string):
+            return True
+
+    def get_regex_maps(self):
+        self.skip_regex_map = {}
+        for name, skip_regex in self.columns.values_list('name', 'skip_regex'):
+            if skip_regex:
+                self.skip_regex_map[name] = re.compile(skip_regex)
+            else:
+                self.skip_regex_map[name] = self.__class__.AlwaysFalseSearch()
+
+        self.import_regex_map = {}
+        for name, import_regex in self.columns.values_list('name', 'import_regex'):
+            if import_regex:
+                self.import_regex_map[name] = re.compile(import_regex)
+            else:
+                self.import_regex_map[name] = self.__class__.AlwaysTrueSearch()
+
+    def process_regex(self, row):
+        skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.skip_regex_map]
+        import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.import_regex_map]
+
+        return all(cell_skip is False for cell_skip in skip_result) and all(import_result)
+
+    def get_column_names(self):
+        if self.columns.count():
+            return self.columns.all().values_list('name', flat=True)
+        else:
+            return string.ascii_uppercase
+
+    def __unicode__(self):
+        return self.name
+
+    def clean(self):
+        """Validation method, to avoid adding a source without a slug value"""
+        if not self.slug:
+            self.slug = slugify(self.name)
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('source-detail', [self.pk])
+
+    class Meta:
+        verbose_name = _('source')
+        verbose_name_plural = _('sources')
+        ordering = ['name', 'slug']
+
+    #########
+
     def analyze_request(self, parameters=None):
         kwargs = {}
         if not parameters:
@@ -71,29 +179,11 @@ class Source(models.Model):
 
         return timestamp, parameters
 
-    def get_column_names(self):
-        if self.columns.count():
-            return self.columns.all().values_list('name', flat=True)
-        else:
-            return string.ascii_uppercase
+    #def import_data(self, source_data_version):
+    #    self.compute_new_name_map()
 
-    def import_data(self, source_data_version):
-        self.compute_new_name_map()
-
-    @staticmethod
-    def add_row_id(row, id):
-        return dict(row, **{'_id': id})
-
-    def get_type(self):
-        return self.__class__.source_type
-
-    def __unicode__(self):
-        return self.name
-
-    def clean(self):
-        """Validation method, to avoid adding a source without a slug value"""
-        if not self.slug:
-            self.slug = slugify(self.name)
+    #def get_type(self):
+    #    return self.__class__.source_type
 
     def get_one(self, id, parameters=None):
         # ID are all base 1
@@ -149,32 +239,6 @@ class Source(models.Model):
 
         return results
 
-    def check_source_data(self):
-        try:
-            lock_id = u'check_source_data-%d' % self.pk
-            logger.debug('trying to acquire lock: %s' % lock_id)
-            lock = Lock.acquire_lock(lock_id, 60)
-            logger.debug('acquired lock: %s' % lock_id)
-            try:
-                self._check_source_data()
-            except Exception as exception:
-                logger.debug('unhandled exception: %s' % exception)
-                raise
-            finally:
-                lock.release()
-        except LockError:
-            logger.debug('unable to obtain lock')
-            pass
-
-    @models.permalink
-    def get_absolute_url(self):
-        return ('source-detail', [self.pk])
-
-    class Meta:
-        verbose_name = _('source')
-        verbose_name_plural = _('sources')
-        ordering = ['name', 'slug']
-
     def get_functions_map(self):
         return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
 
@@ -205,85 +269,6 @@ class Source(models.Model):
         for version in self.versions.all():
             version.delete()
 
-    def _check_source_data(self):
-        origin = Origin.objects.get_subclass(pk=self.origin.pk)
-        origin.copy_data()
-        new_hash = origin.new_hash
-
-        logger.debug('new_hash: %s' % new_hash)
-
-        try:
-            source_data_version = self.versions.get(checksum=new_hash)
-        except SourceDataVersion.DoesNotExist:
-            source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
-            job = Job(target=self.import_data, args=(source_data_version, origin))
-            job.submit()
-            logger.debug('launching import job: %s' % job)
-        else:
-            source_data_version.active = True
-            source_data_version.save()
-
-    class AlwaysFalseSearch(object):
-        def search(self, string):
-            return False
-
-    class AlwaysTrueSearch(object):
-        def search(self, string):
-            return True
-
-    def get_regex_maps(self):
-        self.skip_regex_map = {}
-        for name, skip_regex in self.columns.values_list('name', 'skip_regex'):
-            if skip_regex:
-                self.skip_regex_map[name] = re.compile(skip_regex)
-            else:
-                self.skip_regex_map[name] = self.__class__.AlwaysFalseSearch()
-
-        self.import_regex_map = {}
-        for name, import_regex in self.columns.values_list('name', 'import_regex'):
-            if import_regex:
-                self.import_regex_map[name] = re.compile(import_regex)
-            else:
-                self.import_regex_map[name] = self.__class__.AlwaysTrueSearch()
-
-    def process_regex(self, row):
-        skip_result = [True if self.skip_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.skip_regex_map]
-        import_result = [True if self.import_regex_map[name].search(unicode(value)) else False for name, value in row.items() if name in self.import_regex_map]
-
-        return all(cell_skip is False for cell_skip in skip_result) and all(import_result)
-
-
-class SourceWS(Source):
-    source_type = _('SOAP web service')
-
-    #result = []
-    #try:
-    #    row_id = 1
-    #    # TODO: use enumerate
-    #    for data in getattr(client.service, self.endpoint)(**self.get_parameters(parameters)):
-    #        entry = {'_id': row_id}
-    #        for field in self.wsresultfield_set.all():
-    #            entry[field.name] = getattr(data, field.name, field.default)
-    #        result.append(entry)
-    #        row_id += 1
-    #except IndexError:
-    #    result = []
-    #return result
-
-    class Meta:
-        verbose_name = _('web service source')
-        verbose_name_plural = _('web service sources')
-
-
-class WSResultField (models.Model):
-    source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
-    name = models.CharField(max_length=32, verbose_name=_('name'))
-    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
-
-    class Meta:
-        verbose_name = _('result field')
-        verbose_name_plural = _('result fields')
-
 
 class SourceCSV(Source):
     source_type = _('CSV file')
@@ -291,9 +276,8 @@ class SourceCSV(Source):
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
 
-    def _get_items(self, file_handle):
+    def _get_rows(self):
         column_names = self.get_column_names()
-
         functions_map = self.get_functions_map()
 
         kwargs = {}
@@ -302,53 +286,14 @@ class SourceCSV(Source):
         if self.quote_character:
             kwargs['quotechar'] = str(self.quote_character)
 
-        reader = UnicodeReader(file_handle, **kwargs)
+        reader = UnicodeReader(self.origin_subclass_instance.copy_file, **kwargs)
 
         logger.debug('column_names: %s' % column_names)
 
-        if self.import_rows:
-            parsed_range = parse_range(self.import_rows)
-        else:
-            parsed_range = None
-
-        logger.debug('parsed_range: %s' % parsed_range)
-
         for row_id, row in enumerate(reader, 1):
-            if parsed_range:
-                if row_id in parsed_range:
-                    row_dict = dict(zip(column_names, row))
-                    if self.process_regex(row_dict):
-                        yield self.apply_datatypes(row_dict, functions_map)
-            else:
-                row_dict = dict(zip(column_names, row))
-                if self.process_regex(row_dict):
-                    yield self.apply_datatypes(row_dict, functions_map)
-
-    @transaction.commit_on_success
-    def import_data(self, source_data_version):
-        # Reload data in case this is executed in another thread
-        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
-
-        super(self.__class__, self).import_data(source_data_version)
-
-        if self.path:
-            file_handle = open(self.path)
-        elif self.file:
-            file_handle = self.file
-        elif self.url:
-            file_handle = urllib2.urlopen(self.url)
-
-        logger.debug('file_handle: %s' % file_handle)
-        self.get_regex_maps()
-
-        for row_id, row in enumerate(self._get_items(file_handle), 1):
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
-
-        file_handle.close()
-
-        source_data_version.ready = True
-        source_data_version.active = True
-        source_data_version.save()
+            row_dict = dict(zip(column_names, row))
+            if self.process_regex(row_dict):
+                yield self.apply_datatypes(row_dict, functions_map)
 
     class Meta:
         verbose_name = _('CSV source')
@@ -358,54 +303,19 @@ class SourceCSV(Source):
 class SourceFixedWidth(Source):
     source_type = _('Fixed width column file')
 
-    def _get_items(self):
+    def _get_rows(self):
         column_names = self.get_column_names()
         column_widths = self.columns.all().values_list('size', flat=True)
 
         fmtstring = ''.join('%ds' % f for f in map(int, column_widths))
         parse = struct.Struct(fmtstring).unpack_from
 
-        if self.import_rows:
-            parsed_range = map(lambda x: x - 1, parse_range(self.import_rows))
-        else:
-            parsed_range = None
-
         functions_map = self.get_functions_map()
 
         for row_id, row in enumerate(self._file_handle):
-            if parsed_range:
-                if row_id in parsed_range:
-                    row_dict = dict(zip(column_names, parse(row)))
-                    yield self.apply_datatypes(row_dict, functions_map)
-            else:
-                row_dict = dict(zip(column_names, parse(row)))
+            row_dict = dict(zip(column_names, parse(row)))
+            if self.process_regex(row_dict):
                 yield self.apply_datatypes(row_dict, functions_map)
-
-    @transaction.commit_on_success
-    def import_data(self, source_data_version):
-        # Reload data in case this is executed in another thread
-        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
-
-        super(self.__class__, self).import_data(source_data_version)
-
-        if self.path:
-            self._file_handle = open(self.path)
-        elif self.file:
-            self._file_handle = self.file
-        elif self.url:
-            self._file_handle = urllib2.urlopen(self.url)
-
-        for row_id, row in enumerate(self._get_items(), 1):
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
-
-        self._file_handle.close()
-
-        source_data_version.ready = True
-        source_data_version.active = True
-        source_data_version.save()
-
-        if self._file_handle:
-            self._file_handle.close()
 
     class Meta:
         verbose_name = _('Fixed width source')
@@ -447,63 +357,28 @@ class SourceSpreadsheet(Source):
 
         return item.value
 
-    def _get_items(self):
+    def _get_rows(self):
+        logger.debug('opening workbook')
+
+        self._book = xlrd.open_workbook(file_contents=self.origin_subclass_instance.copy_file.read())
+
+        logger.debug('opening sheet: %s' % self.sheet)
+
         column_names = self.get_column_names()
 
         logger.debug('column_names: %s' % column_names)
 
-        if self.import_rows:
-            parsed_range = map(lambda x: x - 1, parse_range(self.import_rows))
-        else:
-            parsed_range = xrange(0, self._sheet.nrows)
-
-        for i in parsed_range:
-            converted_row = dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
-            if self.process_regex(converted_row):
-                yield converted_row
-
-    @transaction.commit_on_success
-    def import_data(self, source_data_version):
-        # Reload data in case this is executed in another thread
-        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
-
-        super(self.__class__, self).import_data(source_data_version)
-
-        logger.debug('opening workbook')
-        if self.path:
-            self._book = xlrd.open_workbook(self.path)
-            file_handle = None
-        elif self.file:
-            file_handle = self.file
-            self._book = xlrd.open_workbook(file_contents=file_handle.read())
-        elif self.url:
-            file_handle = urllib2.urlopen(self.url)
-            self._book = xlrd.open_workbook(file_contents=file_handle.read())
-
-        logger.debug('opening sheet: %s' % self.sheet)
         try:
             self._sheet = self._book.sheet_by_name(self.sheet)
         except xlrd.XLRDError:
             self._sheet = self._book.sheet_by_index(int(self.sheet))
 
-        self.get_regex_maps()
+        parsed_range = xrange(0, self._sheet.nrows)
 
-        logger.debug('importing rows')
-        for row_id, row in enumerate(self._get_items(), 1):
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
-
-        if file_handle:
-            file_handle.close()
-
-        logger.debug('finished importing rows')
-
-        source_data_version.ready = True
-        source_data_version.active = True
-        source_data_version.save()
-        logger.debug('exiting')
-
-        if file_handle:
-            file_handle.close()
+        for i in parsed_range:
+            converted_row = dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
+            if self.process_regex(converted_row):
+                yield converted_row
 
     class Meta:
         verbose_name = _('spreadsheet source')
@@ -603,22 +478,9 @@ class SourceShape(Source):
             return geometry['coordinates']
 
     @transaction.commit_on_success
-    def import_data(self, source_data_version):
-        # Reload data in case this is executed in another thread
-        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
-
-        super(self.__class__, self).import_data(source_data_version)
-
-        if self.path:
-            self._file_handle = open(self.path)
-        elif self.file:
-            self._file_handle = self.file
-        elif self.url:
-            self._file_handle = urllib2.urlopen(self.url)
-
-        # TODO: only works with paths, fix
-
-        with fiona.collection(self.path, 'r') as source:
+    def _get_rows(self, source_data_version):
+        with fiona.open('/test_uk.shp', vfs='zip://docs/data/test_uk.zip') as source:
+        #with fiona.collection(self.path, 'r') as source:
             source_data_version.metadata = source.crs
             if self.new_projection:
                 new_projection = Proj(init='epsg:%s' % self.new_projection)
@@ -628,7 +490,7 @@ class SourceShape(Source):
 
             functions_map = self.get_functions_map()
 
-            for row_id, feature in enumerate(source, 1):
+            for feature in source:
                 if feature['geometry']:
                     feature['properties'] = Source.add_row_id(self.apply_datatypes(feature.get('properties', {}), functions_map), row_id)
 
@@ -636,18 +498,62 @@ class SourceShape(Source):
                         feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
 
                     feature['geometry'] = geometry.shape(feature['geometry'])
-                    SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=feature)
-
-        source_data_version.ready = True
-        source_data_version.active = True
-        source_data_version.save()
-
-        if self._file_handle:
-            self._file_handle.close()
+                    yield feature
 
     class Meta:
         verbose_name = _('shape source')
         verbose_name_plural = _('shape sources')
+
+
+class SourceDatabase(Source):
+    source_type = _('Database')
+
+    def _get_rows(self):
+        column_names = self.get_column_names()
+
+        for row in self.origin_subclass_instance.data_iterator:
+            yield dict(zip(column_names, row))
+
+    class Meta:
+        verbose_name = _('database source')
+        verbose_name_plural = _('database sources')
+
+
+class SourceRESTAPI(Source):
+    source_type = _('REST API')
+
+    def _get_rows(self):
+        column_names = self.get_column_names()
+
+        for row in self.origin_subclass_instance.data_iterator:
+            print 'row', row
+            finished_row = dict(zip(column_names, row))
+            print 'finished_row', finished_row
+            if self.process_regex(finished_row):
+                yield finished_row
+
+    class Meta:
+        verbose_name = _('REST API source')
+        verbose_name_plural = _('REST API sources')
+
+
+class SourceWS(Source):
+    source_type = _('SOAP web service')
+
+    def _get_rows(self):
+        for row in self.origin_subclass_instance.data_iterator:
+            fields = {}
+            for field in self.columns.all():
+                fields[field.name] = getattr(row, field.name, field.default)
+
+            yield fields
+
+    class Meta:
+        verbose_name = _('web service source')
+        verbose_name_plural = _('web service sources')
+
+
+# Version and data models
 
 
 class SourceDataVersion(models.Model):
@@ -690,7 +596,11 @@ class SourceData(models.Model):
         verbose_name_plural = _('sources data')
 
 
+# Column models
+
+
 class ColumnBase(models.Model):
+    import_column = models.BooleanField(default=True, verbose_name=_('import'))
     name = models.CharField(max_length=32, verbose_name=_('name'))
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
 
@@ -739,17 +649,14 @@ class ShapefileColumn(ColumnBase):
         verbose_name_plural = _('shapefile columns')
 
 
-class SourceDatabase(Source):
-    source_type = _('Database')
-
-    #column_names = self.get_column_names()
-
-    #for row_id, data in enumerate(cursor.fetchall(), 1):
-    #    yield dict(zip(column_names, data), **{'_id': row_id})
+class WebServieResultColumn(ColumnBase):
+    source = models.ForeignKey(SourceWS, verbose_name=_('web service source'), related_name='columns')
+    # data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    # Web service returns the correct data type?
 
     class Meta:
-        verbose_name = _('database source')
-        verbose_name_plural = _('database sources')
+        verbose_name = _('web service column')
+        verbose_name_plural = _('web service columns')
 
 
 class DatabaseResultColumn(ColumnBase):
@@ -761,17 +668,11 @@ class DatabaseResultColumn(ColumnBase):
         verbose_name_plural = _('database columns')
 
 
-class SourceRESTAPI(Source):
-    source_type = _('REST API')
-
-    class Meta:
-        verbose_name = _('REST API source')
-        verbose_name_plural = _('REST API sources')
-
-
 class RESTResultColumn(ColumnBase):
     source = models.ForeignKey(SourceRESTAPI, verbose_name=_('REST API source'), related_name='columns')
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
 
     class Meta:
         verbose_name = _('REST API column')

@@ -10,7 +10,7 @@ from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, Shapef
     SourceWSForm, SourceShapeForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceRESTAPI, SourceShape,
-    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSResultField)
+    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WebServieResultColumn)
 
 
 class SourceColumnInline(admin.TabularInline):
@@ -41,8 +41,8 @@ class ShapefileColumnInline(SourceColumnInline):
     form = ShapefileColumnForm
 
 
-class WSResultFieldInline(SourceColumnInline):
-    model = WSResultField
+class WebServieResultColumnFieldInline(SourceColumnInline):
+    model = WebServieResultColumn
 
 
 class SourceDataVersionInline(admin.TabularInline):
@@ -76,7 +76,7 @@ class SourceAdmin(admin.ModelAdmin):
     list_editable = ('published',)
     filter_horizontal = ['allowed_groups']
 
-    actions = [clone]
+    actions = [clone, check_updated, clear_versions]
 
 
 class SourceDatabaseAdmin(SourceAdmin):
@@ -93,7 +93,6 @@ class SourceSpreadsheetAdmin(SourceAdmin):
     )
 
     inlines = [SourceDataVersionInline, SpreadsheetColumnInline]
-    actions = [check_updated, clear_versions]
     form = SourceSpreadsheetForm
 
 
@@ -105,32 +104,25 @@ class SourceCSVAdmin(SourceAdmin):
         }),
     )
     inlines = [SourceDataVersionInline, CSVColumnInline]
-    actions = [check_updated, clear_versions]
     form = SourceCSVForm
 
 
 class SourceFixedWidthAdmin(SourceAdmin):
     inlines = [SourceDataVersionInline, FixedWidthColumnInline]
-    actions = [check_updated, clear_versions]
     form = SourceFixedWidthForm
 
 
 class SourceWSAdmin(SourceAdmin):
-    inlines = [WSResultFieldInline]
+    inlines = [WebServieResultColumnFieldInline]
     form = SourceWSForm
 
 
 class SourceRESTAPIAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs
-
-    list_display = ('name', 'slug', 'url', 'published')
-    #inlines = [WSArgumentInline, WSResultFieldInline]
-    #form = SourceWSForm
+    inlines = [SourceDataVersionInline]
 
 
 class SourceShapeAdmin(SourceAdmin):
     suit_form_tabs = SourceAdmin.suit_form_tabs + (
-        ('versions', _('Versions')),
         ('renderers', _('Renderers')),
     )
 
@@ -147,7 +139,6 @@ class SourceShapeAdmin(SourceAdmin):
 
     filter_horizontal = SourceAdmin.filter_horizontal + ['markers']
     inlines = [SourceDataVersionInline, ShapefileColumnInline]
-    actions = [check_updated, clear_versions]
     form = SourceShapeForm
 
 
