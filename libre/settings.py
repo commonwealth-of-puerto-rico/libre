@@ -148,7 +148,6 @@ INSTALLED_APPS = (
     'crispy_forms',
     'lock_manager',
     'icons',
-    'db_drivers',
     'origins',
     'data_drivers',
     'query_builder',
@@ -198,6 +197,7 @@ SUIT_CONFIG = {
     'MENU_OPEN_FIRST_CHILD': False,
     'MENU': (
         {'label': _('Auth'), 'icon':'icon-user', 'app': 'auth'},
+        {'label': _('Origins'), 'icon':'icon-hdd', 'app': 'origins'},
         {'label': _('Database drivers'), 'icon':'icon-hdd', 'app': 'db_drivers'},
         {'label': _('Icons'), 'icon':'icon-picture', 'app': 'icons'},
         {'label': _('Data drivers'), 'icon':'icon-folder-open', 'app': 'data_drivers'},

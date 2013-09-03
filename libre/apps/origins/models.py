@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from ast import literal_eval
 import datetime
+import fileinput
 import hashlib
 from itertools import islice, izip
 import logging
@@ -9,6 +10,7 @@ import re
 import string
 import struct
 import tempfile
+import types
 import urllib2
 
 from django.conf import settings
@@ -21,6 +23,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
 
+from model_utils.managers import InheritanceManager
 from picklefield.fields import dbsafe_encode, dbsafe_decode
 import requests
 from suds.client import Client
@@ -53,21 +56,46 @@ class Origin(models.Model):
     label = models.CharField(max_length=128, verbose_name=_('label'), help_text=_('A text by which this origin will be identified.'))
     description = models.TextField(verbose_name=_('description'), blank=True)
 
+    objects = InheritanceManager()
+
     def copy_data(self):
+        """
+        Copy the data from the it's point of origin, serializing it,
+        storing it serialized as well as in it's raw form and calculate
+        a running hash of the serialized representation
+        """
         hash_function = hashlib.sha256()
 
-        temporary_file = tempfile.TemporaryFile(mode='w+')
+        self.temporary_file = tempfile.TemporaryFile(mode='w+')
+        self.copy_file = tempfile.TemporaryFile(mode='w+b')
+
         for row in self.get_data_iteraror():
             data = dbsafe_encode(row)
-            temporary_file.write(dbsafe_encode(row))
-            temporary_file.write('\n')
+            self.temporary_file.write(dbsafe_encode(row))
+            self.temporary_file.write('\n')
             hash_function.update(data)
+            if isinstance(row, types.StringTypes):
+                self.copy_file.write(row)
 
-        temporary_file.seek(0)
-        return temporary_file, hash_function.hexdigest()
+        self.temporary_file.seek(0)
+        self.copy_file.seek(0)
+        self.new_hash = hash_function.hexdigest()
+
+        # Return the serialized content, an iterator to decode the serialized content, a handler to the raw content and the hash
+        return self.temporary_file, (dbsafe_decode(line[:-1]) for line in self.temporary_file), self.copy_file, self.new_hash
+
+    def discard_copy(self):
+        """
+        Close all the TemporaryFile handles so that the space on disk
+        can be garbage collected
+        """
+        self.temporary_file.close()
+        self.copy_file.close()
+
+    def __unicode__(self):
+        return self.label
 
     class Meta:
-        abstract = True
         verbose_name = _('origin')
         verbose_name_plural = _('origins')
 
@@ -79,7 +107,7 @@ class OriginURL(Origin):
     # TODO Add support for credentials
 
     def get_data_iteraror(self):
-        return (item for item in requests.get(self.url).iter_lines)
+        return (item for item in requests.get(self.url).iter_lines())
 
     class Meta:
         abstract = True
@@ -95,13 +123,13 @@ class OriginURLFile(OriginURL, ContainerOrigin):
         verbose_name_plural = _('URL file origins')
 
 
-class OriginPath(OriginURL, ContainerOrigin):
+class OriginPath(Origin, ContainerOrigin):
     origin_type = _('disk path origin')
 
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
 
     def get_data_iteraror(self):
-        return open(self.path)
+        return fileinput.input(self.path)
 
     class Meta:
         verbose_name = _('disk path origin')
@@ -110,9 +138,6 @@ class OriginPath(OriginURL, ContainerOrigin):
 
 class OriginFTPFile(OriginURL, ContainerOrigin):
     origin_type = _('FTP file origin')
-
-    def get_data_iteraror(self):
-        return (data for data in requests.get(self.url).text)
 
     class Meta:
         verbose_name = _('FTP file origin')

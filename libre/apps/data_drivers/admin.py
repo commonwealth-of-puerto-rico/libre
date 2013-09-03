@@ -10,7 +10,7 @@ from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, Shapef
     SourceWSForm, SourceShapeForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceRESTAPI, SourceShape,
-    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSArgument, WSResultField)
+    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSResultField)
 
 
 class SourceColumnInline(admin.TabularInline):
@@ -41,10 +41,6 @@ class ShapefileColumnInline(SourceColumnInline):
     form = ShapefileColumnForm
 
 
-class WSArgumentInline(SourceColumnInline):
-    model = WSArgument
-
-
 class WSResultFieldInline(SourceColumnInline):
     model = WSResultField
 
@@ -59,12 +55,12 @@ class SourceDataVersionInline(admin.TabularInline):
 
 
 class SourceAdmin(admin.ModelAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')), ('fields', _('Fields')), ('authorization', _('Authorization')))
+    suit_form_tabs = (('configuration', _('Configuration')), ('fields', _('Fields')), ('authorization', _('Authorization')), ('versions', _('Versions')))
 
     fieldsets = (
         (_('Basic information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published')
+            'fields': ('name', 'slug', 'description', 'published', 'origin')
         }),
         (_('Result limiting'), {
             'classes': ('suit-tab suit-tab-configuration',),
@@ -76,7 +72,7 @@ class SourceAdmin(admin.ModelAdmin):
         }),
     )
 
-    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
+    list_display = ('name', 'slug', 'description', 'origin', 'published')
     list_editable = ('published',)
     filter_horizontal = ['allowed_groups']
 
@@ -84,37 +80,15 @@ class SourceAdmin(admin.ModelAdmin):
 
 
 class SourceDatabaseAdmin(SourceAdmin):
-    fieldsets = SourceAdmin.fieldsets + (
-        (_('Source information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('database_connection',)
-        }),
-        (_('Specific information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('query',)
-        }),
-    )
     inlines = [DatabaseResultColumnInline]
     form = SourceDatabaseForm
 
 
 class SourceSpreadsheetAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs + (
-        ('versions', _('Versions')),
-    )
-
     fieldsets = SourceAdmin.fieldsets + (
-        (_('Source data (choose one)'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('path', 'file', 'url')
-        }),
         (_('In-file location'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('sheet',)
-        }),
-        (_('Row related'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('import_rows',)
         }),
     )
 
@@ -124,19 +98,7 @@ class SourceSpreadsheetAdmin(SourceAdmin):
 
 
 class SourceCSVAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs + (
-        ('versions', _('Versions')),
-    )
-
     fieldsets = SourceAdmin.fieldsets + (
-        (_('Source data (choose one)'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('path', 'file', 'url',)
-        }),
-        (_('Row related'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('import_rows',)
-        }),
         (_('Comma delimited files'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('delimiter', 'quote_character',)
@@ -148,64 +110,19 @@ class SourceCSVAdmin(SourceAdmin):
 
 
 class SourceFixedWidthAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs + (
-        ('versions', _('Versions')),
-    )
-
-    fieldsets = SourceAdmin.fieldsets + (
-        (_('Source data (choose one)'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('path', 'file', 'url',)
-        }),
-        (_('Row related'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('import_rows',)
-        }),
-    )
     inlines = [SourceDataVersionInline, FixedWidthColumnInline]
     actions = [check_updated, clear_versions]
     form = SourceFixedWidthForm
 
 
 class SourceWSAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs
-
-    fieldsets = (
-        (_('Basic information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published')
-        }),
-        (_('Source data'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('wsdl_url', 'endpoint')
-        }),
-        (_('Authorized groups'), {
-            'classes': ('suit-tab suit-tab-authorization',),
-            'fields': ('allowed_groups',)
-        }),
-    )
-    list_display = ('name', 'slug', 'wsdl_url', 'endpoint', 'published')
-    inlines = [WSArgumentInline, WSResultFieldInline]
+    inlines = [WSResultFieldInline]
     form = SourceWSForm
 
 
 class SourceRESTAPIAdmin(SourceAdmin):
     suit_form_tabs = SourceAdmin.suit_form_tabs
 
-    fieldsets = (
-        (_('Basic information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published')
-        }),
-        (_('Source data'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('url',)
-        }),
-        (_('Authorized groups'), {
-            'classes': ('suit-tab suit-tab-authorization',),
-            'fields': ('allowed_groups',)
-        }),
-    )
     list_display = ('name', 'slug', 'url', 'published')
     #inlines = [WSArgumentInline, WSResultFieldInline]
     #form = SourceWSForm
@@ -218,11 +135,6 @@ class SourceShapeAdmin(SourceAdmin):
     )
 
     fieldsets = SourceAdmin.fieldsets + (
-        (_('Source data (choose one)'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            #'fields': ('path', 'file', 'url') #Disables until file handle support is added
-            'fields': ('path',)
-        }),
         (_('Source data transformation'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('new_projection',)

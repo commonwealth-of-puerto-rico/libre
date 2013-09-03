@@ -26,9 +26,9 @@ from shapely import geometry
 from suds.client import Client
 import xlrd
 
-from db_drivers.models import DatabaseConnection
 from icons.models import Icon
 from lock_manager import Lock, LockError
+from origins.models import Origin
 
 from .exceptions import LIBREAPIError, SourceFileError
 from .job_processing import Job
@@ -53,6 +53,7 @@ class Source(models.Model):
     published = models.BooleanField(default=False, verbose_name=_('published'))
     allowed_groups = models.ManyToManyField(Group, verbose_name=_('allowed groups'), blank=True, null=True)
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
+    origin = models.ForeignKey(Origin, verbose_name=_('origin'))
 
     objects = InheritanceManager()
     allowed = SourceAccessManager()
@@ -69,25 +70,6 @@ class Source(models.Model):
         timestamp = parameters.get('_timestamp', None)
 
         return timestamp, parameters
-
-    def get_stream_type(self):
-        result = _('Unknown')
-        try:
-            if self.file:
-                result = _('Uploaded file')
-            elif self.path:
-                result = _('Filesystem path')
-            elif self.url:
-                result = _('URL')
-            else:
-                result = _('None')
-        except AttributeError:
-            # Might be a database type
-            if self.database_connection:
-                result = _('Database connection')
-
-        return result
-    get_stream_type.short_description = 'stream type'
 
     def get_column_names(self):
         if self.columns.count():
@@ -129,6 +111,12 @@ class Source(models.Model):
             return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
         except SourceData.DoesNotExist:
             raise Http404
+
+    #def get_all(self, timestamp=None, parameters=None, get_id=None):
+    #    if get_id:
+    #        return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), get_id - 1, get_id)
+    #    else:
+    #        return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), 0, self.limit)
 
     #def get_one(self, id, timestamp=None, parameters=None):
     #    # ID are all base 1
@@ -187,83 +175,6 @@ class Source(models.Model):
         verbose_name_plural = _('sources')
         ordering = ['name', 'slug']
 
-
-class SourceWS(Source):
-    source_type = _('SOAP web service')
-    supports_versioning = False
-
-    wsdl_url = models.URLField(verbose_name=_('WSDL URL'))
-    endpoint = models.CharField(max_length=64, verbose_name=_('endpoint'), help_text=_('Endpoint, function or method to call.'))
-
-    def get_parameters(self, parameters=None):
-        result = parameters.copy()
-
-        for argument in self.wsargument_set.all():
-            if argument.name not in result:
-                if argument.default:
-                    result[argument.name] = argument.default
-
-        return result
-
-    def get_one(self, id, timestamp=None, parameters=None):
-        # ID are all base 1
-        if id == 0:
-            raise LIBREAPIError('Invalid ID; IDs are base 1')
-
-        return self.get_all(timestamp, parameters)[id - 1]
-
-    def get_all(self, timestamp=None, parameters=None):
-        if not parameters:
-            parameters = {}
-
-        client = Client(self.wsdl_url)
-
-        result = []
-        try:
-            row_id = 1
-            # TODO: use enumerate
-            for data in getattr(client.service, self.endpoint)(**self.get_parameters(parameters)):
-                entry = {'_id': row_id}
-                for field in self.wsresultfield_set.all():
-                    entry[field.name] = getattr(data, field.name, field.default)
-
-                result.append(entry)
-                row_id += 1
-        except IndexError:
-            result = []
-
-        return result
-
-    class Meta:
-        verbose_name = _('web service source')
-        verbose_name_plural = _('web service sources')
-
-
-class WSArgument(models.Model):
-    source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
-    name = models.CharField(max_length=32, verbose_name=_('name'))
-    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
-
-    class Meta:
-        verbose_name = _('argument')
-        verbose_name_plural = _('arguments')
-
-
-class WSResultField (models.Model):
-    source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
-    name = models.CharField(max_length=32, verbose_name=_('name'))
-    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
-
-    class Meta:
-        verbose_name = _('result field')
-        verbose_name_plural = _('result fields')
-
-
-class SourceFileBased(models.Model):
-    path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
-    file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
-    url = models.URLField(blank=True, verbose_name=_('URL'), help_text=_('Import a file from an URL.'))
-
     def get_functions_map(self):
         return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
 
@@ -295,33 +206,9 @@ class SourceFileBased(models.Model):
             version.delete()
 
     def _check_source_data(self):
-        if self.path:
-            try:
-                with open(self.path) as handle:
-                    new_hash = HASH_FUNCTION(handle.read())
-            except IOError as exception:
-                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
-                raise SourceFileError(unicode(exception))
-        elif self.file:
-            try:
-                new_hash = HASH_FUNCTION(self.file.read())
-            except IOError as exception:
-                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
-                raise SourceFileError(unicode(exception))
-            else:
-                self.file.seek(0)
-        elif self.url:
-            try:
-                handle = urllib2.urlopen(self.url)
-            except urllib2.URLError as exception:
-                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
-                raise SourceFileError(unicode(exception))
-            else:
-                new_hash = HASH_FUNCTION(handle.read())
-                handle.close()
-        else:
-            # No file provided
-            raise SourceFileError('No file provided.')
+        origin = Origin.objects.get_subclass(pk=self.origin.pk)
+        origin.copy_data()
+        new_hash = origin.new_hash
 
         logger.debug('new_hash: %s' % new_hash)
 
@@ -329,19 +216,12 @@ class SourceFileBased(models.Model):
             source_data_version = self.versions.get(checksum=new_hash)
         except SourceDataVersion.DoesNotExist:
             source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
-            job = Job(target=self.import_data, args=(source_data_version,))
+            job = Job(target=self.import_data, args=(source_data_version, origin))
             job.submit()
             logger.debug('launching import job: %s' % job)
         else:
             source_data_version.active = True
             source_data_version.save()
-
-    class Meta:
-        abstract = True
-
-
-class SourceTabularBased(models.Model):
-    import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
 
     class AlwaysFalseSearch(object):
         def search(self, string):
@@ -372,13 +252,41 @@ class SourceTabularBased(models.Model):
 
         return all(cell_skip is False for cell_skip in skip_result) and all(import_result)
 
+
+class SourceWS(Source):
+    source_type = _('SOAP web service')
+
+    #result = []
+    #try:
+    #    row_id = 1
+    #    # TODO: use enumerate
+    #    for data in getattr(client.service, self.endpoint)(**self.get_parameters(parameters)):
+    #        entry = {'_id': row_id}
+    #        for field in self.wsresultfield_set.all():
+    #            entry[field.name] = getattr(data, field.name, field.default)
+    #        result.append(entry)
+    #        row_id += 1
+    #except IndexError:
+    #    result = []
+    #return result
+
     class Meta:
-        abstract = True
+        verbose_name = _('web service source')
+        verbose_name_plural = _('web service sources')
 
 
-class SourceCSV(Source, SourceFileBased, SourceTabularBased):
+class WSResultField (models.Model):
+    source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
+    name = models.CharField(max_length=32, verbose_name=_('name'))
+    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
+
+    class Meta:
+        verbose_name = _('result field')
+        verbose_name_plural = _('result fields')
+
+
+class SourceCSV(Source):
     source_type = _('CSV file')
-    supports_versioning = True
 
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
@@ -447,9 +355,8 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
         verbose_name_plural = _('CSV sources')
 
 
-class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
+class SourceFixedWidth(Source):
     source_type = _('Fixed width column file')
-    supports_versioning = True
 
     def _get_items(self):
         column_names = self.get_column_names()
@@ -505,9 +412,8 @@ class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
         verbose_name_plural = _('Fixed width sources')
 
 
-class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
+class SourceSpreadsheet(Source):
     source_type = _('Spreadsheet file')
-    supports_versioning = True
 
     sheet = models.CharField(max_length=32, default=DEFAULT_SHEET, verbose_name=_('sheet'), help_text=('Worksheet of the spreadsheet file to use.'))
 
@@ -630,9 +536,8 @@ class LeafletMarker(models.Model):
         ordering = ['label', 'slug']
 
 
-class SourceShape(Source, SourceFileBased):
+class SourceShape(Source):
     source_type = _('Shapefile')
-    supports_versioning = True
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
@@ -837,32 +742,10 @@ class ShapefileColumn(ColumnBase):
 class SourceDatabase(Source):
     source_type = _('Database')
 
-    database_connection = models.ForeignKey(DatabaseConnection, verbose_name=_('database connection'))
-    query = models.TextField(verbose_name=_('query'))
+    #column_names = self.get_column_names()
 
-    def get_one(self, id, timestamp=None, parameters=None):
-        # ID are all base 1
-        if id == 0:
-            raise LIBREAPIError('Invalid ID; IDs are base 1')
-
-        return self.get_all(timestamp, parameters, get_id=id)
-
-    def get_all(self, timestamp=None, parameters=None, get_id=None):
-        if get_id:
-            return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), get_id - 1, get_id)
-        else:
-            return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), 0, self.limit)
-
-    def _get_all(self, timestamp=None, parameters=None, get_id=None):
-        if not parameters:
-            parameters = {}
-
-        cursor = self.database_connection.load_backend().cursor()
-        cursor.execute(self.query, {})
-        column_names = self.get_column_names()
-
-        for row_id, data in enumerate(cursor.fetchall(), 1):
-            yield dict(zip(column_names, data), **{'_id': row_id})
+    #for row_id, data in enumerate(cursor.fetchall(), 1):
+    #    yield dict(zip(column_names, data), **{'_id': row_id})
 
     class Meta:
         verbose_name = _('database source')
@@ -880,17 +763,13 @@ class DatabaseResultColumn(ColumnBase):
 
 class SourceRESTAPI(Source):
     source_type = _('REST API')
-    url = models.URLField(verbose_name=_('URL'), help_text=_('URL of the REST API, including the endpoint, function or method to call.'))
-
-    def get_base_data(self, source_data_version):
-        return requests.get(self.url).json()
 
     class Meta:
         verbose_name = _('REST API source')
         verbose_name_plural = _('REST API sources')
 
 
-class DatabaseResultColumn(ColumnBase):
+class RESTResultColumn(ColumnBase):
     source = models.ForeignKey(SourceRESTAPI, verbose_name=_('REST API source'), related_name='columns')
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
 
