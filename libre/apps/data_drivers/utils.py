@@ -264,7 +264,10 @@ def get_value(obj, attrib):
     try:
         return obj[attrib]
     except (KeyError, TypeError):
-        return getattr(obj, attrib)
+        try:
+            return getattr(obj, attrib)
+        except AttributeError:
+            raise LIBREValueError('field has no attribute: %s' % attrib)
 
 
 def return_attrib(obj, attrib):
