@@ -141,11 +141,74 @@ class Source(models.Model):
 
         return all(cell_skip is False for cell_skip in skip_result) and all(import_result)
 
-    def get_column_names(self):
-        if self.columns.count():
-            return self.columns.all().values_list('name', flat=True)
+    def get_all(self, id=None, parameters=None):
+        logger.debug('parameters: %s' % parameters)
+        initial_datetime = datetime.datetime.now()
+        timestamp, parameters = Source.analyze_request(parameters)
+        logger.debug('timestamp: %s', timestamp)
+
+        try:
+            if timestamp:
+                source_data_version = self.versions.get(timestamp=timestamp)
+            else:
+                source_data_version = self.versions.get(active=True)
+        except SourceDataVersion.DoesNotExist:
+            return []
+
+        self.base_iterator = (item.row for item in SourceData.objects.filter(source_data_version=source_data_version).iterator())
+
+        if id:
+            self.base_iterator = islice(self.base_iterator, id-1, id)
+
+        results = Query(self).execute(parameters)
+        logger.debug('query elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
+
+        return results
+
+    def get_one(self, id, parameters=None):
+        # ID are all base 1
+        if id == 0:
+            raise LIBREAPIError('Invalid ID; IDs are base 1')
+        return self.get_all(id, parameters)
+
+    @staticmethod
+    def analyze_request(parameters=None):
+        kwargs = {}
+        if not parameters:
+            parameters = {}
         else:
-            return string.ascii_uppercase
+            for i in parameters:
+                if not i.startswith('_'):
+                    kwargs[i] = parameters[i]
+
+        timestamp = parameters.get('_timestamp', None)
+
+        return timestamp, parameters
+
+    def get_functions_map(self):
+        """Calculate the column name to data type conversion map"""
+        return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
+
+    def apply_datatypes(self, properties, functions_map):
+        result = {}
+
+        for key, value in properties.items():
+            try:
+                result[key] = functions_map[key](value)
+            except KeyError:
+                # Is not to be converted
+                result[key] = value
+            except ValueError:
+                # Fallback for failed conversion
+                logger.error('Unable to apply data type for field: %s' % key)
+                result[key] = value
+
+        return result
+
+    def clear_versions(self):
+        """Delete all the versions of this source"""
+        for version in self.versions.all():
+            version.delete()
 
     def __unicode__(self):
         return self.name
@@ -163,111 +226,6 @@ class Source(models.Model):
         verbose_name = _('source')
         verbose_name_plural = _('sources')
         ordering = ['name', 'slug']
-
-    #########
-
-    def analyze_request(self, parameters=None):
-        kwargs = {}
-        if not parameters:
-            parameters = {}
-        else:
-            for i in parameters:
-                if not i.startswith('_'):
-                    kwargs[i] = parameters[i]
-
-        timestamp = parameters.get('_timestamp', None)
-
-        return timestamp, parameters
-
-    #def import_data(self, source_data_version):
-    #    self.compute_new_name_map()
-
-    #def get_type(self):
-    #    return self.__class__.source_type
-
-    def get_one(self, id, parameters=None):
-        # ID are all base 1
-        if id == 0:
-            raise LIBREAPIError('Invalid ID; IDs are base 1')
-
-        # TODO: return a proper response when no sourcedataversion is found
-        timestamp, parameters = self.analyze_request(parameters)
-        if timestamp:
-            source_data_version = self.versions.get(timestamp=timestamp)
-        else:
-            source_data_version = self.versions.get(active=True)
-
-        try:
-            return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
-        except SourceData.DoesNotExist:
-            raise Http404
-
-    #def get_all(self, timestamp=None, parameters=None, get_id=None):
-    #    if get_id:
-    #        return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), get_id - 1, get_id)
-    #    else:
-    #        return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), 0, self.limit)
-
-    #def get_one(self, id, timestamp=None, parameters=None):
-    #    # ID are all base 1
-    #    if id == 0:
-    #        raise LIBREAPIError('Invalid ID; IDs are base 1')
-    #    return self.get_all(timestamp, parameters)[id - 1]
-
-    def get_base_data(self, source_data_version):
-        return (item.row for item in SourceData.objects.filter(source_data_version=source_data_version).iterator())
-
-    def get_all(self, parameters=None):
-        initial_datetime = datetime.datetime.now()
-        timestamp, parameters = self.analyze_request(parameters)
-
-        if self.supports_versioning:
-            try:
-                if timestamp:
-                    source_data_version = self.versions.get(timestamp=timestamp)
-                else:
-                    source_data_version = self.versions.get(active=True)
-            except SourceDataVersion.DoesNotExist:
-                return []
-        else:
-            source_data_version = None
-
-        self.queryset = self.get_base_data(source_data_version)
-
-        results = Query(self).execute(parameters)
-        logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
-
-        return results
-
-    def get_functions_map(self):
-        return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
-
-    def compute_new_name_map(self):
-        try:
-            self.new_name_map = dict(self.columns.values_list('name', 'new_name'))
-        except FieldError:
-            # This source doesn't support field renaming
-            self.new_name_map = {}
-
-    def apply_datatypes(self, properties, functions_map):
-        result = {}
-
-        for key, value in properties.items():
-            new_name = self.new_name_map.get(key, key)
-            try:
-                result[new_name] = functions_map[key](value)
-            except KeyError:
-                # Is not to be converted
-                result[new_name] = value
-            except ValueError:
-                # Fallback for failed conversion
-                result[new_name] = value
-
-        return result
-
-    def clear_versions(self):
-        for version in self.versions.all():
-            version.delete()
 
 
 class SourceCSV(Source):
@@ -523,14 +481,15 @@ class SourceRESTAPI(Source):
     source_type = _('REST API')
 
     def _get_rows(self):
-        column_names = self.get_column_names()
+        functions_map = self.get_functions_map()
 
         for row in self.origin_subclass_instance.data_iterator:
-            print 'row', row
-            finished_row = dict(zip(column_names, row))
-            print 'finished_row', finished_row
-            if self.process_regex(finished_row):
-                yield finished_row
+            fields = {}
+            for field in self.columns.filter(import_column=True):
+                fields[field.new_name] = functions_map[field.name](row.get(field.name, field.default))
+
+            if self.process_regex(fields):
+                yield fields
 
     class Meta:
         verbose_name = _('REST API source')
@@ -670,9 +629,15 @@ class DatabaseResultColumn(ColumnBase):
 
 class RESTResultColumn(ColumnBase):
     source = models.ForeignKey(SourceRESTAPI, verbose_name=_('REST API source'), related_name='columns')
+    new_name = models.CharField(max_length=32, verbose_name=_('new name'), blank=True)
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
     skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
     import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
+
+    def clean(self):
+        """Validation method, to avoid adding a column without a new_name value"""
+        if not self.new_name:
+            self.new_name = self.name
 
     class Meta:
         verbose_name = _('REST API column')
