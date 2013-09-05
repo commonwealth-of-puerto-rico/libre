@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from rest_framework import permissions
 
-from .models import SourceDataVersion, Source
+from .models import SourceDataVersion
 
 
 class IsAllowedGroupMember(permissions.BasePermission):

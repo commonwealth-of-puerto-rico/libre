@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 
-from itertools import groupby, imap, islice, izip, tee
+from itertools import groupby, imap, izip, tee
 import logging
-from operator import itemgetter
 import types
 
 from django.conf import settings
@@ -161,7 +160,6 @@ class Query():
         count = 0
 
         for item in self.source.base_iterator:
-            row_results = []
 
             if self.filters_function_map:
                 filter_results = []

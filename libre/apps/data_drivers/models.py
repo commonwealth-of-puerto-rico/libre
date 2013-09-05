@@ -5,14 +5,10 @@ import hashlib
 from itertools import islice
 import logging
 import re
-import string
 import struct
-import urllib2
 
 from django.contrib.auth.models import Group
-from django.core.exceptions import FieldError, ValidationError
 from django.db import models, transaction
-from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
@@ -21,22 +17,20 @@ import fiona
 from model_utils.managers import InheritanceManager
 from picklefield.fields import PickledObjectField
 from pyproj import Proj, transform
-import requests
 from shapely import geometry
-from suds.client import Client
 import xlrd
 
 from icons.models import Icon
 from lock_manager import Lock, LockError
 from origins.models import Origin
 
-from .exceptions import LIBREAPIError, SourceFileError
+from .exceptions import LIBREAPIError
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 from .managers import SourceAccessManager
 from .query import Query
-from .utils import DATA_TYPE_FUNCTIONS, UnicodeReader, parse_range
+from .utils import DATA_TYPE_FUNCTIONS, UnicodeReader
 
 HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
@@ -158,7 +152,7 @@ class Source(models.Model):
         self.base_iterator = (item.row for item in SourceData.objects.filter(source_data_version=source_data_version).iterator())
 
         if id:
-            self.base_iterator = islice(self.base_iterator, id-1, id)
+            self.base_iterator = islice(self.base_iterator, id - 1, id)
 
         results = Query(self).execute(parameters)
         logger.debug('query elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
@@ -450,7 +444,7 @@ class SourceShape(Source):
 
             for feature in source:
                 if feature['geometry']:
-                    feature['properties'] = Source.add_row_id(self.apply_datatypes(feature.get('properties', {}), functions_map), row_id)
+                    feature['properties'] = self.apply_datatypes(feature.get('properties', {}), functions_map)
 
                     if new_projection:
                         feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])

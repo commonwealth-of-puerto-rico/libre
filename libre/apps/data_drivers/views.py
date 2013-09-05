@@ -60,12 +60,14 @@ class CustomRetrieveAPIView(CustomAPIView, generics.RetrieveAPIView):
 
 class SourceList(CustomListAPIView):
     serializer_class = SourceSerializer
+
     def get_queryset(self):
         return Source.allowed.for_user(self.request.user)
 
 
 class SourceDetail(CustomRetrieveAPIView):
     serializer_class = SourceSerializer
+
     def get_queryset(self):
         return Source.allowed.for_user(self.request.user)
 
@@ -79,6 +81,7 @@ class SourceDataVersionList(CustomListAPIView):
 
 class SourceDataVersionDetail(CustomRetrieveAPIView):
     serializer_class = SourceDataVersionSerializer
+
     def get_queryset(self):
         return SourceDataVersion.objects.filter(ready=True)
 

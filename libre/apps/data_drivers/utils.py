@@ -35,15 +35,6 @@ def parse_enclosed(string):
     return enclosed_parser.parseString(string).asList()
 
 
-# http://stackoverflow.com/questions/4248399/page-range-for-printing-algorithm
-def parse_range(astr):
-    result = set()
-    for part in astr.split(u','):
-        x = part.split(u'-')
-        result.update(range(int(x[0]), int(x[-1]) + 1))
-    return sorted(result)
-
-
 def convert_to_number(data):
     if isinstance(data, (types.IntType, types.FloatType, types.LongType)):
         # Is already a number
@@ -192,7 +183,7 @@ def parse_as_geometry(string):
     try:
         value = geometry_class(parse_value(value))
     except Exception as exception:
-        raise LIBREValueError('Unable to parse value: %s as a geometry' % value)
+        raise LIBREValueError('Unable to parse value: %s as a geometry; %s' % (value, exception))
 
     if buffer_size:
         value = value.buffer(float(buffer_size))

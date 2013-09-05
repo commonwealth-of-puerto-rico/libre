@@ -1,37 +1,23 @@
 from __future__ import absolute_import
 
 from ast import literal_eval
-import datetime
 import fileinput
 import hashlib
-from itertools import islice, izip
+from itertools import izip
 import logging
-import re
-import string
-import struct
 import tempfile
 import types
-import urllib2
 
 from django.conf import settings
-from django.contrib.auth.models import Group
-from django.core.exceptions import FieldError, ValidationError
-from django.db import models, transaction
+from django.db import models
 from django.db import load_backend as django_load_backend
-from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
-from django.utils.timezone import now
-from django.template.defaultfilters import slugify, truncatechars
 
 from model_utils.managers import InheritanceManager
 from picklefield.fields import dbsafe_encode, dbsafe_decode
 import requests
 from suds.client import Client
 
-from db_drivers.models import DatabaseConnection
-from lock_manager import Lock, LockError
-
-from .exceptions import OriginDataError
 from .literals import BACKEND_CHOICES, BACKEND_CLASSES
 
 logger = logging.getLogger(__name__)

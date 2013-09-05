@@ -199,7 +199,6 @@ class Touches(Filter):
             raise LQLFilterError('field: %s, is not a geometry' % self.field)
 
 
-
 class Within(Filter):
     def __init__(self, field, filter_value, negation):
         self.field = field

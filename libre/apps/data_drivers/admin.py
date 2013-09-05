@@ -1,11 +1,10 @@
 from __future__ import absolute_import
 
-from django.contrib import admin, messages
-from django.db import models
+from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
 from .actions import check_updated, clear_versions, clone
-from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm,  RESTResultColumnForm, ShapefileColumnForm,
+from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, RESTResultColumnForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
     SourceWSForm, SourceShapeForm, WebServiceColumnForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
@@ -46,12 +45,12 @@ class ShapefileColumnInline(SourceColumnInline):
 
 class WebServiceColumnFieldInline(SourceColumnInline):
     model = WebServiceColumn
-    form =  WebServiceColumnForm
+    form = WebServiceColumnForm
 
 
 class RESTResultColumnFieldInline(SourceColumnInline):
     model = RESTResultColumn
-    form =  RESTResultColumnForm
+    form = RESTResultColumnForm
 
 
 class SourceDataVersionInline(admin.TabularInline):

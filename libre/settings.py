@@ -95,7 +95,7 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -196,11 +196,11 @@ SUIT_CONFIG = {
     'ADMIN_NAME': PROJECT_TITLE,
     'MENU_OPEN_FIRST_CHILD': False,
     'MENU': (
-        {'label': _('Auth'), 'icon':'icon-user', 'app': 'auth'},
-        {'label': _('Icons'), 'icon':'icon-picture', 'app': 'icons'},
-        {'label': _('Origins'), 'icon':'icon-hdd', 'app': 'origins'},
-        {'label': _('Data drivers'), 'icon':'icon-folder-open', 'app': 'data_drivers'},
-        {'label': _('Homepage'), 'icon':'icon-globe', 'url': 'https://github.com/commonwealth-of-puerto-rico/libre/'},
+        {'label': _('Auth'), 'icon': 'icon-user', 'app': 'auth'},
+        {'label': _('Icons'), 'icon': 'icon-picture', 'app': 'icons'},
+        {'label': _('Origins'), 'icon': 'icon-hdd', 'app': 'origins'},
+        {'label': _('Data drivers'), 'icon': 'icon-folder-open', 'app': 'data_drivers'},
+        {'label': _('Homepage'), 'icon': 'icon-globe', 'url': 'https://github.com/commonwealth-of-puerto-rico/libre/'},
     ),
 }
 
@@ -259,4 +259,3 @@ if DEVELOPMENT:
         DEBUG_TOOLBAR_CONFIG = {
             'INTERCEPT_REDIRECTS': False,
         }
-

@@ -1,6 +1,6 @@
 from django.forms import ModelForm, widgets
 
-from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput, SuitSplitDateTimeWidget
+from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput
 
 
 class SourceForm(ModelForm):
