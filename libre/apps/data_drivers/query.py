@@ -160,7 +160,7 @@ class Query():
     def data_iterator(self):
         count = 0
 
-        for item in self.source.queryset:
+        for item in self.source.base_iterator:
             row_results = []
 
             if self.filters_function_map:
@@ -247,7 +247,7 @@ class Query():
                 else:
                     results = [match.value for match in expression.find(iterator)]
             except Exception as exception:
-                raise LQLParseError('JSON query error; %s' % exception)
+                raise LQLParseError('JSON path error; %s' % exception)
             else:
                 if len(results) == 1:
                     return results[0]
