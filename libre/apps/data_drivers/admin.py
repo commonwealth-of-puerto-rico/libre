@@ -7,10 +7,13 @@ from django.utils.translation import ugettext_lazy as _
 from .actions import check_updated, clear_versions, clone
 from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm,  RESTResultColumnForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
-    SourceWSForm, SourceShapeForm)
+    SourceWSForm, SourceShapeForm, WebServiceColumnForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceRESTAPI, SourceShape,
-    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WebServieResultColumn, RESTResultColumn)
+    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WebServiceColumn, RESTResultColumn)
+
+
+# Column inlines
 
 
 class SourceColumnInline(admin.TabularInline):
@@ -41,8 +44,9 @@ class ShapefileColumnInline(SourceColumnInline):
     form = ShapefileColumnForm
 
 
-class WebServieResultColumnFieldInline(SourceColumnInline):
-    model = WebServieResultColumn
+class WebServiceColumnFieldInline(SourceColumnInline):
+    model = WebServiceColumn
+    form =  WebServiceColumnForm
 
 
 class RESTResultColumnFieldInline(SourceColumnInline):
@@ -57,6 +61,9 @@ class SourceDataVersionInline(admin.TabularInline):
     extra = 0
     max_num = 0  # Don't allowing adding new versions by hand
     suit_classes = 'suit-tab suit-tab-versions'
+
+
+# Source admins
 
 
 class SourceAdmin(admin.ModelAdmin):
@@ -118,7 +125,7 @@ class SourceFixedWidthAdmin(SourceAdmin):
 
 
 class SourceWSAdmin(SourceAdmin):
-    inlines = [WebServieResultColumnFieldInline]
+    inlines = [SourceDataVersionInline, WebServiceColumnFieldInline]
     form = SourceWSForm
 
 

@@ -467,10 +467,8 @@ class SourceDatabase(Source):
     source_type = _('Database')
 
     def _get_rows(self):
-        column_names = self.get_column_names()
-
         for row in self.origin_subclass_instance.data_iterator:
-            yield dict(zip(column_names, row))
+            yield row
 
     class Meta:
         verbose_name = _('database source')
@@ -500,12 +498,16 @@ class SourceWS(Source):
     source_type = _('SOAP web service')
 
     def _get_rows(self):
+        # TODO: Same as REST API, consolidate
+        functions_map = self.get_functions_map()
+
         for row in self.origin_subclass_instance.data_iterator:
             fields = {}
-            for field in self.columns.all():
-                fields[field.name] = getattr(row, field.name, field.default)
+            for field in self.columns.all(import_column=True):
+                fields[field.new_name] = functions_map[field.name](row.get(field.name, field.default))
 
-            yield fields
+            if self.process_regex(fields):
+                yield fields
 
     class Meta:
         verbose_name = _('web service source')
@@ -608,10 +610,12 @@ class ShapefileColumn(ColumnBase):
         verbose_name_plural = _('shapefile columns')
 
 
-class WebServieResultColumn(ColumnBase):
+class WebServiceColumn(ColumnBase):
     source = models.ForeignKey(SourceWS, verbose_name=_('web service source'), related_name='columns')
-    # data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
-    # Web service returns the correct data type?
+    new_name = models.CharField(max_length=32, verbose_name=_('new name'), blank=True)
+    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
 
     class Meta:
         verbose_name = _('web service column')
