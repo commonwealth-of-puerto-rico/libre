@@ -111,3 +111,13 @@ class LeafletMarkerForm(ModelForm):
             'popup_anchor_y': widgets.TextInput(attrs={'class': 'input-small'}),
         }
 
+
+class RESTResultColumnForm(ModelForm):
+    class Meta:
+        widgets = {
+            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'name': widgets.TextInput(attrs={'class': 'input-small'}),
+            'default': EnclosedInput(attrs={'class': 'input-mini'}),
+            'data_type': widgets.Select(attrs={'class': 'input-small'}),
+        }

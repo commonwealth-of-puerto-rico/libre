@@ -5,12 +5,12 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from .actions import check_updated, clear_versions, clone
-from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
+from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm,  RESTResultColumnForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
     SourceWSForm, SourceShapeForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceRESTAPI, SourceShape,
-    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WebServieResultColumn)
+    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WebServieResultColumn, RESTResultColumn)
 
 
 class SourceColumnInline(admin.TabularInline):
@@ -43,6 +43,11 @@ class ShapefileColumnInline(SourceColumnInline):
 
 class WebServieResultColumnFieldInline(SourceColumnInline):
     model = WebServieResultColumn
+
+
+class RESTResultColumnFieldInline(SourceColumnInline):
+    model = RESTResultColumn
+    form =  RESTResultColumnForm
 
 
 class SourceDataVersionInline(admin.TabularInline):
@@ -118,7 +123,7 @@ class SourceWSAdmin(SourceAdmin):
 
 
 class SourceRESTAPIAdmin(SourceAdmin):
-    inlines = [SourceDataVersionInline]
+    inlines = [SourceDataVersionInline, RESTResultColumnFieldInline]
 
 
 class SourceShapeAdmin(SourceAdmin):
