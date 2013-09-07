@@ -316,21 +316,20 @@ class SourceSpreadsheet(Source):
 
         logger.debug('opening sheet: %s' % self.sheet)
 
-        column_names = self.get_column_names()
-
-        logger.debug('column_names: %s' % column_names)
-
         try:
             self._sheet = self._book.sheet_by_name(self.sheet)
         except xlrd.XLRDError:
             self._sheet = self._book.sheet_by_index(int(self.sheet))
 
-        parsed_range = xrange(0, self._sheet.nrows)
+        for i in xrange(0, self._sheet.nrows):
+            cells = self._sheet.row(i)
 
-        for i in parsed_range:
-            converted_row = dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
-            if self.process_regex(converted_row):
-                yield converted_row
+            fields = {}
+            for cell_number, field in enumerate(self.columns.filter(import_column=True), 0):
+                fields[field.name] = self._convert_value(cells[cell_number])
+
+            if self.process_regex(fields):
+                yield fields
 
     class Meta:
         verbose_name = _('spreadsheet source')
