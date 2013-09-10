@@ -4,6 +4,7 @@ import datetime
 import hashlib
 from itertools import islice
 import logging
+import os
 import re
 import struct
 
@@ -53,6 +54,8 @@ class Source(models.Model):
     allowed = SourceAccessManager()
 
     def check_source_data(self):
+        logger.info('checking data for source: %s' % self.slug)
+
         try:
             lock_id = u'check_source_data-%d' % self.pk
             logger.debug('trying to acquire lock: %s' % lock_id)
@@ -62,11 +65,13 @@ class Source(models.Model):
                 self.check_origin_data()
             except Exception as exception:
                 logger.debug('unhandled exception: %s' % exception)
+                logger.error('error when checking data for source: %s; %s' % (self.slug, exception))
                 raise
             finally:
                 lock.release()
         except LockError:
             logger.debug('unable to obtain lock')
+            logger.info('Unable to obtain lock to check data for source: %s' % self.slug)
             pass
 
     def check_origin_data(self):
@@ -86,9 +91,21 @@ class Source(models.Model):
             source_data_version.active = True
             source_data_version.save()
 
+    def _get_metadata(self):
+        """Source models are responsible for overloading this method"""
+        return None
+
+    def _cleanup(self):
+        """Called when the import_origin_data method finishes.
+        Source models are responsible for overloading this method"""
+        pass
+
     @transaction.commit_on_success
     def import_origin_data(self, source_data_version):
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+
+        source_data_version.metadata = self._get_metadata()
+        source_data_version.save()
 
         self.get_regex_maps()
 
@@ -98,6 +115,8 @@ class Source(models.Model):
             SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=dict(row, **{'_id': row_id}))
 
         logger.debug('finished importing rows')
+
+        self._cleanup()
 
         source_data_version.ready = True
         source_data_version.active = True
@@ -428,28 +447,36 @@ class SourceShape(Source):
             # Unsuported geometry type, return coordinates as is
             return geometry['coordinates']
 
-    @transaction.commit_on_success
-    def _get_rows(self, source_data_version):
-        with fiona.open('/test_uk.shp', vfs='zip://docs/data/test_uk.zip') as source:
-        #with fiona.collection(self.path, 'r') as source:
-            source_data_version.metadata = source.crs
-            if self.new_projection:
-                new_projection = Proj(init='epsg:%s' % self.new_projection)
-                old_projection = Proj(**source.crs)
-            else:
-                new_projection = False
+    def _get_metadata(self):
+        old_filename = self.origin_subclass_instance.copy_file.name
+        self.filename = old_filename + '.zip'
+        os.rename(old_filename, self.filename)
 
-            functions_map = self.get_functions_map()
+        self.source = fiona.open('', vfs='zip://%s' % self.filename)
+        return self.source.crs
 
-            for feature in source:
-                if feature['geometry']:
-                    feature['properties'] = self.apply_datatypes(feature.get('properties', {}), functions_map)
+    def _get_rows(self):
+        if self.new_projection:
+            new_projection = Proj(init='epsg:%s' % self.new_projection)
+            old_projection = Proj(**self.source.crs)
+        else:
+            new_projection = False
 
-                    if new_projection:
-                        feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
+        functions_map = self.get_functions_map()
 
-                    feature['geometry'] = geometry.shape(feature['geometry'])
-                    yield feature
+        for feature in self.source:
+            if feature['geometry']:
+                feature['properties'] = self.apply_datatypes(feature.get('properties', {}), functions_map)
+
+                if new_projection:
+                    feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
+
+                feature['geometry'] = geometry.shape(feature['geometry'])
+                yield feature
+
+    def _cleanup(self):
+        # Rename the temporary file back to it's filename so that is can be garbage collected
+        os.rename(self.filename, self.filename[:-4])
 
     class Meta:
         verbose_name = _('shape source')
@@ -597,6 +624,13 @@ class ShapefileColumn(ColumnBase):
     source = models.ForeignKey(SourceShape, verbose_name=_('shapefile source'), related_name='columns')
     new_name = models.CharField(max_length=32, verbose_name=_('new name'), blank=True)
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
+
+    def clean(self):
+        """Validation method, to avoid adding a column without a new_name value"""
+        if not self.new_name:
+            self.new_name = self.name
 
     class Meta:
         verbose_name = _('shapefile column')
@@ -609,6 +643,11 @@ class WebServiceColumn(ColumnBase):
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
     skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
     import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
+
+    def clean(self):
+        """Validation method, to avoid adding a column without a new_name value"""
+        if not self.new_name:
+            self.new_name = self.name
 
     class Meta:
         verbose_name = _('web service column')
