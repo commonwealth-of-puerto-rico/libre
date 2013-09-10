@@ -52,8 +52,8 @@ class Origin(models.Model):
         """
         hash_function = hashlib.sha256()
 
-        self.temporary_file = tempfile.TemporaryFile(mode='w+')
-        self.copy_file = tempfile.TemporaryFile(mode='w+b')
+        self.temporary_file = tempfile.NamedTemporaryFile(mode='w+')
+        self.copy_file = tempfile.NamedTemporaryFile(mode='w+b')
 
         for row in self.get_data_iteraror():
             data = dbsafe_encode(row)
