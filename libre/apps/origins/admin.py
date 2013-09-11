@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
-from .forms import OriginPathForm, OriginUploadedFileForm
+from .forms import OriginPathForm, OriginURLFileForm, OriginUploadedFileForm
 from .models import (OriginDatabase, OriginFTPFile, OriginUploadedFile,
     OriginURLFile, OriginPath, OriginRESTAPI, OriginSOAPWebService)
 
@@ -39,6 +39,7 @@ class OriginURLFileAdmin(OriginAdmin):
         }),
     )
     list_display = OriginAdmin.list_display + ('url',)
+    form = OriginURLFileForm
 
 
 class OriginPathAdmin(OriginAdmin):

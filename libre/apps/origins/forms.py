@@ -24,3 +24,11 @@ class OriginUploadedFileForm(OriginForm):
             'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
             'path': EnclosedInput(prepend='icon-folder-open', attrs={'class': 'input-xxlarge'}),
         }
+
+
+class OriginURLFileForm(OriginForm):
+    class Meta:
+        widgets = {
+            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
+            'url': EnclosedInput(prepend='icon-globe', attrs={'class': 'input-xxlarge'}),
+        }
