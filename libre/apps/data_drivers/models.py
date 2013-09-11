@@ -270,18 +270,28 @@ class SourceFixedWidth(Source):
     source_type = _('Fixed width column file')
 
     def _get_rows(self):
-        column_names = self.get_column_names()
-        column_widths = self.columns.all().values_list('size', flat=True)
+        column_names = self.columns.values_list('name', flat=True)
+        column_widths = self.columns.values_list('size', flat=True)
 
         fmtstring = ''.join('%ds' % f for f in map(int, column_widths))
         parse = struct.Struct(fmtstring).unpack_from
 
         functions_map = self.get_functions_map()
 
-        for row_id, row in enumerate(self._file_handle):
-            row_dict = dict(zip(column_names, parse(row)))
-            if self.process_regex(row_dict):
-                yield self.apply_datatypes(row_dict, functions_map)
+        for row_id, row in enumerate(self.origin_subclass_instance.data_iterator, 1):
+            try:
+                row_dict = dict(zip(column_names, parse(row)))
+            except struct.error as exception:
+                logger.error('Error importing row # %d of source: %s' % (row_id, self.slug))
+            else:
+                if self.process_regex(row_dict):
+                    fields = {}
+                    for field_num, field in enumerate(self.columns.filter(import_column=True), 1):
+                        try:
+                            fields[field.name] = functions_map[field.name](row_dict[field.name])
+                        except ValueError as exception:
+                            logger.error('Error converting field # %d, of row # %d, of source: %s; %s' % (field_num, row_id, self.slug, exception))
+                    yield fields
 
     class Meta:
         verbose_name = _('Fixed width source')
@@ -601,6 +611,8 @@ class FixedWidthColumn(ColumnBase):
     source = models.ForeignKey(SourceFixedWidth, verbose_name=_('fixed width source'), related_name='columns')
     size = models.PositiveIntegerField(verbose_name=_('size'))
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
 
     class Meta:
         verbose_name = _('fixed width column')
