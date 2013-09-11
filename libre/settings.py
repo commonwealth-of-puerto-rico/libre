@@ -210,6 +210,9 @@ JOB_PROCESSING_MODE_IMMEDIATE = False
 # LQL
 LQL_DELIMITER = '_'
 
+# Crispy forms
+CRISPY_TEMPLATE_PACK = 'bootstrap'
+
 # Overwrite defaults with local settings
 try:
     from settings_local import *
