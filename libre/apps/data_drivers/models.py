@@ -94,7 +94,7 @@ class Source(models.Model):
 
     def _get_metadata(self):
         """Source models are responsible for overloading this method"""
-        return None
+        return ''
 
     @transaction.commit_on_success
     def import_origin_data(self, source_data_version):
@@ -242,7 +242,6 @@ class SourceCSV(Source):
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
 
     def _get_rows(self):
-        column_names = self.get_column_names()
         functions_map = self.get_functions_map()
 
         kwargs = {}
@@ -251,14 +250,16 @@ class SourceCSV(Source):
         if self.quote_character:
             kwargs['quotechar'] = str(self.quote_character)
 
-        reader = UnicodeReader(self.origin_subclass_instance.copy_file, **kwargs)
+        column_names = self.columns.values_list('name', flat=True)
 
-        logger.debug('column_names: %s' % column_names)
-
-        for row_id, row in enumerate(reader, 1):
+        for row in UnicodeReader(self.origin_subclass_instance.copy_file, **kwargs):
             row_dict = dict(zip(column_names, row))
+
             if self.process_regex(row_dict):
-                yield self.apply_datatypes(row_dict, functions_map)
+                fields = {}
+                for field in self.columns.filter(import_column=True):
+                    fields[field.name] = functions_map[field.name](row_dict[field.name])
+                yield fields
 
     class Meta:
         verbose_name = _('CSV source')
