@@ -5,6 +5,8 @@ python:
 install:
   - "pip install -r libre/requirements.txt --use-mirrors"
   - "pip install coveralls"
+notifications:
+  email: false
 script:
   - python manage.py test data_drivers origins
   - coverage run --source=data_drivers,origins manage.py test data_drivers origins
