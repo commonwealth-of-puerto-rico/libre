@@ -70,6 +70,17 @@ class SourceShapeForm(SourceForm):
 
 # Column Forms
 
+class FixedWidthColumnForm(ModelForm):
+    class Meta:
+        widgets = {
+            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'name': widgets.TextInput(attrs={'class': 'input-small'}),
+            'size': widgets.TextInput(attrs={'class': 'input-small'}),
+            'default': EnclosedInput(attrs={'class': 'input-mini'}),
+            'data_type': widgets.Select(attrs={'class': 'input-small'}),
+        }
+
 
 class CSVColumnForm(ModelForm):
     class Meta:

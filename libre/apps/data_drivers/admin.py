@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
 from .actions import check_updated, clear_versions, clone
-from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, RESTResultColumnForm, ShapefileColumnForm,
+from .forms import (FixedWidthColumnForm, SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, RESTResultColumnForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
     SourceWSForm, SourceShapeForm, WebServiceColumnForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
@@ -26,6 +26,7 @@ class DatabaseResultColumnInline(SourceColumnInline):
 
 class FixedWidthColumnInline(SourceColumnInline):
     model = FixedWidthColumn
+    form = FixedWidthColumnForm
 
 
 class CSVColumnInline(SourceColumnInline):
