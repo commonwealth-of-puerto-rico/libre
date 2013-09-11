@@ -54,7 +54,7 @@ class Source(models.Model):
     allowed = SourceAccessManager()
 
     def check_source_data(self):
-        logger.info('checking data for source: %s' % self.slug)
+        logger.info('Checking for new data for source: %s' % self.slug)
 
         try:
             lock_id = u'check_source_data-%d' % self.pk
@@ -65,13 +65,13 @@ class Source(models.Model):
                 self.check_origin_data()
             except Exception as exception:
                 logger.debug('unhandled exception: %s' % exception)
-                logger.error('error when checking data for source: %s; %s' % (self.slug, exception))
+                logger.error('Error when checking data for source: %s; %s' % (self.slug, exception))
                 raise
             finally:
                 lock.release()
         except LockError:
             logger.debug('unable to obtain lock')
-            logger.info('Unable to obtain lock to check data for source: %s' % self.slug)
+            logger.info('Unable to obtain lock to check for new data for source: %s' % self.slug)
             pass
 
     def check_origin_data(self):
@@ -83,6 +83,7 @@ class Source(models.Model):
         try:
             source_data_version = self.versions.get(checksum=self.origin_subclass_instance.new_hash)
         except SourceDataVersion.DoesNotExist:
+            logger.info('New origin data version found for source: %s' % self.slug)
             source_data_version = SourceDataVersion.objects.create(source=self, checksum=self.origin_subclass_instance.new_hash)
             job = Job(target=self.import_origin_data, args=[source_data_version])
             job.submit()
@@ -95,11 +96,6 @@ class Source(models.Model):
         """Source models are responsible for overloading this method"""
         return None
 
-    def _cleanup(self):
-        """Called when the import_origin_data method finishes.
-        Source models are responsible for overloading this method"""
-        pass
-
     @transaction.commit_on_success
     def import_origin_data(self, source_data_version):
         source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
@@ -109,21 +105,19 @@ class Source(models.Model):
 
         self.get_regex_maps()
 
-        logger.debug('importing rows')
+        logger.info('Importing new data for source: %s' % self.slug)
 
         for row_id, row in enumerate(self._get_rows(), 1):
             SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=dict(row, **{'_id': row_id}))
 
         logger.debug('finished importing rows')
 
-        self._cleanup()
-
         source_data_version.ready = True
         source_data_version.active = True
         source_data_version.save()
 
         self.origin_subclass_instance.discard_copy()
-        logger.debug('exiting')
+        logger.info('Imported %d rows for source: %s' % (row_id, self.slug))
 
     class AlwaysFalseSearch(object):
         def search(self, string):
@@ -451,6 +445,7 @@ class SourceShape(Source):
         old_filename = self.origin_subclass_instance.copy_file.name
         self.filename = old_filename + '.zip'
         os.rename(old_filename, self.filename)
+        self.origin_subclass_instance.copy_file.name = self.filename
 
         self.source = fiona.open('', vfs='zip://%s' % self.filename)
         return self.source.crs
@@ -466,17 +461,18 @@ class SourceShape(Source):
 
         for feature in self.source:
             if feature['geometry']:
-                feature['properties'] = self.apply_datatypes(feature.get('properties', {}), functions_map)
+                fields = {}
+                for field in self.columns.filter(import_column=True):
+                    fields[field.new_name] = functions_map[field.name](feature['properties'].get(field.name, field.default))
+
+                feature['properties'] = fields
 
                 if new_projection:
                     feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
 
-                feature['geometry'] = geometry.shape(feature['geometry'])
-                yield feature
-
-    def _cleanup(self):
-        # Rename the temporary file back to it's filename so that is can be garbage collected
-        os.rename(self.filename, self.filename[:-4])
+                if self.process_regex(fields):
+                    feature['geometry'] = geometry.shape(feature['geometry'])
+                    yield feature
 
     class Meta:
         verbose_name = _('shape source')
@@ -523,7 +519,7 @@ class SourceWS(Source):
 
         for row in self.origin_subclass_instance.data_iterator:
             fields = {}
-            for field in self.columns.all(import_column=True):
+            for field in self.columns.filter(import_column=True):
                 fields[field.new_name] = functions_map[field.name](row.get(field.name, field.default))
 
             if self.process_regex(fields):
