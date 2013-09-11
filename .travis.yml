@@ -2,8 +2,7 @@ language: python
 python:
   - "2.7"
   - "2.6"
-install:
-  - pip install -r libre/requirementes.txt
+install: "pip install -r libre/requirements.txt --use-mirrors"
 script:
-  - python manage.py test data_drivers
+  - python manage.py test data_drivers origins
 
