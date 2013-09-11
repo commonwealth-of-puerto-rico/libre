@@ -3,7 +3,9 @@ from __future__ import absolute_import
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
-from .models import OriginDatabase, OriginFTPFile, OriginUploadedFile, OriginURLFile, OriginPath, OriginRESTAPI, OriginSOAPWebService
+from .forms import OriginPathForm, OriginUploadedFileForm
+from .models import (OriginDatabase, OriginFTPFile, OriginUploadedFile,
+    OriginURLFile, OriginPath, OriginRESTAPI, OriginSOAPWebService)
 
 
 class OriginAdmin(admin.ModelAdmin):
@@ -47,6 +49,7 @@ class OriginPathAdmin(OriginAdmin):
         }),
     )
     list_display = OriginAdmin.list_display + ('path',)
+    form = OriginPathForm
 
 
 class OriginRESTAPIAdmin(OriginAdmin):
@@ -59,9 +62,20 @@ class OriginRESTAPIAdmin(OriginAdmin):
     list_display = OriginAdmin.list_display + ('url',)
 
 
+class OriginUploadedFileAdmin(OriginAdmin):
+    fieldsets = OriginAdmin.fieldsets + (
+        (_('Specific information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('file',)
+        }),
+    )
+    list_display = OriginAdmin.list_display + ('file',)
+    form = OriginUploadedFileForm
+
+
 admin.site.register(OriginDatabase, OriginDatabaseAdmin)
 admin.site.register(OriginFTPFile)
-admin.site.register(OriginUploadedFile)
+admin.site.register(OriginUploadedFile, OriginUploadedFileAdmin)
 admin.site.register(OriginURLFile, OriginURLFileAdmin)
 admin.site.register(OriginPath, OriginPathAdmin)
 admin.site.register(OriginRESTAPI, OriginRESTAPIAdmin)
