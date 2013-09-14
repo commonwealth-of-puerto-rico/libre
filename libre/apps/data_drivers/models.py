@@ -521,20 +521,8 @@ class SourceRESTAPI(Source):
         verbose_name_plural = _('REST API sources')
 
 
-class SourceWS(Source):
+class SourceWS(SourceRESTAPI):
     source_type = _('SOAP web service')
-
-    def _get_rows(self):
-        # TODO: Same as REST API, consolidate
-        functions_map = self.get_functions_map()
-
-        for row in self.origin_subclass_instance.data_iterator:
-            fields = {}
-            for field in self.columns.filter(import_column=True):
-                fields[field.new_name] = functions_map[field.name](row.get(field.name, field.default))
-
-            if self.process_regex(fields):
-                yield fields
 
     class Meta:
         verbose_name = _('web service source')
