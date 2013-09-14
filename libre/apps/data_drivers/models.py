@@ -502,9 +502,7 @@ class SourceDatabase(Source):
         verbose_name_plural = _('database sources')
 
 
-class SourceRESTAPI(Source):
-    source_type = _('REST API')
-
+class SourceSimple(Source):
     def _get_rows(self):
         functions_map = self.get_functions_map()
 
@@ -517,12 +515,32 @@ class SourceRESTAPI(Source):
                 yield fields
 
     class Meta:
+        abstract = True
+
+
+class SourceRESTAPI(SourceSimple):
+    source_type = _('REST API')
+
+    # TODO Add support for parameters
+
+    def get_data_iteraror(self):
+        return (item for item in requests.get(self.url).json())
+
+    class Meta:
         verbose_name = _('REST API source')
         verbose_name_plural = _('REST API sources')
 
 
-class SourceWS(SourceRESTAPI):
+class SourceWS(SourceSimple):
     source_type = _('SOAP web service')
+
+    endpoint = models.CharField(max_length=64, verbose_name=_('endpoint'), help_text=_('Endpoint, function or method to call.'))
+    parameters = models.TextField(blank=True, verbose_name=_('parameters'))
+    # TODO: Implemente 'fields to return'
+
+    def get_data_iteraror(self):
+        client = Client(self.url)
+        return (item for item in getattr(client.service, self.endpoint)(**literal_eval(self.parameters)))
 
     class Meta:
         verbose_name = _('web service source')
