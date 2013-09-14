@@ -125,6 +125,13 @@ class SourceFixedWidthAdmin(SourceAdmin):
 
 
 class SourceWSAdmin(SourceAdmin):
+    fieldsets = SourceAdmin.fieldsets + (
+        (_('Specific information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('endpoint', 'parameters')
+        }),
+    )
+    list_display = SourceAdmin.list_display + ('endpoint', 'parameters')
     inlines = [SourceDataVersionInline, WebServiceColumnFieldInline]
     form = SourceWSForm
 

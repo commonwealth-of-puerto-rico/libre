@@ -7,7 +7,7 @@ class SourceForm(ModelForm):
     class Meta:
         widgets = {
             'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'query': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
+            'limit': NumberInput(attrs={'class': 'input-mini'}),
         }
 
 
@@ -21,9 +21,6 @@ class SourceDatabaseForm(SourceForm):
 class SourceSpreadsheetForm(SourceForm):
     class Meta:
         widgets = {
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
             'sheet': NumberInput(attrs={'class': 'input-mini'}),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
         }
@@ -32,9 +29,6 @@ class SourceSpreadsheetForm(SourceForm):
 class SourceFixedWidthForm(SourceForm):
     class Meta:
         widgets = {
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
         }
 
@@ -42,17 +36,15 @@ class SourceFixedWidthForm(SourceForm):
 class SourceCSVForm(SourceForm):
     class Meta:
         widgets = {
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
         }
 
 
 class SourceWSForm(SourceForm):
-    class Meta:
+    class Meta(SourceForm.Meta):
         widgets = {
             'wsdl_url': EnclosedInput(prepend='icon-globe'),
+            'parameters': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
         }
 
 
@@ -62,9 +54,6 @@ class SourceShapeForm(SourceForm):
             'popup_template': AutosizedTextarea(attrs={'rows': 20, 'class': 'input-xlarge'}),
             'marker_template': AutosizedTextarea(attrs={'rows': 20, 'class': 'input-xlarge'}),
             'template_header': AutosizedTextarea(attrs={'rows': 20, 'class': 'input-xlarge'}),
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
         }
 
 

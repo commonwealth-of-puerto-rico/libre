@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from .forms import OriginPathForm, OriginURLFileForm, OriginUploadedFileForm
 from .models import (OriginDatabase, OriginFTPFile, OriginUploadedFile,
-    OriginURLFile, OriginPath, OriginRESTAPI, OriginSOAPWebService)
+    OriginURLFile, OriginPath)
 
 
 class OriginAdmin(admin.ModelAdmin):
@@ -53,16 +53,6 @@ class OriginPathAdmin(OriginAdmin):
     form = OriginPathForm
 
 
-class OriginRESTAPIAdmin(OriginAdmin):
-    fieldsets = OriginAdmin.fieldsets + (
-        (_('Specific information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('url',)
-        }),
-    )
-    list_display = OriginAdmin.list_display + ('url',)
-
-
 class OriginUploadedFileAdmin(OriginAdmin):
     fieldsets = OriginAdmin.fieldsets + (
         (_('Specific information'), {
@@ -79,5 +69,3 @@ admin.site.register(OriginFTPFile)
 admin.site.register(OriginUploadedFile, OriginUploadedFileAdmin)
 admin.site.register(OriginURLFile, OriginURLFileAdmin)
 admin.site.register(OriginPath, OriginPathAdmin)
-admin.site.register(OriginRESTAPI, OriginRESTAPIAdmin)
-admin.site.register(OriginSOAPWebService)
