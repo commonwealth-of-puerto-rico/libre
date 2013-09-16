@@ -33,7 +33,6 @@ from .managers import SourceAccessManager
 from .query import Query
 from .utils import DATA_TYPE_FUNCTIONS, UnicodeReader
 
-HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
 
 
