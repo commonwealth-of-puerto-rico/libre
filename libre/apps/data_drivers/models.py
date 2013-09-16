@@ -40,7 +40,6 @@ logger = logging.getLogger(__name__)
 class Source(models.Model):
     source_type = _('Base source class')
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
-    supports_versioning = False
 
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
     slug = models.SlugField(unique=True, blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
