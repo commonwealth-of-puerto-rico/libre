@@ -27,9 +27,6 @@ class ContainerOrigin(models.Model):
     uncompress = models.BooleanField(verbose_name=_('uncompress'))
     contained_file_list = models.TextField(verbose_name=_('contained file list'), blank=True)
 
-    def __unicode__(self):
-        return self.label
-
     class Meta:
         abstract = True
         verbose_name = _('compressed origin')
@@ -79,22 +76,32 @@ class Origin(models.Model):
         self.temporary_file.close()
         self.copy_file.close()
 
-    def __unicode__(self):
+    @property
+    def identifier(self):
         return self.label
+
+    def __unicode__(self):
+        subclass = Origin.objects.get_subclass(pk=self.pk)
+        return u'%s (%s)' % (subclass.identifier, subclass.origin_type)
 
     class Meta:
         verbose_name = _('origin')
         verbose_name_plural = _('origins')
+        ordering = ('label',)
 
 
 class OriginURL(Origin):
-    origin_type = _('URL origin')
+    origin_type = _('URL')
 
     url = models.URLField(verbose_name=_('URL'), help_text=_('URL from which to read the data.'))
     # TODO Add support for credentials
 
     def get_data_iteraror(self):
         return (item for item in requests.get(self.url).iter_lines())
+
+    @property
+    def identifier(self):
+        return self.url
 
     class Meta:
         abstract = True
@@ -103,7 +110,7 @@ class OriginURL(Origin):
 
 
 class OriginURLFile(OriginURL, ContainerOrigin):
-    origin_type = _('URL file origin')
+    origin_type = _('URL file')
 
     class Meta:
         verbose_name = _('URL file origin')
@@ -111,12 +118,16 @@ class OriginURLFile(OriginURL, ContainerOrigin):
 
 
 class OriginPath(Origin, ContainerOrigin):
-    origin_type = _('disk path origin')
+    origin_type = _('disk path')
 
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
 
     def get_data_iteraror(self):
         return fileinput.input(self.path)
+
+    @property
+    def identifier(self):
+        return self.path
 
     class Meta:
         verbose_name = _('disk path origin')
@@ -124,7 +135,7 @@ class OriginPath(Origin, ContainerOrigin):
 
 
 class OriginFTPFile(OriginURL, ContainerOrigin):
-    origin_type = _('FTP file origin')
+    origin_type = _('FTP file')
 
     class Meta:
         verbose_name = _('FTP file origin')
@@ -132,12 +143,16 @@ class OriginFTPFile(OriginURL, ContainerOrigin):
 
 
 class OriginUploadedFile(Origin, ContainerOrigin):
-    origin_type = _('uploaded file origin')
+    origin_type = _('uploaded file')
 
     file = models.FileField(blank=True, null=True, upload_to='uploaded_files', verbose_name=_('uploaded file'))
 
     def get_data_iteraror(self):
         self.file.seek(0)
+        return self.file
+
+    @property
+    def identifier(self):
         return self.file
 
     class Meta:
@@ -146,7 +161,7 @@ class OriginUploadedFile(Origin, ContainerOrigin):
 
 
 class OriginDatabase(Origin):
-    origin_type = _('database origin')
+    origin_type = _('database')
 
     db_backend = models.PositiveIntegerField(choices=BACKEND_CHOICES, verbose_name=_('database backend'))
     db_name = models.CharField(max_length=128, blank=True, verbose_name=_('name'), help_text=_('Name or path to database.'))
