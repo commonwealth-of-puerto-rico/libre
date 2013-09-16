@@ -82,7 +82,7 @@ class Origin(models.Model):
 
     def __unicode__(self):
         subclass = Origin.objects.get_subclass(pk=self.pk)
-        return u'%s (%s)' % (subclass.identifier, subclass.origin_type)
+        return u'%s (%s)' % (subclass.label, subclass.origin_type)
 
     class Meta:
         verbose_name = _('origin')
@@ -203,3 +203,36 @@ class OriginDatabase(Origin):
     class Meta:
         verbose_name = _('database origin')
         verbose_name_plural = _('database origins')
+
+
+class OriginRESTAPI(OriginURL):
+    origin_type = _('REST API')
+
+    # TODO Add support for parameters
+
+    def get_data_iteraror(self):
+        return (item for item in requests.get(self.url).json())
+
+    class Meta:
+        verbose_name = _('REST API origin')
+        verbose_name_plural = _('REST API origins')
+
+
+class OriginSOAPWebService(OriginURL):
+    origin_type = _('SOAP webservice')
+
+    endpoint = models.CharField(max_length=64, verbose_name=_('endpoint'), help_text=_('Endpoint, function or method to call.'))
+    parameters = models.TextField(blank=True, verbose_name=_('parameters'))
+
+    def get_data_iteraror(self):
+        client = Client(self.url)
+        if self.parameters:
+            parameters = literal_eval(self.parameters)
+        else:
+            parameters = {}
+
+        return (dict(item) for item in getattr(client.service, self.endpoint)(**parameters))
+
+    class Meta:
+        verbose_name = _('SOAP webservice origin')
+        verbose_name_plural = _('SOAP webservice origins')

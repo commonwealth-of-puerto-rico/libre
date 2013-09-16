@@ -40,14 +40,6 @@ class SourceCSVForm(SourceForm):
         }
 
 
-class SourceWSForm(SourceForm):
-    class Meta(SourceForm.Meta):
-        widgets = {
-            'wsdl_url': EnclosedInput(prepend='icon-globe'),
-            'parameters': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
-        }
-
-
 class SourceShapeForm(SourceForm):
     class Meta:
         widgets = {

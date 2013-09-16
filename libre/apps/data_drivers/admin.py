@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from .actions import check_updated, clear_versions, clone
 from .forms import (FixedWidthColumnForm, SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, RESTResultColumnForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
-    SourceWSForm, SourceShapeForm, WebServiceColumnForm)
+    SourceShapeForm, WebServiceColumnForm)
 from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceRESTAPI, SourceShape,
     SourceSpreadsheet, SpreadsheetColumn, SourceWS, WebServiceColumn, RESTResultColumn)
@@ -125,15 +125,7 @@ class SourceFixedWidthAdmin(SourceAdmin):
 
 
 class SourceWSAdmin(SourceAdmin):
-    fieldsets = SourceAdmin.fieldsets + (
-        (_('Specific information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('endpoint', 'parameters')
-        }),
-    )
-    list_display = SourceAdmin.list_display + ('endpoint', 'parameters')
     inlines = [SourceDataVersionInline, WebServiceColumnFieldInline]
-    form = SourceWSForm
 
 
 class SourceRESTAPIAdmin(SourceAdmin):

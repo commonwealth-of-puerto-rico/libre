@@ -32,3 +32,20 @@ class OriginURLFileForm(OriginForm):
             'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
             'url': EnclosedInput(prepend='icon-globe', attrs={'class': 'input-xxlarge'}),
         }
+
+
+class OriginRESTAPIForm(OriginForm):
+    class Meta(OriginForm.Meta):
+        widgets = {
+            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
+            'url': EnclosedInput(prepend='icon-globe', attrs={'class': 'input-xxlarge'}),
+        }
+
+
+class OriginSOAPWebServiceForm(OriginForm):
+    class Meta(OriginForm.Meta):
+        widgets = {
+            'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
+            'wsdl_url': EnclosedInput(prepend='icon-globe'),
+            'parameters': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
+        }
