@@ -16,3 +16,9 @@ script:
   - coverage run --source=data_drivers,origins manage.py test data_drivers origins
 after_success:
   - coveralls
+branches:
+  only:
+    - development
+    - master
+env:
+  - JOB_PROCESSING_MODE_IMMEDIATE=True
