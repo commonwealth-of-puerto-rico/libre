@@ -9,3 +9,4 @@ _build/
 /static/
 /venv/
 /site_media/
+.coverage
