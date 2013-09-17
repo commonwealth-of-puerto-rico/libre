@@ -3,10 +3,10 @@ from __future__ import absolute_import
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
-from .forms import (OriginPathForm, OriginURLFileForm, OriginUploadedFileForm,
+from .forms import (OriginPathForm, OriginPythonScriptForm, OriginURLFileForm, OriginUploadedFileForm,
     OriginRESTAPIForm, OriginSOAPWebServiceForm)
 from .models import (OriginDatabase, OriginFTPFile, OriginUploadedFile,
-    OriginURLFile, OriginPath, OriginRESTAPI, OriginSOAPWebService)
+    OriginURLFile, OriginPath, OriginPythonScript, OriginRESTAPI, OriginSOAPWebService)
 
 
 class OriginAdmin(admin.ModelAdmin):
@@ -87,6 +87,17 @@ class OriginSOAPWebServiceAdmin(OriginAdmin):
     form = OriginSOAPWebServiceForm
 
 
+class OriginPythonScriptAdmin(OriginAdmin):
+    fieldsets = OriginAdmin.fieldsets + (
+        (_('Specific information'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('script_text',)
+        }),
+    )
+    list_display = OriginAdmin.list_display
+    form = OriginPythonScriptForm
+
+
 admin.site.register(OriginDatabase, OriginDatabaseAdmin)
 admin.site.register(OriginFTPFile)
 admin.site.register(OriginUploadedFile, OriginUploadedFileAdmin)
@@ -94,3 +105,4 @@ admin.site.register(OriginURLFile, OriginURLFileAdmin)
 admin.site.register(OriginPath, OriginPathAdmin)
 admin.site.register(OriginRESTAPI, OriginRESTAPIAdmin)
 admin.site.register(OriginSOAPWebService, OriginSOAPWebServiceAdmin)
+admin.site.register(OriginPythonScript, OriginPythonScriptAdmin)

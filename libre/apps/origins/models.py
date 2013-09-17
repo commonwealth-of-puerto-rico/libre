@@ -236,3 +236,20 @@ class OriginSOAPWebService(OriginURL):
     class Meta:
         verbose_name = _('SOAP webservice origin')
         verbose_name_plural = _('SOAP webservice origins')
+
+
+class OriginPythonScript(Origin):
+    origin_type = _('Python script')
+
+    script_text = models.TextField(verbose_name=_('script text'), help_text=_('Assign resulting values to the _results variable. Ideally it should be a list of dictionaries.'))
+
+    def get_data_iteraror(self):
+        _results = []
+        code = compile(self.script_text, '<string>', 'exec')
+        exec code
+
+        return (item for item in _results)
+
+    class Meta:
+        verbose_name = _('python script origin')
+        verbose_name_plural = _('python script origin')

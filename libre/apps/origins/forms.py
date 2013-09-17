@@ -1,4 +1,4 @@
-from django.forms import ModelForm, widgets
+from django.forms import ModelForm
 
 from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput
 
@@ -48,4 +48,11 @@ class OriginSOAPWebServiceForm(OriginForm):
             'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
             'wsdl_url': EnclosedInput(prepend='icon-globe'),
             'parameters': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
+        }
+
+
+class OriginPythonScriptForm(OriginForm):
+    class Meta(OriginForm.Meta):
+        widgets = {
+            'script_text': AutosizedTextarea(attrs={'rows': 5, 'class': 'input-xxlarge'}),
         }
