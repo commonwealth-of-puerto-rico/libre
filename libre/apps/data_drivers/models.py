@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import datetime
-import hashlib
 from itertools import islice
 import logging
 import os
@@ -39,6 +38,7 @@ logger = logging.getLogger(__name__)
 class Source(models.Model):
     source_type = _('Base source class')
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
+    support_column_regex = False
 
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
     slug = models.SlugField(unique=True, blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
@@ -101,7 +101,8 @@ class Source(models.Model):
         source_data_version.metadata = self._get_metadata()
         source_data_version.save()
 
-        self.get_regex_maps()
+        if self.support_column_regex:
+            self.get_regex_maps()
 
         logger.info('Importing new data for source: %s' % self.slug)
 
@@ -235,6 +236,7 @@ class Source(models.Model):
 
 class SourceCSV(Source):
     source_type = _('CSV file')
+    support_column_regex = True
 
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
@@ -266,6 +268,7 @@ class SourceCSV(Source):
 
 class SourceFixedWidth(Source):
     source_type = _('Fixed width column file')
+    support_column_regex = True
 
     def _get_rows(self):
         column_names = self.columns.values_list('name', flat=True)
@@ -298,6 +301,7 @@ class SourceFixedWidth(Source):
 
 class SourceSpreadsheet(Source):
     source_type = _('Spreadsheet file')
+    support_column_regex = True
 
     sheet = models.CharField(max_length=32, default=DEFAULT_SHEET, verbose_name=_('sheet'), help_text=('Worksheet of the spreadsheet file to use.'))
 
@@ -387,6 +391,7 @@ class LeafletMarker(models.Model):
 class SourceShape(Source):
     source_type = _('Shapefile')
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
+    support_column_regex = True
 
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
     new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
@@ -488,19 +493,23 @@ class SourceShape(Source):
         verbose_name_plural = _('shape sources')
 
 
-class SourceDatabase(Source):
-    source_type = _('Database')
+class SourceDirect(Source):
+    source_type = _('Direct')
+    support_column_regex = False
 
     def _get_rows(self):
         for row in self.origin_subclass_instance.data_iterator:
             yield row
 
     class Meta:
-        verbose_name = _('database source')
-        verbose_name_plural = _('database sources')
+        verbose_name = _('direct source')
+        verbose_name_plural = _('direct sources')
 
 
 class SourceSimple(Source):
+    source_type = _('Simple')
+    support_column_regex = True
+
     def _get_rows(self):
         functions_map = self.get_functions_map()
 
@@ -513,23 +522,8 @@ class SourceSimple(Source):
                 yield fields
 
     class Meta:
-        abstract = True
-
-
-class SourceRESTAPI(SourceSimple):
-    source_type = _('REST API')
-
-    class Meta:
-        verbose_name = _('REST API source')
-        verbose_name_plural = _('REST API sources')
-
-
-class SourceWS(SourceSimple):
-    source_type = _('SOAP web service')
-
-    class Meta:
-        verbose_name = _('web service source')
-        verbose_name_plural = _('web service sources')
+        verbose_name = _('simple source')
+        verbose_name_plural = _('simple sources')
 
 
 # Version and data models
@@ -637,8 +631,8 @@ class ShapefileColumn(ColumnBase):
         verbose_name_plural = _('shapefile columns')
 
 
-class WebServiceColumn(ColumnBase):
-    source = models.ForeignKey(SourceWS, verbose_name=_('web service source'), related_name='columns')
+class SimpleSourceColumn(ColumnBase):
+    source = models.ForeignKey(SourceSimple, verbose_name=_('simple source'), related_name='columns')
     new_name = models.CharField(max_length=32, verbose_name=_('new name'), blank=True)
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
     skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
@@ -650,31 +644,5 @@ class WebServiceColumn(ColumnBase):
             self.new_name = self.name
 
     class Meta:
-        verbose_name = _('web service column')
-        verbose_name_plural = _('web service columns')
-
-
-class DatabaseResultColumn(ColumnBase):
-    source = models.ForeignKey(SourceDatabase, verbose_name=_('Database source'), related_name='columns')
-    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
-
-    class Meta:
-        verbose_name = _('database column')
-        verbose_name_plural = _('database columns')
-
-
-class RESTResultColumn(ColumnBase):
-    source = models.ForeignKey(SourceRESTAPI, verbose_name=_('REST API source'), related_name='columns')
-    new_name = models.CharField(max_length=32, verbose_name=_('new name'), blank=True)
-    data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
-    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
-    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
-
-    def clean(self):
-        """Validation method, to avoid adding a column without a new_name value"""
-        if not self.new_name:
-            self.new_name = self.name
-
-    class Meta:
-        verbose_name = _('REST API column')
-        verbose_name_plural = _('REST API columns')
+        verbose_name = _('simple source column')
+        verbose_name_plural = _('simple source columns')
