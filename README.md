@@ -44,3 +44,7 @@ INSTALLATION
     $ ./manage.py runserver
 
 Point your browser to 127.0.0.1:8000
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/commonwealth-of-puerto-rico/libre/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
