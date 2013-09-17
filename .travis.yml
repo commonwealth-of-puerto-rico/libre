@@ -19,6 +19,5 @@ after_success:
 branches:
   only:
     - development
-    - master
 env:
   - JOB_PROCESSING_MODE_IMMEDIATE=True
