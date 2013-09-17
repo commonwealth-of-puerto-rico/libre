@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/commonwealth-of-puerto-rico/libre.png?branch=master,development)](https://travis-ci.org/commonwealth-of-puerto-rico/libre.png?branch=master,development)
+[![Build Status](https://travis-ci.org/commonwealth-of-puerto-rico/libre.png?branch=master,development)](https://travis-ci.org/commonwealth-of-puerto-rico/libre)
 [![Coverage Status](https://coveralls.io/repos/commonwealth-of-puerto-rico/libre/badge.png)](https://coveralls.io/r/commonwealth-of-puerto-rico/libre)
 
 ![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/libre_logo.png)
