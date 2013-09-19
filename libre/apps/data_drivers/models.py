@@ -23,7 +23,9 @@ import xlrd
 from icons.models import Icon
 from lock_manager import Lock, LockError
 from origins.models import Origin
+from scheduler import UnknownJob
 
+from . import local_scheduler
 from .exceptions import LIBREAPIError
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
@@ -47,6 +49,14 @@ class Source(models.Model):
     allowed_groups = models.ManyToManyField(Group, verbose_name=_('allowed groups'), blank=True, null=True)
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
     origin = models.ForeignKey(Origin, verbose_name=_('origin'))
+    schedule_year = models.CharField(max_length=32, blank=True, verbose_name=_('year'), help_text=_('Enter the 4 digit year number.'))
+    schedule_month = models.CharField(max_length=32, blank=True, verbose_name=_('month'), help_text=_('Enter the month number (1-12).'))
+    schedule_day = models.CharField(max_length=32, blank=True, verbose_name=_('day'), help_text=_('Enter the day of the month (1-31).'))
+    schedule_week = models.CharField(max_length=32, blank=True, verbose_name=_('week'), help_text=_('Enter the ISO week number (1-53).'))
+    schedule_dow = models.CharField(max_length=32, blank=True, verbose_name=_('day of week'), help_text=_('Enter the day of the week number or the name of the weekday (0-6 or mon, tue, wed, thu, fri, sat, sun).'))
+    schedule_hour = models.CharField(max_length=32, blank=True, verbose_name=_('hour'), help_text=_('Enter the hour (0-23).'))
+    schedule_minute = models.CharField(max_length=32, blank=True, verbose_name=_('minute'), help_text=_('Enter the minute (0-59).'))
+    schedule_second = models.CharField(max_length=32, blank=True, verbose_name=_('second'), help_text=_('Enter the second (0-59).'))
 
     objects = InheritanceManager()
     allowed = SourceAccessManager()
@@ -61,6 +71,7 @@ class Source(models.Model):
             logger.debug('acquired lock: %s' % lock_id)
             try:
                 self.check_origin_data()
+                pass
             except Exception as exception:
                 logger.debug('unhandled exception: %s' % exception)
                 logger.error('Error when checking data for source: %s; %s' % (self.slug, exception))
@@ -218,6 +229,18 @@ class Source(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        super(Source, self).save(*args, **kwargs)
+        try:
+            job = local_scheduler.get_job_by_name(self.pk)
+        except UnknownJob:
+            pass
+        else:
+            local_scheduler.stop_job(job)
+
+        if self.schedule_year or self.schedule_month or self.schedule_day or self.schedule_week or self.schedule_dow or self.schedule_hour or self.schedule_minute or self.schedule_second:
+            local_scheduler.add_cron_job(name=self.pk, label='check source date', function=self.check_source_data, year=self.schedule_year or None, month=self.schedule_month or None, week=self.schedule_week or None, day_of_week=self.schedule_dow or None, hour=self.schedule_hour or None, minute=self.schedule_minute or None, second=self.schedule_second or None)
 
     def clean(self):
         """Validation method, to avoid adding a source without a slug value"""

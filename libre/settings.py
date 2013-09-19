@@ -147,6 +147,7 @@ INSTALLED_APPS = (
     'rest_framework.authtoken',
     'crispy_forms',
     'lock_manager',
+    'scheduler',
     'icons',
     'origins',
     'data_drivers',
