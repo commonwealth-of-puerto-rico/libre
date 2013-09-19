@@ -10,8 +10,8 @@ __email__ = 'roberto.rosario.gonzalez@gmail.com'
 __status__ = 'Production'
 
 __version_info__ = {
-    'major': 0,
-    'minor': 7,
+    'major': 1,
+    'minor': 0,
     'micro': 0,
     'releaselevel': 'final',
     'serial': 0
