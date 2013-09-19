@@ -16,7 +16,6 @@ after_success:
   - coveralls
 branches:
   only:
-    - development
     - master
 env:
   - JOB_PROCESSING_MODE_IMMEDIATE=True
