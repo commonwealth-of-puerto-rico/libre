@@ -28,10 +28,10 @@ class URLFileTestCase(TestCase):
         self.origin_url.discard_copy()
 
     def test_temp_file_creation(self):
-        print self.temp_path_status(self.origin_url.temporary_file.name)
+        self.assertEqual(self.temp_path_status(self.origin_url.temporary_file.name), 'File exists')
 
     def test_copy_file_creation(self):
-        print self.temp_path_status(self.origin_url.copy_file.name)
+        self.assertEqual(self.temp_path_status(self.origin_url.copy_file.name), 'File exists')
 
     def test_hash(self):
         self.assertEqual(self.origin_url.new_hash, 'df0cfc653167d570a6aecfbab0f33e89377a0430dd74d92338a1802567a12621')
@@ -65,10 +65,10 @@ class OriginPathTestCase(TestCase):
         self.origin_url.discard_copy()
 
     def test_temp_file_creation(self):
-        print self.temp_path_status(self.origin_url.temporary_file.name)
+        self.assertEqual(self.temp_path_status(self.origin_url.temporary_file.name), 'File exists')
 
     def test_copy_file_creation(self):
-        print self.temp_path_status(self.origin_url.copy_file.name)
+        self.assertEqual(self.temp_path_status(self.origin_url.copy_file.name), 'File exists')
 
     def test_hash(self):
         self.assertEqual(self.origin_url.new_hash, 'a860d5522702a5aeb002a6b7aa21d24abb999cd65723504414cd5f8b5bb8d931')
