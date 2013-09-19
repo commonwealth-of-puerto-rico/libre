@@ -10,15 +10,18 @@ from .models import OriginPath, OriginURLFile
 TEST_FIXED_WIDTH_FILE = 'prmunnet.txt'
 
 
+def temp_path_status(path):
+    if not os.path.exists(path):
+        return 'File does not exist'
+    if not os.path.isfile(path):
+        return 'Not a file'
+    if not os.access(path, os.R_OK):
+        return 'File is not readable'
+    return 'File exists'
+
+
 class URLFileTestCase(TestCase):
-    def temp_path_status(self, path):
-        if not os.path.exists(path):
-            return 'File does not exist'
-        if not os.path.isfile(path):
-            return 'Not a file'
-        if not os.access(path, os.R_OK):
-            return 'File is not readable'
-        return 'File exists'
+
 
     def setUp(self):
         self.origin_url = OriginURLFile.objects.create(label='test origin', url='http://www.census.gov/population/estimates/puerto-rico/prmunnet.txt')
@@ -28,10 +31,10 @@ class URLFileTestCase(TestCase):
         self.origin_url.discard_copy()
 
     def test_temp_file_creation(self):
-        self.assertEqual(self.temp_path_status(self.origin_url.temporary_file.name), 'File exists')
+        self.assertEqual(temp_path_status(self.origin_url.temporary_file.name), 'File exists')
 
     def test_copy_file_creation(self):
-        self.assertEqual(self.temp_path_status(self.origin_url.copy_file.name), 'File exists')
+        self.assertEqual(temp_path_status(self.origin_url.copy_file.name), 'File exists')
 
     def test_hash(self):
         self.assertEqual(self.origin_url.new_hash, 'df0cfc653167d570a6aecfbab0f33e89377a0430dd74d92338a1802567a12621')
@@ -48,15 +51,6 @@ class URLFileTestCase(TestCase):
 
 
 class OriginPathTestCase(TestCase):
-    def temp_path_status(self, path):
-        if not os.path.exists(path):
-            return 'File does not exist'
-        if not os.path.isfile(path):
-            return 'Not a file'
-        if not os.access(path, os.R_OK):
-            return 'File is not readable'
-        return 'File exists'
-
     def setUp(self):
         self.origin_url = OriginPath.objects.create(label='test origin', path=os.path.join(settings.PROJECT_ROOT, 'contrib', 'sample_data', TEST_FIXED_WIDTH_FILE))
         self.origin_url.copy_data()
@@ -65,10 +59,10 @@ class OriginPathTestCase(TestCase):
         self.origin_url.discard_copy()
 
     def test_temp_file_creation(self):
-        self.assertEqual(self.temp_path_status(self.origin_url.temporary_file.name), 'File exists')
+        self.assertEqual(temp_path_status(self.origin_url.temporary_file.name), 'File exists')
 
     def test_copy_file_creation(self):
-        self.assertEqual(self.temp_path_status(self.origin_url.copy_file.name), 'File exists')
+        self.assertEqual(temp_path_status(self.origin_url.copy_file.name), 'File exists')
 
     def test_hash(self):
         self.assertEqual(self.origin_url.new_hash, 'a860d5522702a5aeb002a6b7aa21d24abb999cd65723504414cd5f8b5bb8d931')
