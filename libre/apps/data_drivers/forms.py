@@ -1,29 +1,19 @@
 from django.forms import ModelForm, widgets
 
-from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput, SuitSplitDateTimeWidget
+from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput
 
 
 class SourceForm(ModelForm):
     class Meta:
         widgets = {
             'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-            'query': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
-        }
-
-
-class SourceDatabaseForm(SourceForm):
-    class Meta:
-        widgets = {
-            'query': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xlarge'}),
+            'limit': NumberInput(attrs={'class': 'input-mini'}),
         }
 
 
 class SourceSpreadsheetForm(SourceForm):
     class Meta:
         widgets = {
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
             'sheet': NumberInput(attrs={'class': 'input-mini'}),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
         }
@@ -32,9 +22,6 @@ class SourceSpreadsheetForm(SourceForm):
 class SourceFixedWidthForm(SourceForm):
     class Meta:
         widgets = {
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
         }
 
@@ -42,17 +29,7 @@ class SourceFixedWidthForm(SourceForm):
 class SourceCSVForm(SourceForm):
     class Meta:
         widgets = {
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
             'import_rows': AutosizedTextarea(attrs={'rows': 1, 'class': 'input-xlarge'}),
-        }
-
-
-class SourceWSForm(SourceForm):
-    class Meta:
-        widgets = {
-            'wsdl_url': EnclosedInput(prepend='icon-globe'),
         }
 
 
@@ -62,9 +39,20 @@ class SourceShapeForm(SourceForm):
             'popup_template': AutosizedTextarea(attrs={'rows': 20, 'class': 'input-xlarge'}),
             'marker_template': AutosizedTextarea(attrs={'rows': 20, 'class': 'input-xlarge'}),
             'template_header': AutosizedTextarea(attrs={'rows': 20, 'class': 'input-xlarge'}),
-            'limit': NumberInput(attrs={'class': 'input-mini'}),
-            'path': EnclosedInput(prepend='icon-folder-open'),
-            'url': EnclosedInput(prepend='icon-globe'),
+        }
+
+
+# Column Forms
+
+class FixedWidthColumnForm(ModelForm):
+    class Meta:
+        widgets = {
+            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'name': widgets.TextInput(attrs={'class': 'input-small'}),
+            'size': widgets.TextInput(attrs={'class': 'input-small'}),
+            'default': EnclosedInput(attrs={'class': 'input-mini'}),
+            'data_type': widgets.Select(attrs={'class': 'input-small'}),
         }
 
 
@@ -82,11 +70,11 @@ class CSVColumnForm(ModelForm):
 class SpreadsheetColumnForm(ModelForm):
     class Meta:
         widgets = {
-            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
-            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
             'name': widgets.TextInput(attrs={'class': 'input-small'}),
             'default': EnclosedInput(attrs={'class': 'input-mini'}),
             'data_type': widgets.Select(attrs={'class': 'input-small'}),
+            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
         }
 
 
@@ -97,6 +85,8 @@ class ShapefileColumnForm(ModelForm):
             'new_name': widgets.TextInput(attrs={'class': 'input-small'}),
             'default': EnclosedInput(attrs={'class': 'input-mini'}),
             'data_type': widgets.Select(attrs={'class': 'input-small'}),
+            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
         }
 
 
@@ -111,3 +101,14 @@ class LeafletMarkerForm(ModelForm):
             'popup_anchor_y': widgets.TextInput(attrs={'class': 'input-small'}),
         }
 
+
+class SimpleSourceColumnForm(ModelForm):
+    class Meta:
+        widgets = {
+            'skip_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'import_regex': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-small'}),
+            'name': widgets.TextInput(attrs={'class': 'input-small'}),
+            'new_name': widgets.TextInput(attrs={'class': 'input-small'}),
+            'default': EnclosedInput(attrs={'class': 'input-mini'}),
+            'data_type': widgets.Select(attrs={'class': 'input-small'}),
+        }

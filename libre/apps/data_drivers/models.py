@@ -1,329 +1,122 @@
 from __future__ import absolute_import
 
 import datetime
-import hashlib
 from itertools import islice
 import logging
+import os
 import re
-import string
 import struct
-import urllib2
 
 from django.contrib.auth.models import Group
-from django.core.exceptions import FieldError, ValidationError
 from django.db import models, transaction
-from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
 
 import fiona
-from suds.client import Client
-import xlrd
 from model_utils.managers import InheritanceManager
 from picklefield.fields import PickledObjectField
 from pyproj import Proj, transform
 from shapely import geometry
+import xlrd
 
-from db_drivers.models import DatabaseConnection
 from icons.models import Icon
 from lock_manager import Lock, LockError
+from origins.models import Origin
 
-from .exceptions import LIBREAPIError, SourceFileError
+from .exceptions import LIBREAPIError
 from .job_processing import Job
 from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 from .managers import SourceAccessManager
 from .query import Query
-from .utils import DATA_TYPE_FUNCTIONS, UnicodeReader, parse_range
+from .utils import DATA_TYPE_FUNCTIONS, UnicodeReader
 
-HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
 logger = logging.getLogger(__name__)
 
 
 class Source(models.Model):
+    source_type = _('Base source class')
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
+    support_column_regex = False
 
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
     slug = models.SlugField(unique=True, blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
     description = models.TextField(blank=True, verbose_name=_('description'))
     published = models.BooleanField(default=False, verbose_name=_('published'))
     allowed_groups = models.ManyToManyField(Group, verbose_name=_('allowed groups'), blank=True, null=True)
+    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
+    origin = models.ForeignKey(Origin, verbose_name=_('origin'))
 
     objects = InheritanceManager()
     allowed = SourceAccessManager()
 
-    def get_stream_type(self):
-        result = _('Unknown')
+    def check_source_data(self):
+        logger.info('Checking for new data for source: %s' % self.slug)
+
         try:
-            if self.file:
-                result = _('Uploaded file')
-            elif self.path:
-                result = _('Filesystem path')
-            elif self.url:
-                result = _('URL')
-            else:
-                result = _('None')
-        except AttributeError:
-            # Might be a database type
-            if self.database_connection:
-                result = _('Database connection')
-
-        return result
-    get_stream_type.short_description = 'stream type'
-
-    def get_column_names(self):
-        if self.columns.count():
-            return self.columns.all().values_list('name', flat=True)
-        else:
-            return string.ascii_uppercase
-
-    def import_data(self, source_data_version):
-        self.compute_new_name_map()
-
-    @staticmethod
-    def add_row_id(row, id):
-        return dict(row, **{'_id': id})
-
-    def get_type(self):
-        return self.__class__.source_type
-
-    def __unicode__(self):
-        return self.name
-
-    def clean(self):
-        if not self.slug:
-            self.slug = slugify(self.name)
-
-    @models.permalink
-    def get_absolute_url(self):
-        return ('source-detail', [self.pk])
-
-    class Meta:
-        verbose_name = _('source')
-        verbose_name_plural = _('sources')
-        ordering = ['name', 'slug']
-
-
-class SourceWS(Source):
-    source_type = _('SOAP web service')
-    wsdl_url = models.URLField(verbose_name=_('WSDL URL'))
-    endpoint = models.CharField(max_length=64, verbose_name=_('endpoint'), help_text=_('Endpoint, function or method to call.'))
-
-    def get_parameters(self, parameters=None):
-        result = parameters.copy()
-
-        for argument in self.wsargument_set.all():
-            if argument.name not in result:
-                if argument.default:
-                    result[argument.name] = argument.default
-
-        return result
-
-    def get_one(self, id, timestamp=None, parameters=None):
-        # ID are all base 1
-        if id == 0:
-            raise LIBREAPIError('Invalid ID; IDs are base 1')
-
-        return self.get_all(timestamp, parameters)[id - 1]
-
-    def get_all(self, timestamp=None, parameters=None):
-        if not parameters:
-            parameters = {}
-
-        client = Client(self.wsdl_url)
-
-        result = []
-        try:
-            row_id = 1
-            # TODO: use enumerate
-            for data in getattr(client.service, self.endpoint)(**self.get_parameters(parameters)):
-                entry = {'_id': row_id}
-                for field in self.wsresultfield_set.all():
-                    entry[field.name] = getattr(data, field.name, field.default)
-
-                result.append(entry)
-                row_id += 1
-        except IndexError:
-            result = []
-
-        return result
-
-    class Meta:
-        verbose_name = _('web service source')
-        verbose_name_plural = _('web service sources')
-
-
-class WSArgument(models.Model):
-    source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
-    name = models.CharField(max_length=32, verbose_name=_('name'))
-    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
-
-    class Meta:
-        verbose_name = _('argument')
-        verbose_name_plural = _('arguments')
-
-
-class WSResultField (models.Model):
-    source_ws = models.ForeignKey(SourceWS, verbose_name=_('web service source'))
-    name = models.CharField(max_length=32, verbose_name=_('name'))
-    default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
-
-    class Meta:
-        verbose_name = _('result field')
-        verbose_name_plural = _('result fields')
-
-
-class SourceFileBased(models.Model):
-    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
-    path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
-    file = models.FileField(blank=True, null=True, upload_to='spreadsheets', verbose_name=_('uploaded file'))
-    url = models.URLField(blank=True, verbose_name=_('URL'), help_text=_('Import a file from an URL.'))
-
-    def get_functions_map(self):
-        return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
-
-    def compute_new_name_map(self):
-        try:
-            self.new_name_map = dict(self.columns.values_list('name', 'new_name'))
-        except FieldError:
-            # This source doesn't support field renaming
-            self.new_name_map = {}
-
-    def apply_datatypes(self, properties, functions_map):
-        result = {}
-
-        for key, value in properties.items():
-            new_name = self.new_name_map.get(key, key)
-            try:
-                result[new_name] = functions_map[key](value)
-            except KeyError:
-                # Is not to be converted
-                result[new_name] = value
-            except ValueError:
-                # Fallback for failed conversion
-                result[new_name] = value
-
-        return result
-
-    def clear_versions(self):
-        for version in self.versions.all():
-            version.delete()
-
-    def check_file(self):
-        try:
-            lock_id = u'check_file-%d' % self.pk
+            lock_id = u'check_source_data-%d' % self.pk
             logger.debug('trying to acquire lock: %s' % lock_id)
             lock = Lock.acquire_lock(lock_id, 60)
             logger.debug('acquired lock: %s' % lock_id)
             try:
-                self._check_file()
+                self.check_origin_data()
             except Exception as exception:
                 logger.debug('unhandled exception: %s' % exception)
+                logger.error('Error when checking data for source: %s; %s' % (self.slug, exception))
                 raise
             finally:
                 lock.release()
         except LockError:
             logger.debug('unable to obtain lock')
+            logger.info('Unable to obtain lock to check for new data for source: %s' % self.slug)
             pass
 
-    def _check_file(self):
-        if self.path:
-            try:
-                with open(self.path) as handle:
-                    new_hash = HASH_FUNCTION(handle.read())
-            except IOError as exception:
-                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
-                raise SourceFileError(unicode(exception))
-        elif self.file:
-            try:
-                new_hash = HASH_FUNCTION(self.file.read())
-            except IOError as exception:
-                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
-                raise SourceFileError(unicode(exception))
-            else:
-                self.file.seek(0)
-        elif self.url:
-            try:
-                handle = urllib2.urlopen(self.url)
-            except urllib2.URLError as exception:
-                logger.error('Unable to open file for source id: %s ;%s' % (self.id, exception))
-                raise SourceFileError(unicode(exception))
-            else:
-                new_hash = HASH_FUNCTION(handle.read())
-                handle.close()
-        else:
-            # No file provided
-            raise SourceFileError('No file provided.')
+    def check_origin_data(self):
+        self.origin_subclass_instance = Origin.objects.get_subclass(pk=self.origin.pk)
+        self.origin_subclass_instance.copy_data()
 
-        logger.debug('new_hash: %s' % new_hash)
+        logger.debug('new_hash: %s' % self.origin_subclass_instance.new_hash)
 
         try:
-            source_data_version = self.versions.get(checksum=new_hash)
+            source_data_version = self.versions.get(checksum=self.origin_subclass_instance.new_hash)
         except SourceDataVersion.DoesNotExist:
-            source_data_version = SourceDataVersion.objects.create(source=self, checksum=new_hash)
-            job = Job(target=self.import_data, args=(source_data_version,))
+            logger.info('New origin data version found for source: %s' % self.slug)
+            source_data_version = SourceDataVersion.objects.create(source=self, checksum=self.origin_subclass_instance.new_hash)
+            job = Job(target=self.import_origin_data, args=[source_data_version])
             job.submit()
             logger.debug('launching import job: %s' % job)
         else:
             source_data_version.active = True
             source_data_version.save()
 
-    def analyze_request(self, parameters=None):
-        kwargs = {}
-        if not parameters:
-            parameters = {}
-        else:
-            for i in parameters:
-                if not i.startswith('_'):
-                    kwargs[i] = parameters[i]
+    def _get_metadata(self):
+        """Source models are responsible for overloading this method"""
+        return ''
 
-        timestamp = parameters.get('_timestamp', None)
+    @transaction.commit_on_success
+    def import_origin_data(self, source_data_version):
+        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
 
-        return timestamp, parameters
+        source_data_version.metadata = self._get_metadata()
+        source_data_version.save()
 
-    def get_one(self, id, parameters=None):
-        # ID are all base 1
-        if id == 0:
-            raise LIBREAPIError('Invalid ID; IDs are base 1')
+        if self.support_column_regex:
+            self.get_regex_maps()
 
-        # TODO: return a proper response when no sourcedataversion is found
-        timestamp, parameters = self.analyze_request(parameters)
-        if timestamp:
-            source_data_version = self.versions.get(timestamp=timestamp)
-        else:
-            source_data_version = self.versions.get(active=True)
+        logger.info('Importing new data for source: %s' % self.slug)
 
-        try:
-            return SourceData.objects.get(source_data_version=source_data_version, row_id=id).row
-        except SourceData.DoesNotExist:
-            raise Http404
+        for row_id, row in enumerate(self._get_rows(), 1):
+            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=dict(row, **{'_id': row_id}))
 
-    def get_all(self, parameters=None):
-        initial_datetime = datetime.datetime.now()
-        timestamp, parameters = self.analyze_request(parameters)
+        logger.debug('finished importing rows')
 
-        try:
-            if timestamp:
-                source_data_version = self.versions.get(timestamp=timestamp)
-            else:
-                source_data_version = self.versions.get(active=True)
-        except SourceDataVersion.DoesNotExist:
-            return []
+        source_data_version.ready = True
+        source_data_version.active = True
+        source_data_version.save()
 
-        self.queryset = SourceData.objects.filter(source_data_version=source_data_version)
-
-        results = Query(self).execute(parameters)
-        logger.debug('Elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
-
-        return results
-
-    class Meta:
-        abstract = True
-
-
-class SourceTabularBased(models.Model):
-    import_rows = models.TextField(blank=True, null=True, verbose_name=_('import rows'), help_text=_('Range of rows to import can use dashes to specify a continuous range or commas to specify individual rows or ranges. Leave blank to import all rows.'))
+        self.origin_subclass_instance.discard_copy()
+        logger.info('Imported %d rows for source: %s' % (row_id, self.slug))
 
     class AlwaysFalseSearch(object):
         def search(self, string):
@@ -354,19 +147,101 @@ class SourceTabularBased(models.Model):
 
         return all(cell_skip is False for cell_skip in skip_result) and all(import_result)
 
+    def get_all(self, id=None, parameters=None):
+        logger.debug('parameters: %s' % parameters)
+        initial_datetime = datetime.datetime.now()
+        timestamp, parameters = Source.analyze_request(parameters)
+        logger.debug('timestamp: %s', timestamp)
+
+        try:
+            if timestamp:
+                source_data_version = self.versions.get(timestamp=timestamp)
+            else:
+                source_data_version = self.versions.get(active=True)
+        except SourceDataVersion.DoesNotExist:
+            return []
+
+        self.base_iterator = (item.row for item in SourceData.objects.filter(source_data_version=source_data_version).iterator())
+
+        if id:
+            self.base_iterator = islice(self.base_iterator, id - 1, id)
+
+        results = Query(self).execute(parameters)
+        logger.debug('query elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
+
+        return results
+
+    def get_one(self, id, parameters=None):
+        # ID are all base 1
+        if id == 0:
+            raise LIBREAPIError('Invalid ID; IDs are base 1')
+        return self.get_all(id, parameters)
+
+    @staticmethod
+    def analyze_request(parameters=None):
+        kwargs = {}
+        if not parameters:
+            parameters = {}
+        else:
+            for i in parameters:
+                if not i.startswith('_'):
+                    kwargs[i] = parameters[i]
+
+        timestamp = parameters.get('_timestamp', None)
+
+        return timestamp, parameters
+
+    def get_functions_map(self):
+        """Calculate the column name to data type conversion map"""
+        return dict([(column, DATA_TYPE_FUNCTIONS[data_type]) for column, data_type in self.columns.values_list('name', 'data_type')])
+
+    def apply_datatypes(self, properties, functions_map):
+        result = {}
+
+        for key, value in properties.items():
+            try:
+                result[key] = functions_map[key](value)
+            except KeyError:
+                # Is not to be converted
+                result[key] = value
+            except ValueError:
+                # Fallback for failed conversion
+                logger.error('Unable to apply data type for field: %s' % key)
+                result[key] = value
+
+        return result
+
+    def clear_versions(self):
+        """Delete all the versions of this source"""
+        for version in self.versions.all():
+            version.delete()
+
+    def __unicode__(self):
+        return self.name
+
+    def clean(self):
+        """Validation method, to avoid adding a source without a slug value"""
+        if not self.slug:
+            self.slug = slugify(self.name)
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('source-detail', [self.pk])
+
     class Meta:
-        abstract = True
+        verbose_name = _('source')
+        verbose_name_plural = _('sources')
+        ordering = ['name', 'slug']
 
 
-class SourceCSV(Source, SourceFileBased, SourceTabularBased):
+class SourceCSV(Source):
     source_type = _('CSV file')
+    support_column_regex = True
 
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
 
-    def _get_items(self, file_handle):
-        column_names = self.get_column_names()
-
+    def _get_rows(self):
         functions_map = self.get_functions_map()
 
         kwargs = {}
@@ -375,118 +250,58 @@ class SourceCSV(Source, SourceFileBased, SourceTabularBased):
         if self.quote_character:
             kwargs['quotechar'] = str(self.quote_character)
 
-        reader = UnicodeReader(file_handle, **kwargs)
+        column_names = self.columns.values_list('name', flat=True)
 
-        logger.debug('column_names: %s' % column_names)
+        for row in UnicodeReader(self.origin_subclass_instance.copy_file, **kwargs):
+            row_dict = dict(zip(column_names, row))
 
-        if self.import_rows:
-            parsed_range = parse_range(self.import_rows)
-        else:
-            parsed_range = None
-
-        logger.debug('parsed_range: %s' % parsed_range)
-
-        for row_id, row in enumerate(reader, 1):
-            if parsed_range:
-                if row_id in parsed_range:
-                    row_dict = dict(zip(column_names, row))
-                    if self.process_regex(row_dict):
-                        yield self.apply_datatypes(row_dict, functions_map)
-            else:
-                row_dict = dict(zip(column_names, row))
-                if self.process_regex(row_dict):
-                    yield self.apply_datatypes(row_dict, functions_map)
-
-    @transaction.commit_on_success
-    def import_data(self, source_data_version):
-        # Reload data in case this is executed in another thread
-        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
-
-        super(self.__class__, self).import_data(source_data_version)
-
-        if self.path:
-            file_handle = open(self.path)
-        elif self.file:
-            file_handle = self.file
-        elif self.url:
-            file_handle = urllib2.urlopen(self.url)
-
-        logger.debug('file_handle: %s' % file_handle)
-        self.get_regex_maps()
-
-        for row_id, row in enumerate(self._get_items(file_handle), 1):
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
-
-        file_handle.close()
-
-        source_data_version.ready = True
-        source_data_version.active = True
-        source_data_version.save()
+            if self.process_regex(row_dict):
+                fields = {}
+                for field in self.columns.filter(import_column=True):
+                    fields[field.name] = functions_map[field.name](row_dict[field.name])
+                yield fields
 
     class Meta:
         verbose_name = _('CSV source')
         verbose_name_plural = _('CSV sources')
 
 
-class SourceFixedWidth(Source, SourceFileBased, SourceTabularBased):
+class SourceFixedWidth(Source):
     source_type = _('Fixed width column file')
+    support_column_regex = True
 
-    def _get_items(self):
-        column_names = self.get_column_names()
-        column_widths = self.columns.all().values_list('size', flat=True)
+    def _get_rows(self):
+        column_names = self.columns.values_list('name', flat=True)
+        column_widths = self.columns.values_list('size', flat=True)
 
         fmtstring = ''.join('%ds' % f for f in map(int, column_widths))
         parse = struct.Struct(fmtstring).unpack_from
 
-        if self.import_rows:
-            parsed_range = map(lambda x: x - 1, parse_range(self.import_rows))
-        else:
-            parsed_range = None
-
         functions_map = self.get_functions_map()
 
-        for row_id, row in enumerate(self._file_handle):
-            if parsed_range:
-                if row_id in parsed_range:
-                    row_dict = dict(zip(column_names, parse(row)))
-                    yield self.apply_datatypes(row_dict, functions_map)
-            else:
+        for row_id, row in enumerate(self.origin_subclass_instance.data_iterator, 1):
+            try:
                 row_dict = dict(zip(column_names, parse(row)))
-                yield self.apply_datatypes(row_dict, functions_map)
-
-    @transaction.commit_on_success
-    def import_data(self, source_data_version):
-        # Reload data in case this is executed in another thread
-        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
-
-        super(self.__class__, self).import_data(source_data_version)
-
-        if self.path:
-            self._file_handle = open(self.path)
-        elif self.file:
-            self._file_handle = self.file
-        elif self.url:
-            self._file_handle = urllib2.urlopen(self.url)
-
-        for row_id, row in enumerate(self._get_items(), 1):
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
-
-        self._file_handle.close()
-
-        source_data_version.ready = True
-        source_data_version.active = True
-        source_data_version.save()
-
-        if self._file_handle:
-            self._file_handle.close()
+            except struct.error as exception:
+                logger.error('Error importing row # %d of source: %s' % (row_id, self.slug))
+            else:
+                if self.process_regex(row_dict):
+                    fields = {}
+                    for field_num, field in enumerate(self.columns.filter(import_column=True), 1):
+                        try:
+                            fields[field.name] = functions_map[field.name](row_dict[field.name])
+                        except ValueError as exception:
+                            logger.error('Error converting field # %d, of row # %d, of source: %s; %s' % (field_num, row_id, self.slug, exception))
+                    yield fields
 
     class Meta:
         verbose_name = _('Fixed width source')
         verbose_name_plural = _('Fixed width sources')
 
 
-class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
+class SourceSpreadsheet(Source):
     source_type = _('Spreadsheet file')
+    support_column_regex = True
 
     sheet = models.CharField(max_length=32, default=DEFAULT_SHEET, verbose_name=_('sheet'), help_text=('Worksheet of the spreadsheet file to use.'))
 
@@ -520,63 +335,27 @@ class SourceSpreadsheet(Source, SourceFileBased, SourceTabularBased):
 
         return item.value
 
-    def _get_items(self):
-        column_names = self.get_column_names()
-
-        logger.debug('column_names: %s' % column_names)
-
-        if self.import_rows:
-            parsed_range = map(lambda x: x - 1, parse_range(self.import_rows))
-        else:
-            parsed_range = xrange(0, self._sheet.nrows)
-
-        for i in parsed_range:
-            converted_row = dict(zip(column_names, [self._convert_value(cell) for cell in self._sheet.row(i)]))
-            if self.process_regex(converted_row):
-                yield converted_row
-
-    @transaction.commit_on_success
-    def import_data(self, source_data_version):
-        # Reload data in case this is executed in another thread
-        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
-
-        super(self.__class__, self).import_data(source_data_version)
-
+    def _get_rows(self):
         logger.debug('opening workbook')
-        if self.path:
-            self._book = xlrd.open_workbook(self.path)
-            file_handle = None
-        elif self.file:
-            file_handle = self.file
-            self._book = xlrd.open_workbook(file_contents=file_handle.read())
-        elif self.url:
-            file_handle = urllib2.urlopen(self.url)
-            self._book = xlrd.open_workbook(file_contents=file_handle.read())
+
+        self._book = xlrd.open_workbook(file_contents=self.origin_subclass_instance.copy_file.read())
 
         logger.debug('opening sheet: %s' % self.sheet)
+
         try:
             self._sheet = self._book.sheet_by_name(self.sheet)
         except xlrd.XLRDError:
             self._sheet = self._book.sheet_by_index(int(self.sheet))
 
-        self.get_regex_maps()
+        for i in xrange(0, self._sheet.nrows):
+            cells = self._sheet.row(i)
 
-        logger.debug('importing rows')
-        for row_id, row in enumerate(self._get_items(), 1):
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=Source.add_row_id(row, row_id))
+            fields = {}
+            for cell_number, field in enumerate(self.columns.filter(import_column=True), 0):
+                fields[field.name] = self._convert_value(cells[cell_number])
 
-        if file_handle:
-            file_handle.close()
-
-        logger.debug('finished importing rows')
-
-        source_data_version.ready = True
-        source_data_version.active = True
-        source_data_version.save()
-        logger.debug('exiting')
-
-        if file_handle:
-            file_handle.close()
+            if self.process_regex(fields):
+                yield fields
 
     class Meta:
         verbose_name = _('spreadsheet source')
@@ -599,6 +378,7 @@ class LeafletMarker(models.Model):
         return '%s%s' % (self.slug, ' (%s)' % self.label if self.label else '')
 
     def clean(self):
+        """Validation method, to avoid adding a new marker without a slug value"""
         if not self.slug:
             self.slug = slugify(self.label)
 
@@ -608,10 +388,11 @@ class LeafletMarker(models.Model):
         ordering = ['label', 'slug']
 
 
-class SourceShape(Source, SourceFileBased):
+class SourceShape(Source):
     source_type = _('Shapefile')
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML,
-        RENDERER_LEAFLET)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
+    support_column_regex = True
+
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
     new_projection = models.CharField(max_length=32, blank=True, verbose_name=_('new projection'), help_text=_('Specify the EPSG number of the new projection to transform the geometries, leave blank otherwise.'))
     markers = models.ManyToManyField(LeafletMarker, blank=True, null=True)
@@ -674,52 +455,78 @@ class SourceShape(Source, SourceFileBased):
             # Unsuported geometry type, return coordinates as is
             return geometry['coordinates']
 
-    @transaction.commit_on_success
-    def import_data(self, source_data_version):
-        # Reload data in case this is executed in another thread
-        source_data_version = SourceDataVersion.objects.get(pk=source_data_version.pk)
+    def _get_metadata(self):
+        old_filename = self.origin_subclass_instance.copy_file.name
+        self.filename = old_filename + '.zip'
+        os.rename(old_filename, self.filename)
+        self.origin_subclass_instance.copy_file.name = self.filename
 
-        super(self.__class__, self).import_data(source_data_version)
+        self.source = fiona.open('', vfs='zip://%s' % self.filename)
+        return self.source.crs
 
-        if self.path:
-            self._file_handle = open(self.path)
-        elif self.file:
-            self._file_handle = self.file
-        elif self.url:
-            self._file_handle = urllib2.urlopen(self.url)
+    def _get_rows(self):
+        if self.new_projection:
+            new_projection = Proj(init='epsg:%s' % self.new_projection)
+            old_projection = Proj(**self.source.crs)
+        else:
+            new_projection = False
 
-        # TODO: only works with paths, fix
+        functions_map = self.get_functions_map()
 
-        with fiona.collection(self.path, 'r') as source:
-            source_data_version.metadata = source.crs
-            if self.new_projection:
-                new_projection = Proj(init='epsg:%s' % self.new_projection)
-                old_projection = Proj(**source.crs)
-            else:
-                new_projection = False
+        for feature in self.source:
+            if feature['geometry']:
+                fields = {}
+                for field in self.columns.filter(import_column=True):
+                    fields[field.new_name] = functions_map[field.name](feature['properties'].get(field.name, field.default))
 
-            functions_map = self.get_functions_map()
+                feature['properties'] = fields
 
-            for row_id, feature in enumerate(source, 1):
-                if feature['geometry']:
-                    feature['properties'] = Source.add_row_id(self.apply_datatypes(feature.get('properties', {}), functions_map), row_id)
+                if new_projection:
+                    feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
 
-                    if new_projection:
-                        feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
-
+                if self.process_regex(fields):
                     feature['geometry'] = geometry.shape(feature['geometry'])
-                    SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=feature)
-
-        source_data_version.ready = True
-        source_data_version.active = True
-        source_data_version.save()
-
-        if self._file_handle:
-            self._file_handle.close()
+                    yield feature
 
     class Meta:
         verbose_name = _('shape source')
         verbose_name_plural = _('shape sources')
+
+
+class SourceDirect(Source):
+    source_type = _('Direct')
+    support_column_regex = False
+
+    def _get_rows(self):
+        for row in self.origin_subclass_instance.data_iterator:
+            yield row
+
+    class Meta:
+        verbose_name = _('direct source')
+        verbose_name_plural = _('direct sources')
+
+
+class SourceSimple(Source):
+    source_type = _('Simple')
+    support_column_regex = True
+
+    def _get_rows(self):
+        functions_map = self.get_functions_map()
+
+        for row in self.origin_subclass_instance.data_iterator:
+            fields = {}
+            for field in self.columns.filter(import_column=True):
+                fields[field.new_name] = functions_map[field.name](row.get(field.name, field.default))
+
+            if self.process_regex(fields):
+                yield fields
+
+    class Meta:
+        verbose_name = _('simple source')
+        verbose_name_plural = _('simple sources')
+
+
+# Version and data models
 
 
 class SourceDataVersion(models.Model):
@@ -762,7 +569,11 @@ class SourceData(models.Model):
         verbose_name_plural = _('sources data')
 
 
+# Column models
+
+
 class ColumnBase(models.Model):
+    import_column = models.BooleanField(default=True, verbose_name=_('import'))
     name = models.CharField(max_length=32, verbose_name=_('name'))
     default = models.CharField(max_length=32, blank=True, verbose_name=_('default'))
 
@@ -785,6 +596,8 @@ class FixedWidthColumn(ColumnBase):
     source = models.ForeignKey(SourceFixedWidth, verbose_name=_('fixed width source'), related_name='columns')
     size = models.PositiveIntegerField(verbose_name=_('size'))
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
 
     class Meta:
         verbose_name = _('fixed width column')
@@ -805,52 +618,31 @@ class ShapefileColumn(ColumnBase):
     source = models.ForeignKey(SourceShape, verbose_name=_('shapefile source'), related_name='columns')
     new_name = models.CharField(max_length=32, verbose_name=_('new name'), blank=True)
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
+
+    def clean(self):
+        """Validation method, to avoid adding a column without a new_name value"""
+        if not self.new_name:
+            self.new_name = self.name
 
     class Meta:
         verbose_name = _('shapefile column')
         verbose_name_plural = _('shapefile columns')
 
 
-class SourceDatabase(Source):
-    source_type = _('Database')
-
-    database_connection = models.ForeignKey(DatabaseConnection, verbose_name=_('database connection'))
-    query = models.TextField(verbose_name=_('query'))
-    limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
-
-    def get_one(self, id, timestamp=None, parameters=None):
-        # ID are all base 1
-        if id == 0:
-            raise LIBREAPIError('Invalid ID; IDs are base 1')
-
-        return self.get_all(timestamp, parameters, get_id=id)
-
-    def get_all(self, timestamp=None, parameters=None, get_id=None):
-        if get_id:
-            return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), get_id - 1, get_id)
-        else:
-            return islice(self._get_all(timestamp=timestamp, parameters=parameters, get_id=get_id), 0, self.limit)
-
-    def _get_all(self, timestamp=None, parameters=None, get_id=None):
-        if not parameters:
-            parameters = {}
-
-        cursor = self.database_connection.load_backend().cursor()
-        cursor.execute(self.query, {})
-        column_names = self.get_column_names()
-
-        for row_id, data in enumerate(cursor.fetchall(), 1):
-            yield dict(zip(column_names, data), **{'_id': row_id})
-
-    class Meta:
-        verbose_name = _('database source')
-        verbose_name_plural = _('database sources')
-
-
-class DatabaseResultColumn(ColumnBase):
-    source = models.ForeignKey(SourceDatabase, verbose_name=_('Database source'), related_name='columns')
+class SimpleSourceColumn(ColumnBase):
+    source = models.ForeignKey(SourceSimple, verbose_name=_('simple source'), related_name='columns')
+    new_name = models.CharField(max_length=32, verbose_name=_('new name'), blank=True)
     data_type = models.PositiveIntegerField(choices=DATA_TYPE_CHOICES, verbose_name=_('data type'))
+    skip_regex = models.TextField(blank=True, verbose_name=_('skip expression'))
+    import_regex = models.TextField(blank=True, verbose_name=_('import expression'))
+
+    def clean(self):
+        """Validation method, to avoid adding a column without a new_name value"""
+        if not self.new_name:
+            self.new_name = self.name
 
     class Meta:
-        verbose_name = _('database column')
-        verbose_name_plural = _('database columns')
+        verbose_name = _('simple source column')
+        verbose_name_plural = _('simple source columns')

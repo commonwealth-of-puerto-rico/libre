@@ -1,0 +1,22 @@
+language: python
+python:
+  - "2.7"
+  - "2.6"
+before_install:
+  - sudo add-apt-repository http://ppa.launchpad.net/ubuntugis/ppa/ubuntu -y
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libgdal-dev
+install:
+  - "pip install -r libre/requirements/testing.txt --use-mirrors"
+notifications:
+  email: false
+script:
+  - coverage run --source=origins,data_drivers manage.py test origins data_drivers
+after_success:
+  - coveralls
+branches:
+  only:
+    - development
+    - master
+env:
+  - JOB_PROCESSING_MODE_IMMEDIATE=True

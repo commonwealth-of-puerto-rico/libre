@@ -8,3 +8,5 @@ build/
 _build/
 /static/
 /venv/
+/site_media/
+.coverage

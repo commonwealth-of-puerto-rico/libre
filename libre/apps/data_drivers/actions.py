@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.contrib import admin, messages
+from django.contrib import messages
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
@@ -11,7 +11,7 @@ def check_updated(modeladmin, request, queryset):
     count = 0
     for source in queryset:
         try:
-            source.check_file()
+            source.check_source_data()
         except SourceFileError as exception:
             messages.error(request, _('Error opening file for source: %s; %s') % (source, str(exception)))
         else:

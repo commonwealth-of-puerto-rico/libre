@@ -1,16 +1,18 @@
 from __future__ import absolute_import
 
-from django.contrib import admin, messages
-from django.db import models
+from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
 from .actions import check_updated, clear_versions, clone
-from .forms import (SourceDatabaseForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
+from .forms import (FixedWidthColumnForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
-    SourceWSForm, SourceShapeForm)
-from .models import (CSVColumn, DatabaseResultColumn, FixedWidthColumn, SourceDatabase, LeafletMarker,
+    SourceShapeForm, SimpleSourceColumnForm)
+from .models import (CSVColumn, SimpleSourceColumn, FixedWidthColumn, SourceDirect, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
-    SourceSpreadsheet, SpreadsheetColumn, SourceWS, WSArgument, WSResultField)
+    SourceSpreadsheet, SourceSimple, SpreadsheetColumn)
+
+
+# Column inlines
 
 
 class SourceColumnInline(admin.TabularInline):
@@ -18,12 +20,9 @@ class SourceColumnInline(admin.TabularInline):
     suit_classes = 'suit-tab suit-tab-fields'
 
 
-class DatabaseResultColumnInline(SourceColumnInline):
-    model = DatabaseResultColumn
-
-
 class FixedWidthColumnInline(SourceColumnInline):
     model = FixedWidthColumn
+    form = FixedWidthColumnForm
 
 
 class CSVColumnInline(SourceColumnInline):
@@ -41,12 +40,9 @@ class ShapefileColumnInline(SourceColumnInline):
     form = ShapefileColumnForm
 
 
-class WSArgumentInline(SourceColumnInline):
-    model = WSArgument
-
-
-class WSResultFieldInline(SourceColumnInline):
-    model = WSResultField
+class SimpleSourceColumnInline(SourceColumnInline):
+    model = SimpleSourceColumn
+    form = SimpleSourceColumnForm
 
 
 class SourceDataVersionInline(admin.TabularInline):
@@ -58,13 +54,16 @@ class SourceDataVersionInline(admin.TabularInline):
     suit_classes = 'suit-tab suit-tab-versions'
 
 
+# Source admins
+
+
 class SourceAdmin(admin.ModelAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')), ('fields', _('Fields')), ('authorization', _('Authorization')))
+    suit_form_tabs = (('configuration', _('Configuration')), ('authorization', _('Authorization')), ('versions', _('Versions')))
 
     fieldsets = (
         (_('Basic information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published')
+            'fields': ('name', 'slug', 'description', 'published', 'origin')
         }),
         (_('Result limiting'), {
             'classes': ('suit-tab suit-tab-configuration',),
@@ -76,131 +75,47 @@ class SourceAdmin(admin.ModelAdmin):
         }),
     )
 
-    list_display = ('name', 'slug', 'description', 'get_stream_type', 'published')
+    list_display = ('name', 'slug', 'description', 'origin', 'published')
     list_editable = ('published',)
     filter_horizontal = ['allowed_groups']
-
-    actions = [clone]
-
-
-class SourceDatabaseAdmin(SourceAdmin):
-    fieldsets = SourceAdmin.fieldsets + (
-        (_('Source information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('database_connection',)
-        }),
-        (_('Specific information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('query',)
-        }),
-    )
-    inlines = [DatabaseResultColumnInline]
-    form = SourceDatabaseForm
+    actions = [clone, check_updated, clear_versions]
 
 
-class SourceSpreadsheetAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs + (
-        ('versions', _('Versions')),
-    )
-
-    fieldsets = SourceAdmin.fieldsets + (
-        (_('Source data (choose one)'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('path', 'file', 'url')
-        }),
-        (_('In-file location'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('sheet',)
-        }),
-        (_('Row related'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('import_rows',)
-        }),
-    )
-
-    inlines = [SourceDataVersionInline, SpreadsheetColumnInline]
-    actions = [check_updated, clear_versions]
-    form = SourceSpreadsheetForm
+class SourceDirectAdmin(SourceAdmin):
+    #form = SourceDirectForm
+    inlines = [SourceDataVersionInline]
 
 
 class SourceCSVAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs + (
-        ('versions', _('Versions')),
-    )
+    suit_form_tabs = SourceAdmin.suit_form_tabs + (('fields', _('Fields')),)
 
     fieldsets = SourceAdmin.fieldsets + (
-        (_('Source data (choose one)'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('path', 'file', 'url',)
-        }),
-        (_('Row related'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('import_rows',)
-        }),
         (_('Comma delimited files'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('delimiter', 'quote_character',)
         }),
     )
     inlines = [SourceDataVersionInline, CSVColumnInline]
-    actions = [check_updated, clear_versions]
     form = SourceCSVForm
 
 
 class SourceFixedWidthAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs + (
-        ('versions', _('Versions')),
-    )
-
-    fieldsets = SourceAdmin.fieldsets + (
-        (_('Source data (choose one)'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('path', 'file', 'url',)
-        }),
-        (_('Row related'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('import_rows',)
-        }),
-    )
+    suit_form_tabs = SourceAdmin.suit_form_tabs + (('fields', _('Fields')),)
     inlines = [SourceDataVersionInline, FixedWidthColumnInline]
-    actions = [check_updated, clear_versions]
     form = SourceFixedWidthForm
 
 
-class SourceWSAdmin(SourceAdmin):
-    suit_form_tabs = SourceAdmin.suit_form_tabs
-
-    fieldsets = (
-        (_('Basic information'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published')
-        }),
-        (_('Source data'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('wsdl_url', 'endpoint')
-        }),
-        (_('Authorized groups'), {
-            'classes': ('suit-tab suit-tab-authorization',),
-            'fields': ('allowed_groups',)
-        }),
-    )
-    list_display = ('name', 'slug', 'wsdl_url', 'endpoint', 'published')
-    inlines = [WSArgumentInline, WSResultFieldInline]
-    form = SourceWSForm
+class SourceSimpleAdmin(SourceAdmin):
+    suit_form_tabs = SourceAdmin.suit_form_tabs + (('fields', _('Fields')),)
+    inlines = [SourceDataVersionInline, SimpleSourceColumnInline]
 
 
 class SourceShapeAdmin(SourceAdmin):
     suit_form_tabs = SourceAdmin.suit_form_tabs + (
-        ('versions', _('Versions')),
-        ('renderers', _('Renderers')),
+        ('fields', _('Fields')), ('renderers', _('Renderers')),
     )
 
     fieldsets = SourceAdmin.fieldsets + (
-        (_('Source data (choose one)'), {
-            'classes': ('suit-tab suit-tab-configuration',),
-            #'fields': ('path', 'file', 'url') #Disables until file handle support is added
-            'fields': ('path',)
-        }),
         (_('Source data transformation'), {
             'classes': ('suit-tab suit-tab-configuration',),
             'fields': ('new_projection',)
@@ -213,8 +128,20 @@ class SourceShapeAdmin(SourceAdmin):
 
     filter_horizontal = SourceAdmin.filter_horizontal + ['markers']
     inlines = [SourceDataVersionInline, ShapefileColumnInline]
-    actions = [check_updated, clear_versions]
     form = SourceShapeForm
+
+
+class SourceSpreadsheetAdmin(SourceAdmin):
+    suit_form_tabs = SourceAdmin.suit_form_tabs + (('fields', _('Fields')),)
+    fieldsets = SourceAdmin.fieldsets + (
+        (_('In-file location'), {
+            'classes': ('suit-tab suit-tab-configuration',),
+            'fields': ('sheet',)
+        }),
+    )
+
+    inlines = [SourceDataVersionInline, SpreadsheetColumnInline]
+    form = SourceSpreadsheetForm
 
 
 class LeafletMarkerAdmin(admin.ModelAdmin):
@@ -224,10 +151,10 @@ class LeafletMarkerAdmin(admin.ModelAdmin):
     form = LeafletMarkerForm
 
 
-admin.site.register(SourceDatabase, SourceDatabaseAdmin)
-admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
-admin.site.register(SourceCSV, SourceCSVAdmin)
-admin.site.register(SourceShape, SourceShapeAdmin)
-admin.site.register(SourceFixedWidth, SourceFixedWidthAdmin)
-admin.site.register(SourceWS, SourceWSAdmin)
 admin.site.register(LeafletMarker, LeafletMarkerAdmin)
+admin.site.register(SourceCSV, SourceCSVAdmin)
+admin.site.register(SourceDirect, SourceDirectAdmin)
+admin.site.register(SourceFixedWidth, SourceFixedWidthAdmin)
+admin.site.register(SourceSpreadsheet, SourceSpreadsheetAdmin)
+admin.site.register(SourceShape, SourceShapeAdmin)
+admin.site.register(SourceSimple, SourceSimpleAdmin)

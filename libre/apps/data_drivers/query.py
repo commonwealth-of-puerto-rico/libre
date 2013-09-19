@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 
-from itertools import groupby, imap, islice, izip, tee
+from itertools import groupby, imap, izip, tee
 import logging
-from operator import itemgetter
 import types
 
 from django.conf import settings
@@ -160,15 +159,14 @@ class Query():
     def data_iterator(self):
         count = 0
 
-        for item in self.source.queryset.iterator():
-            row_results = []
+        for item in self.source.base_iterator:
 
             if self.filters_function_map:
                 filter_results = []
                 for filter_entry in self.filters_function_map:
 
                     try:
-                        value = return_attrib(item.row, filter_entry['field'])
+                        value = return_attrib(item, filter_entry['field'])
                     except (AttributeError, TypeError, KeyError):
                         # A dotted attribute is not found
                         raise LQLParseError('Invalid element: %s' % filter_entry['field'])
@@ -180,18 +178,18 @@ class Query():
                 if self.join_type == JOIN_TYPE_AND:
                     if all(filter_results):
                         count += 1
-                        yield item.row
+                        yield item
                         if count >= self.source.limit:
                             break
                 else:
                     if any(filter_results):
                         count += 1
-                        yield item.row
+                        yield item
                         if count >= self.source.limit:
                             break
             else:
                 count += 1
-                yield item.row
+                yield item
                 if count >= self.source.limit:
                     break
 
@@ -247,7 +245,7 @@ class Query():
                 else:
                     results = [match.value for match in expression.find(iterator)]
             except Exception as exception:
-                raise LQLParseError('JSON query error; %s' % exception)
+                raise LQLParseError('JSON path error; %s' % exception)
             else:
                 if len(results) == 1:
                     return results[0]
