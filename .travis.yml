@@ -7,17 +7,16 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgdal-dev
 install:
-  - "pip install -r libre/requirements.txt --use-mirrors"
-  - "pip install coveralls"
+  - "pip install -r libre/requirements/testing.txt --use-mirrors"
 notifications:
   email: false
 script:
-  - python manage.py test data_drivers origins
-  - coverage run --source=data_drivers,origins manage.py test data_drivers origins
+  - coverage run --source=origins,data_drivers manage.py test origins data_drivers
 after_success:
   - coveralls
 branches:
   only:
     - development
+    - master
 env:
   - JOB_PROCESSING_MODE_IMMEDIATE=True
