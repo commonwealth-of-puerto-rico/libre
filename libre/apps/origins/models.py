@@ -7,11 +7,14 @@ from itertools import izip
 import logging
 import tempfile
 import types
+import os
 
 from django.conf import settings
 from django.db import models
 from django.db import load_backend as django_load_backend
 from django.utils.translation import ugettext_lazy as _
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 from model_utils.managers import InheritanceManager
 from picklefield.fields import dbsafe_encode, dbsafe_decode
@@ -139,11 +142,17 @@ class OriginUploadedFile(Origin, ContainerOrigin):
     def get_data_iteraror(self):
         self.file.seek(0)
         return self.file
-
+    
+    def delete_from_disk(self):
+        self.file.delete(False)
+        
     class Meta:
         verbose_name = _('uploaded file origin')
         verbose_name_plural = _('uploaded file origins')
 
+@receiver(pre_delete, sender=OriginUploadedFile)
+def _OriginUploadedFile_delete(sender, instance, **kwargs):
+    instance.delete_from_disk()
 
 class OriginDatabase(Origin):
     origin_type = _('database origin')
