@@ -97,6 +97,7 @@ class OriginURL(Origin):
     # TODO Add support for credentials
 
     def get_data_iteraror(self):
+        # TODO: checks if iter_lines break remote binary files
         return (item for item in requests.get(self.url).iter_lines())
 
     @property
