@@ -15,6 +15,9 @@ from icons.models import Icon
 
 from .encoders import JSONEncoder
 
+class BoundsError(Exception):
+    pass
+
 
 class LeafletRenderer(renderers.TemplateHTMLRenderer):
     template_name = 'leaflet.html'
@@ -107,7 +110,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
             # determine where to move the map ourselves
             try:
                 extra_context['extents'] = self.determine_extents(features)
-            except StopIteration:
+            except (StopIteration, BoundsError):
                 pass
 
         ret = json.dumps(new_data, cls=self.encoder_class, ensure_ascii=True)
@@ -127,9 +130,14 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
 
     def determine_extents(self, features):
         bounds_generator = (feature['geometry'].bounds for feature in features)
+
         iterator = iter(bounds_generator)
 
-        first_feature_bounds = iterator.next()
+        try:
+            first_feature_bounds = iterator.next()
+        except AttributeError:
+            # No .bounds property?
+            raise BoundsError
 
         min_x, min_y, max_x, max_y = first_feature_bounds
         for bounds in bounds_generator:
