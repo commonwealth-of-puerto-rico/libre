@@ -56,9 +56,8 @@ class SourceDataVersionInline(admin.TabularInline):
 
 # Source admins
 
-
 class SourceAdmin(admin.ModelAdmin):
-    suit_form_tabs = (('configuration', _('Configuration')), ('authorization', _('Authorization')), ('versions', _('Versions')))
+    suit_form_tabs = (('configuration', _('Configuration')), ('authorization', _('Authorization')), ('versions', _('Versions')), ('schedule', _('Schedule')))
 
     fieldsets = (
         (_('Basic information'), {
@@ -72,6 +71,10 @@ class SourceAdmin(admin.ModelAdmin):
         (_('Authorized groups'), {
             'classes': ('suit-tab suit-tab-authorization',),
             'fields': ('allowed_groups',)
+        }),
+        (_('Origin check schedule'), {
+            'classes': ('suit-tab suit-tab-schedule',),
+            'fields': ('schedule_year', 'schedule_month', 'schedule_day', 'schedule_week', 'schedule_dow', 'schedule_hour', 'schedule_minute', 'schedule_second')
         }),
     )
 

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import datetime
 import os
 
 from django.conf import settings
@@ -9,6 +10,7 @@ from origins.models import OriginPath
 
 from .literals import DATA_TYPE_STRING, DATA_TYPE_NUMBER
 from .models import SourceFixedWidth
+from .utils import parse_value, parse_request
 
 TEST_FIXED_WIDTH_FILE = 'prmunnet.txt'
 
@@ -50,7 +52,7 @@ class SourceTestCase(TestCase):
 class QueryTestCase(TestCase):
     def setUp(self):
         self.origin_url = OriginPath.objects.create(label='test origin', path=os.path.join(settings.PROJECT_ROOT, 'contrib', 'sample_data', TEST_FIXED_WIDTH_FILE))
-        self.fw_source = SourceFixedWidth.objects.create(name='test fixed width source', origin=self.origin_url, limit=200)
+        self.fw_source = SourceFixedWidth.objects.create(name='test fixed width source', slug='test-fixed-width-source', origin=self.origin_url, limit=200)
         self.fw_source.columns.create(name='city', size=18, data_type=DATA_TYPE_STRING, skip_regex=r'(?:Municipio.*|\||-.*|Puerto Rico)')
         self.fw_source.columns.create(name='1999_estimate', size=15, data_type=DATA_TYPE_NUMBER)
         self.fw_source.columns.create(name='1990_census', size=16, data_type=DATA_TYPE_NUMBER)
@@ -163,3 +165,24 @@ class QueryTestCase(TestCase):
     def test_filtering_endswith(self):
         result = list(self.fw_source.get_all(parameters={'city__endswith' :'"abo"', '_json_path': '[*].(city)'}))
         self.assertEqual(result, ['Guaynabo', 'Gurabo', 'Maunabo', 'Naguabo'])
+
+
+class UtilitiesTestCase(TestCase):
+    def test_query_parsing(self):
+        class Request():
+            META = {'QUERY_STRING': 'a=1&b="2"&c=Subquery(a=1&b=2)&d="&"'}
+
+        self.assertEqual(parse_request(Request()), {'a': '1', 'c': 'Subquery(a=1&b=2)', 'b': '"2"', 'd': '"&"'})
+
+    def test_value_parsing(self):
+        self.assertEqual(parse_value('1'), 1)  # Number
+        self.assertEqual(parse_value('(5)'), -5)  # Negative number
+        self.assertEqual(parse_value('-5'), -5)  # Negative number
+        self.assertEqual(parse_value('1.10'), 1.10)  # Float
+        self.assertEqual(parse_value('"1.10"'), u'1.10')  # String
+        self.assertEqual(parse_value('[1.10, "a"]'), [1.10, u'a'])  #List
+        self.assertEqual(parse_value('Date(2013-01-01)'), datetime.date(2013, 1, 1))  #Date
+        self.assertEqual(parse_value('Time(10:55PM)'), datetime.time(22, 55))  #Time
+        self.assertEqual(parse_value('DateTime(2013-02-02 14:55)'), datetime.datetime(2013, 2, 2, 14, 55))  #Datetime
+        self.assertEqual(parse_value('Point([1,1])').__geo_interface__, {'type': 'Point', 'coordinates': (1.0, 1.0)})  # Point
+        self.assertEqual(parse_value('Point([1,1]).buffer(0.01)').simplify(1).__geo_interface__, {'type': 'Polygon', 'coordinates': (((1.01, 1.0), (1.0, 0.99), (0.99, 1.0), (1.0, 1.01), (1.01, 1.0)),)})  #buffer method

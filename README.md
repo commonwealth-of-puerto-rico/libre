@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/commonwealth-of-puerto-rico/libre.png?branch=development)](https://travis-ci.org/commonwealth-of-puerto-rico/libre)
-[![Coverage Status](https://coveralls.io/repos/commonwealth-of-puerto-rico/libre/badge.png?branch=development)](https://coveralls.io/r/commonwealth-of-puerto-rico/libre?branch=development)
+[![Build Status](https://travis-ci.org/commonwealth-of-puerto-rico/libre.png?branch=master)](https://travis-ci.org/commonwealth-of-puerto-rico/libre)
+[![Coverage Status](https://coveralls.io/repos/commonwealth-of-puerto-rico/libre/badge.png?branch=master)](https://coveralls.io/r/commonwealth-of-puerto-rico/libre?branch=master)
 
 ![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/libre_logo.png)
 
@@ -47,3 +47,7 @@ INSTALLATION
     $ ./manage.py runserver
 
 Point your browser to 127.0.0.1:8000
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/commonwealth-of-puerto-rico/libre/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
