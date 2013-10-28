@@ -30,10 +30,23 @@ Query your data afterwards too!
 
 ![Logo](https://raw.github.com/commonwealth-of-puerto-rico/libre/master/libre/docs/_static/math_query.png)
 
+BEFORE INSTALLATION
+===========
+
+On Linux
+--------
+
+    $ sudo apt-get install libgdal-dev -y
+
+On OSX using MacPorts
+---------------------
+
+    $ sudo port install geos
+    $ sudo port install gdal
+
 INSTALLATION
 ============
 
-    $ sudo apt-get install libgdal-dev -y
     $ git clone https://github.com/commonwealth-of-puerto-rico/libre.git
     $ cd libre
     $ virtualenv venv
