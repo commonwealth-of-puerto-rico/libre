@@ -74,7 +74,7 @@ class SourceAdmin(admin.ModelAdmin):
         }),
         (_('Origin check schedule'), {
             'classes': ('suit-tab suit-tab-schedule',),
-            'fields': ('schedule_year', 'schedule_month', 'schedule_day', 'schedule_week', 'schedule_dow', 'schedule_hour', 'schedule_minute', 'schedule_second')
+            'fields': ('schedule_enabled', 'schedule_string',)
         }),
     )
 

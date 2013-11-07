@@ -214,6 +214,9 @@ LQL_DELIMITER = os.environ.get('LQL_DELIMITER', '_')
 # Crispy forms
 CRISPY_TEMPLATE_PACK = 'bootstrap'
 
+# Scheduler
+DATA_DRIVER_SCHEDULER_RESOLUTION = 5  # 5 seconds
+
 # Overwrite defaults with local settings
 try:
     from settings_local import *
