@@ -215,7 +215,7 @@ LQL_DELIMITER = os.environ.get('LQL_DELIMITER', '_')
 CRISPY_TEMPLATE_PACK = 'bootstrap'
 
 # Scheduler
-DATA_DRIVER_SCHEDULER_RESOLUTION = 5  # 5 seconds
+DATA_DRIVER_SCHEDULER_RESOLUTION = 45  # 45 seconds
 
 # Overwrite defaults with local settings
 try:
