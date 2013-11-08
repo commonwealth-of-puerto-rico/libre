@@ -231,8 +231,8 @@ FILTER_CLASS_MAP = {
     FILTER_LTE: LessThanOrEqual,
     FILTER_GT: GreaterThan,
     FILTER_GTE: GreaterThanOrEqual,
-    FILTER_IN: In,
     # Other
+    FILTER_IN: In,
     FILTER_EQUALS: Equals,
     FILTER_RANGE: Range,
     # Spatial
