@@ -59,6 +59,7 @@ class Origin(models.Model):
             hash_function.update(data)
             if isinstance(row, types.StringTypes):
                 self.copy_file.write(row)
+                self.copy_file.write('\n')
 
         self.temporary_file.seek(0)
         self.copy_file.seek(0)

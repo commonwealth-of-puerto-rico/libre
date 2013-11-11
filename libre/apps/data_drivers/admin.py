@@ -95,7 +95,7 @@ class SourceCSVAdmin(SourceAdmin):
     fieldsets = SourceAdmin.fieldsets + (
         (_('Comma delimited files'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('delimiter', 'quote_character',)
+            'fields': ('delimiter', 'quote_character', 'encoding')
         }),
     )
     inlines = [SourceDataVersionInline, CSVColumnInline]

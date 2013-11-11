@@ -7,6 +7,7 @@ import os
 import re
 import struct
 
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
@@ -30,7 +31,7 @@ from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 from .managers import SourceAccessManager
 from .query import Query
-from .utils import DATA_TYPE_FUNCTIONS, UnicodeReader
+from .utils import DATA_TYPE_FUNCTIONS
 
 logger = logging.getLogger(__name__)
 
@@ -111,9 +112,17 @@ class Source(models.Model):
         logger.info('Importing new data for source: %s' % self.slug)
 
         row_count = 0
-        for row_id, row in enumerate(self._get_rows(), 1):
-            SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=dict(row, **{'_id': row_id}))
-            row_count += 1
+        try:
+            for row_id, row in enumerate(self._get_rows(), 1):
+                SourceData.objects.create(source_data_version=source_data_version, row_id=row_id, row=dict(row, **{'_id': row_id}))
+                row_count += 1
+        except Exception as exception:
+            transaction.rollback()
+            logger.error('Error importing rows; %s' % exception)
+            if getattr(settings, 'DEBUG', False):
+                raise
+            else:
+                return
 
         logger.debug('finished importing rows')
 
@@ -239,6 +248,7 @@ class Source(models.Model):
         verbose_name_plural = _('sources')
         ordering = ['name', 'slug']
 
+from unicodecsv import DictReader
 
 class SourceCSV(Source):
     source_type = _('CSV file')
@@ -246,6 +256,7 @@ class SourceCSV(Source):
 
     delimiter = models.CharField(blank=True, max_length=1, default=',', verbose_name=_('delimiter'))
     quote_character = models.CharField(blank=True, max_length=1, verbose_name=_('quote character'))
+    encoding = models.CharField(default='ascii', max_length=32, verbose_name=_('encoding'), help_text=_('File encoding. Check http://docs.python.org/2/library/codecs.html#standard-encodings for a list of valid encodings.'))
 
     def _get_rows(self):
         functions_map = self.get_functions_map()
@@ -258,9 +269,9 @@ class SourceCSV(Source):
 
         column_names = self.columns.values_list('name', flat=True)
 
-        for row in UnicodeReader(self.origin_subclass_instance.copy_file, **kwargs):
-            row_dict = dict(zip(column_names, row))
+        logger.debug('column_names: %s' % column_names)
 
+        for row_dict in DictReader(self.origin_subclass_instance.copy_file, encoding=self.encoding, errors='replace', fieldnames=column_names, **kwargs):
             if self.process_regex(row_dict):
                 fields = {}
                 for field in self.columns.filter(import_column=True):
