@@ -15,6 +15,7 @@ from icons.models import Icon
 
 from .encoders import JSONEncoder
 
+
 class BoundsError(Exception):
     pass
 
