@@ -16,7 +16,7 @@ LIBRE: Libre Information Batch Restructuring Engine
         :target: https://crate.io/packages/libre/
 
 
-The engine that's powering the liberation of government data for island of Puerto Rico.
+The engine that's powering the liberation of government data for the island of Puerto Rico.
 
 .. image:: https://raw.github.com/commonwealth-of-puerto-rico/libre/master/docs/_static/libre_logo.png
 
