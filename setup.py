@@ -55,8 +55,8 @@ setup(
     license=license,
     long_description=readme + '\n\n' + history,
     name='libre',
-    namespace_packages=['mayan'],
-    packages=packages
+    namespace_packages=['libre'],
+    packages=packages,
     url='https://github.com/commonwealth-of-puerto-rico/libre',
     version=libre.__version__,
     zip_safe=False,
