@@ -2,6 +2,7 @@
 
 {% load i18n %}
 {% load staticfiles %}
+{% load version_tags %}
 
 {% block content %}
       <div class="masthead">
@@ -31,7 +32,8 @@
 
 {% block footer %}
       <div class="footer">
-        <p>{% trans 'Copyright &copy; 2013 Office of the Chief Information Officer, Commonwealth of Puerto Rico' %}</p>
-        <p>{% trans 'Created by Roberto Rosario' %}</p>
+        <p>{% project_version as project_version %} {% blocktrans with project_version as project_version %}Version: {{ project_version }}{% endblocktrans %}<br/>
+        {% trans 'Copyright &copy; 2013 Office of the Chief Information Officer, Commonwealth of Puerto Rico' %}<br/>
+        {% trans 'Created by Roberto Rosario' %}</p>
       </div>
 {% endblock %}

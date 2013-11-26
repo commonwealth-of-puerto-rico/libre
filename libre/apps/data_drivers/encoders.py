@@ -17,9 +17,15 @@ class JSONEncoder(json.JSONEncoder):
     decimal types, and generators.
     """
     def default(self, o):
+        # A dictionary may have a date as it's key, explicitly handle this
+        if isinstance(o, dict):
+            result = {}
+            for key, value in o.iteritems():
+                result[self.default(key)] = self.default(value)
+            return result
         # For Date Time string spec, see ECMA 262
         # http://ecma-international.org/ecma-262/5.1/#sec-15.9.1.15
-        if isinstance(o, Promise):
+        elif isinstance(o, Promise):
             return force_text(o)
         elif isinstance(o, (geometry.LineString, geometry.MultiLineString, geometry.MultiPoint, geometry.MultiPolygon, geometry.Point, geometry.Polygon)):
             return o.__geo_interface__
@@ -43,6 +49,9 @@ class JSONEncoder(json.JSONEncoder):
             return str(o.total_seconds())
         elif isinstance(o, decimal.Decimal):
             return str(o)
+        elif hasattr(o, 'tolist'):
+            return o.tolist()
         elif hasattr(o, '__iter__'):
-            return [i for i in o]
-        return super(JSONEncoder, self).default(o)
+            return [self.default(i) for i in o]
+        else:
+            return o

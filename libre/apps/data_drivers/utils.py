@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import csv
 from HTMLParser import HTMLParser
 import logging
 from operator import itemgetter
@@ -54,32 +53,6 @@ def convert_to_number(data):
             else:
                 # Otherwise it is an integer
                 return int(data)
-
-
-class UnicodeReader:
-    """
-    A CSV reader which will iterate over lines in the CSV file "f",
-    which is encoded in the given encoding.
-    """
-
-    def __init__(self, f, dialect=csv.excel, encoding='utf-8', **kwds):
-        self.reader = csv.reader(f, dialect=dialect, **kwds)
-
-    def next(self):
-        row = self.reader.next()
-        if row:
-            try:
-                return [unicode(s, 'utf-8') for s in row]
-            except UnicodeDecodeError:
-                try:
-                    return [s.decode('iso-8859-1') for s in row]
-                except UnicodeDecodeError:
-                    return []
-        else:
-            return []
-
-    def __iter__(self):
-        return self
 
 
 def parse_value(string):

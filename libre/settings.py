@@ -147,6 +147,7 @@ INSTALLED_APPS = (
     'rest_framework.authtoken',
     'crispy_forms',
     'lock_manager',
+    'scheduler',
     'icons',
     'origins',
     'data_drivers',
@@ -213,6 +214,9 @@ LQL_DELIMITER = os.environ.get('LQL_DELIMITER', '_')
 # Crispy forms
 CRISPY_TEMPLATE_PACK = 'bootstrap'
 
+# Scheduler
+DATA_DRIVER_SCHEDULER_RESOLUTION = 45  # 45 seconds
+
 # Overwrite defaults with local settings
 try:
     from settings_local import *
@@ -223,7 +227,8 @@ except ImportError:
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+        #'rest_framework.authentication.TokenAuthentication',
+        'data_drivers.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'URL_FORMAT_OVERRIDE': LQL_DELIMITER + 'format',

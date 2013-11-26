@@ -59,6 +59,7 @@ class Origin(models.Model):
             hash_function.update(data)
             if isinstance(row, types.StringTypes):
                 self.copy_file.write(row)
+                self.copy_file.write('\n')  # Added here so that CSV reader could differentiate file lines
 
         self.temporary_file.seek(0)
         self.copy_file.seek(0)
@@ -97,6 +98,7 @@ class OriginURL(Origin):
     # TODO Add support for credentials
 
     def get_data_iteraror(self):
+        # TODO: checks if iter_lines break remote binary files
         return (item for item in requests.get(self.url).iter_lines())
 
     @property
