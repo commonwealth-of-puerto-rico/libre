@@ -20,14 +20,14 @@ with open('HISTORY.rst') as f:
     history = f.read()
 with open('LICENSE') as f:
     license = f.read()
+with open('libre/requirements/common.txt') as f:
+    requires = f.readlines()
 
 packages=['libre', 'libre.management', 'libre.apps', 'libre.management.commands',
     'libre.apps.origins', 'libre.apps.icons', 'libre.apps.main', 'libre.apps.query_builder',
     'libre.apps.data_drivers', 'libre.apps.scheduler', 'libre.apps.lock_manager',
     'libre.apps.origins.migrations', 'libre.apps.icons.migrations', 'libre.apps.icons.templatetags',
     'libre.apps.main.templatetags', 'libre.apps.data_drivers.migrations', 'libre.apps.lock_manager.migrations']
-
-requires = []
 
 setup(
     author='Roberto Rosario',
