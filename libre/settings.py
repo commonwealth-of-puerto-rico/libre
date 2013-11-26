@@ -153,6 +153,7 @@ INSTALLED_APPS = (
     'data_drivers',
     'query_builder',
     'main',
+    'libre',
 )
 
 # A sample logging configuration. The only tangible logging
