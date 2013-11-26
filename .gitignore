@@ -10,3 +10,5 @@ _build/
 /venv/
 /site_media/
 .coverage
+/dist
+libre.egg-info/
