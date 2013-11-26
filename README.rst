@@ -42,6 +42,8 @@ Query your data afterwards too!
 INSTALLATION
 ============
 
+Install OS dependencies first.
+
 On Linux
 --------
 
@@ -57,8 +59,8 @@ On OSX using MacPorts
     $ sudo port install geos
     $ sudo port install gdal
 
-INSTALLATION
-============
+Github installation
+-------------------
 
 .. code-block:: bash
 
@@ -71,8 +73,27 @@ INSTALLATION
     $ cat <<'EOF' > settings_local.py
     DEBUG=True
     DEVELOPMENT=True
+    ALLOWED_HOSTS = ['*']
     EOF
     $ ./manage.py runserver
+
+Point your browser to 127.0.0.1:8000
+
+PyPI installation
+-----------------
+
+.. code-block:: bash
+
+    $ virtualenv libre-venv
+    $ source libre-venv/bin/activate
+    $ pip install libre==1.0
+    $ ./manage.py syncdb --migrate
+    $ cat <<'EOF' > settings_local.py
+    DEBUG=True
+    DEVELOPMENT=True
+    ALLOWED_HOSTS = ['*']
+    EOF
+    $ libre-admin.py runserver --pythonpath=.
 
 Point your browser to 127.0.0.1:8000
 
