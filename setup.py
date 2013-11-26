@@ -49,7 +49,7 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
         'Topic :: Communications :: File Sharing',
     ],
-    description='Large Information Batch Restructuring Engine.',
+    description='A Python based open data API engine.',
     include_package_data=True,
     install_requires=requires,
     license=license,
