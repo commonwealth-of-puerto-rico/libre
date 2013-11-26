@@ -57,6 +57,8 @@ setup(
     name='libre',
     namespace_packages=['libre'],
     packages=packages,
+    platforms=['any'],
+    scripts=['libre/bin/libre-admin.py'],
     url='https://github.com/commonwealth-of-puerto-rico/libre',
     version=libre.__version__,
     zip_safe=False,

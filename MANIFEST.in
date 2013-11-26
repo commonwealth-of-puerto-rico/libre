@@ -1,2 +1,2 @@
-include README.rst LICENSE HISTORY.rst libre/requirements.txt
-recursive-include libre *.txt
+include README.rst LICENSE HISTORY.rst libre/requirements.txt libre/__init__.py
+recursive-include libre *.txt *.html *.css *.ico *.png
