@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from django.template import Library
 
-from .. import __version__
+from libre import __version__
 
 register = Library()
 
