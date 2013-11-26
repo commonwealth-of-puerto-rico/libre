@@ -9,6 +9,12 @@ LIBRE: Libre Information Batch Restructuring Engine
 .. image:: https://coveralls.io/repos/commonwealth-of-puerto-rico/libre/badge.png?branch=master
         :target: https://coveralls.io/r/commonwealth-of-puerto-rico/libre?branch=master
 
+.. image:: https://badge.fury.io/py/libre.png
+    :target: http://badge.fury.io/py/libre
+
+.. image:: https://pypip.in/d/libre/badge.png
+        :target: https://crate.io/packages/libre/
+
 
 The engine that's powering the liberation of government data for island of Puerto Rico.
 
@@ -59,7 +65,22 @@ On OSX using MacPorts
     $ sudo port install geos
     $ sudo port install gdal
 
-Github installation
+PyPI installation
+-----------------
+
+.. code-block:: bash
+
+    $ pip install libre
+    $ libre-admin.py syncdb --migrate
+    $ cat <<'EOF' > settings_local.py
+    DEBUG=True
+    DEVELOPMENT=True
+    EOF
+    $ libre-admin.py runserver --pythonpath=.
+
+Point your browser to 127.0.0.1:8000
+
+GitHub installation
 -------------------
 
 .. code-block:: bash
@@ -73,27 +94,8 @@ Github installation
     $ cat <<'EOF' > settings_local.py
     DEBUG=True
     DEVELOPMENT=True
-    ALLOWED_HOSTS = ['*']
     EOF
     $ ./manage.py runserver
-
-Point your browser to 127.0.0.1:8000
-
-PyPI installation
------------------
-
-.. code-block:: bash
-
-    $ virtualenv libre-venv
-    $ source libre-venv/bin/activate
-    $ pip install libre==1.0
-    $ ./manage.py syncdb --migrate
-    $ cat <<'EOF' > settings_local.py
-    DEBUG=True
-    DEVELOPMENT=True
-    ALLOWED_HOSTS = ['*']
-    EOF
-    $ libre-admin.py runserver --pythonpath=.
 
 Point your browser to 127.0.0.1:8000
 
