@@ -132,7 +132,7 @@ Once up and running go to `<your ip>:8000` in your browser to use **LIBRE**.
 Documentation
 -------------
 
-Documentation is available at http://docs.python-requests.org/.
+Documentation is available at http://libre.readthedocs.org
 
 
 .. image:: https://d2weczhvl823v0.cloudfront.net/commonwealth-of-puerto-rico/libre/trend.png

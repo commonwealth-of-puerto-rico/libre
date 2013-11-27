@@ -4,23 +4,21 @@ TO DO List
 **LIBRE** already has an extensive set of functionality but there are things and
 functionality everybody would like to see added, here is a list of those things.
 
-Filebased sources
------------------
-
-  * Add compressed file support
-  * Skip blank lines?
-  * Switch from column widths to column ranges
-  * Toggable auto update via inotify, polling or python-watchdog
-  * Add internal support for open ranges for rows "10-"
-  * Migrate Spreadsheet regex import and skip solution to other filebased sources
-  * Add row number exclusion support during import
-
 Database sources
 ----------------
 
   * Add DB Source support
 
     * Pony ORM
+
+
+Datastore
+---------
+
+  * Multiple DataStores support
+  * File-based DataStore
+  * DataStore router support
+  * DjangoStorage DataStore support
 
 
 Documentation
@@ -32,6 +30,18 @@ Documentation
     * http://www.census.gov/population/estimates/puerto-rico/prmunnet.txt
 
   * Examples using existing public data
+
+
+Filebased sources
+-----------------
+
+  * Add compressed file support
+  * Skip blank lines?
+  * Switch from column widths to column ranges
+  * Toggable auto update via inotify, polling or python-watchdog
+  * Add internal support for open ranges for rows "10-"
+  * Migrate Spreadsheet regex import and skip solution to other filebased sources
+  * Add row number exclusion support during import
 
 
 General
@@ -51,15 +61,6 @@ General
   * Data translation
   * Remap JSON names
   * Password reset view
-
-
-Datastore
----------
-
-  * Multiple DataStores support
-  * File-based DataStore
-  * DataStore router support
-  * DjangoStorage DataStore support
 
 
 Renderes
@@ -225,6 +226,3 @@ Unsorted
     * http://www.ics.uci.edu/~eppstein/161/python/mergesort-generators.py
 
   * Dynamic icons
-
-
-
