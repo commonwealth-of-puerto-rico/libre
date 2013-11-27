@@ -1,17 +1,8 @@
-Author & maintainer
--------------------
-* Roberto Rosario (roberto.rosario.gonzalez@gmail.com) [http://robertorosario.com]
+ .. _contributors:
 
-Patches
--------
-* Axel Rivera (github@riveralabs.com) [http://riveralabs.com]
 
-Ideas
------
-* Andres Colón (levipr@gmail.com)
+Authors
+=======
 
-Bug reports
------------
-* Carlos Feliciano (c.feliciano2009@gmail.com)
-* Soynerdito (https://github.com/soynerdito)
-* Rafael Arce (https://github.com/ran-research-lab)
+
+.. include:: ../../AUTHORS.rst

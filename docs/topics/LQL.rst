@@ -1,13 +1,12 @@
-========================
 LQL LIBRE Query Language
 ========================
 
-Draft 1.0 of the LIBRE Query Language specification.
+Version 1.0 of the **LIBRE** Query Language specification.
 LQL is a mixture of SQL, Django's ORM, Python's syntax and geospatial queries constructs using the URL query strings to create a RESTful query language.
 
 
 Values
-======
+------
 LQL accepts as input:
 
 * numbers - Any value not enclosed in double quotes.
@@ -38,11 +37,11 @@ A time: ``Time(10:00pm)`` or ``Time(22:00)``
 
 A date and time: ``DateTime(2013-01-01 1:00pm)``
 
-A subquery: ``births=<census-prmunnet&_aggregate__aggregated_most_births=Max(births)&_json_path=most_births>
+A subquery: ``births=<census-prmunnet&_aggregate__aggregated_most_births=Max(births)&_json_path=most_births>``
 
 
 Filtering
-=========
+---------
 To filter a collection by a field, specify the field name appending a double underscore '__' (or the specified delimiter if overrided) appending again one of the following filters.
 Multiple filters can be specified on a single query.
 
@@ -50,7 +49,7 @@ Strings filters
 ~~~~~~~~~~~~~~~
 
 contains
---------
+^^^^^^^^
 
 ``contains=<string>``
 
@@ -60,7 +59,7 @@ Example: ``first_name__contains="John"``
 
 
 icontains
----------
+^^^^^^^^^
 ``icontains=<string>``
 
 Return the elements whose field values includes the specified string. Matches upper and lower cases.
@@ -69,7 +68,7 @@ Example: ``last_name__icontains="smith"``
 
 
 startswith
-----------
+^^^^^^^^^^
 
 ``startswith=<string>``
 
@@ -79,7 +78,7 @@ Example: ``state__startswith="North"``
 
 
 istartswith
------------
+^^^^^^^^^^^
 
 ``istartswith=<string>``
 
@@ -89,7 +88,7 @@ Example: ``city__istartswith="John"``
 
 
 endswith
---------
+^^^^^^^^
 
 ``endswith=<string>``
 
@@ -99,7 +98,7 @@ Example: ``state__startswith="Carolina"``
 
 
 iendswith
----------
+^^^^^^^^^
 
 ``iendswith=<string>``
 
@@ -109,7 +108,7 @@ Example: ``company_name__iendswith="corp"``
 
 
 iequals
--------
+^^^^^^^
 
 ``iequals=<string>``
 
@@ -123,7 +122,7 @@ Number filters
 
 
 lt
---
+^^
 
 ``lt=<number>``
 
@@ -133,7 +132,7 @@ Example: ``ytd_sales__lt=1000000``
 
 
 lte
----
+^^^
 
 ``lte=<number>``
 
@@ -143,7 +142,7 @@ Example: ``employees_count__lte=1000``
 
 
 gt
---
+^^
 
 ``gt=<number>``
 
@@ -153,7 +152,7 @@ Example: ``spare_rooms__gt=3``
 
 
 gte
----
+^^^
 
 ``gte=<number>``
 
@@ -166,7 +165,7 @@ Spatial filters
 ~~~~~~~~~~~~~~~
 
 has
----
+^^^
 
 ``has=<geometry>``
 
@@ -176,7 +175,7 @@ Example: ``city__has=Point(-66.16918303705927,18.40250894588894)``
 
 
 disjoint
---------
+^^^^^^^^
 
 ``disjoint=<geometry>``
 
@@ -186,7 +185,7 @@ Example: ``country__disjoint=Point(-66.16918303705927,18.40250894588894)``
 
 
 intersects
-----------
+^^^^^^^^^^
 
 ``intersects=<geometry>``
 
@@ -196,7 +195,7 @@ Example: ``county__intersects=Point(-66.16918303705927,18.40250894588894).buffer
 
 
 touches
--------
+^^^^^^^
 
 ``touches=<geometry>``
 
@@ -206,7 +205,7 @@ Example: ``river__touches=LineString([-66.16918303705927,18.40250894588894])``
 
 
 within
-------
+^^^^^^
 
 ``within=<geometry>``
 
@@ -223,7 +222,7 @@ Other filters
 
 
 in
---
+^^
 
 ``in=<list of strings or numbers>``
 
@@ -233,7 +232,7 @@ Example: ``crime_type_id__in=[1,4,8]``
 
 
 range
------
+^^^^^
 
 ``range=<list of two dates, two times, two date and times, two numbers or two strings>``
 
@@ -242,10 +241,10 @@ Return the elements whose field values's months are within the the specified val
 Example: ``purchases_date__range=[Date(2013-01-01), Date(2013-03-01)]``
 
 
-negation
+Negation
 ~~~~~~~~
 
-All filter can be negated by adding ``__not `` before the filter name, this will cause their logic to be inverted.
+All filter can be negated by adding ``__not`` before the filter name, this will cause their logic to be inverted.
 
 Return the elements whose field values do not match one entry in the specified list of strings or numbers.
 
@@ -258,7 +257,7 @@ All directive are prepended by the underscore delimiter '_'.
 
 
 join
-----
+^^^^
 
 ``_join=<OR | AND>``
 
@@ -266,7 +265,7 @@ When multiple filters are specified per query the results of each filter are ``A
 
 
 json_path
----------
+^^^^^^^^^
 
 Reduce the result set using JSON Path
 
@@ -276,7 +275,7 @@ JSON Path syntax: https://github.com/kennknowles/python-jsonpath-rw
 
 
 renderer
---------
+^^^^^^^^
 
 Pass renderer specific key value pairs. The key and values are dependent on the renderer being used.
 
@@ -300,7 +299,8 @@ Return a count of all crimes committed in February and which occurred within the
 
 
 Count
------
+^^^^^
+
 Return the count of rows or occurences of a value in the specified list, returned as an alias.
 
 ``Count(<field to count> or <*>)``
@@ -309,7 +309,8 @@ Example: ``_aggregate__total=Count(*)``
 
 
 Sum
----
+^^^
+
 Return the sum of the values of the specified field.
 
 ``Sum(<field to sum>)``
@@ -318,7 +319,8 @@ Example: ``_aggregate__total_score=Sum(score)``
 
 
 Min
----
+^^^
+
 Return the minimum value of the specified field in the elements.
 
 ``Min(<field>)``
@@ -327,7 +329,8 @@ Example: ``_aggregate__least_deaths=Min(deaths)``
 
 
 Max
----
+^^^
+
 Return the maximun value of the specified field in the elements.
 
 ``Max(<field>)``
@@ -336,7 +339,8 @@ Example: ``_aggregate__most_births=Max(births)``
 
 
 Average
--------
+^^^^^^^
+
 Return the average value of the specified field in the elements.
 
 ``Average(<field>)``
@@ -346,6 +350,7 @@ Example: ``_aggregate__point_average=Average(points)``
 
 Grouping
 ~~~~~~~~
+
 ``_group_by=<comma delimited list of fields by which to group data>``
 
 Example: ``_group_by=city,region``
@@ -355,19 +360,19 @@ Transformations
 ~~~~~~~~~~~~~~~
 
 _as_dict_list
--------------
+^^^^^^^^^^^^^
 
 Return the current values as a list of key value dictionaries
 
 
 _as_nested_list
----------------
+^^^^^^^^^^^^^^^
 
 Return the current values as a nested list (list of lists)
 
 
 
 Coming soon
-===========
+-----------
 * Sorting
 * Pagination

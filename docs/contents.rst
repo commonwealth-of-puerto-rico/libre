@@ -1,15 +1,9 @@
 .. _contents:
 
-============================
 LIBRE documentation contents
 ============================
 
 .. toctree::
-    :hidden:
+    :maxdepth: 4
 
     index
-
-.. toctree::
-    :maxdepth: 3
-
-    topics/index

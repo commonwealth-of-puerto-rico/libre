@@ -100,5 +100,7 @@ GitHub installation
 Point your browser to 127.0.0.1:8000
 
 
+.. include:: docs/topics/installation.rst
+
 .. image:: https://d2weczhvl823v0.cloudfront.net/commonwealth-of-puerto-rico/libre/trend.png
     :target: https://bitdeli.com/free

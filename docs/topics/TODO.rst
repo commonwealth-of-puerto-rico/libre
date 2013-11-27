@@ -1,6 +1,11 @@
-PENDING
--------
-* Filebased sources
+TO DO List
+==========
+
+**LIBRE** already has an extensive set of functionality but there are things and
+functionality everybody would like to see added, here is a list of those things.
+
+Filebased sources
+-----------------
 
   * Add compressed file support
   * Skip blank lines?
@@ -10,16 +15,17 @@ PENDING
   * Migrate Spreadsheet regex import and skip solution to other filebased sources
   * Add row number exclusion support during import
 
-* Database sources
+Database sources
+----------------
 
   * Add DB Source support
 
     * Pony ORM
 
 
-* Documentation
+Documentation
+-------------
 
-  * Release notes
   * Getting started
   * Add better sample source files
 
@@ -28,7 +34,8 @@ PENDING
   * Examples using existing public data
 
 
-* General
+General
+-------
 
   * Parse values
 
@@ -40,22 +47,42 @@ PENDING
   * Add row number exclusion support during import
   * Stored JSON data index support
   * JSON source descriptor export and import
-  * Rename timestamp to version and allow user defined version strings
+  * Rename 'timestamp' to 'version' and allow user defined version strings
   * Data translation
   * Remap JSON names
+  * Password reset view
 
 
-* Geographical sources
+Datastore
+---------
 
-  * <No task remains>
+  * Multiple DataStores support
+  * File-based DataStore
+  * DataStore router support
+  * DjangoStorage DataStore support
 
 
-* Job processing
+Renderes
+--------
+
+  * Add D3 renderer
+  * Add Google Maps renderer
+
+
+Job processing
+--------------
 
   * Add Celery support or subprocess
 
 
-* LQL
+LQL
+---
+
+  * Views support
+  * Dataset Namespaces
+  * Result reformating to allow including metadata in HTTP response
+
+    * { "result": {"a": 1, "b": 2}, "count": 2, "limit": 100, "response_time": "100ms"}
 
   * LQL based pagination (size and page number) (Andres Colón)
   * Expand the _fields directive to support dot and index notations
@@ -74,13 +101,7 @@ PENDING
 
     * _match
 
-  * Subqueries
-  * Aggregation
-
-    * Grouping
-    * Sum
-
-  * Pagination
+  * Annotations
   * Limiting
 
     * _limit=<soft limit of elements>
@@ -103,7 +124,6 @@ PENDING
     * _join=<data set name>,<join type>,<current set field>__<foreign set field>,<current set field>__<foreign set field>
     * _relation=(field, subquery)
 
-  * Add support for annotations
   * Field selection
 
     * _select=(field_name, field_name)
@@ -112,7 +132,8 @@ PENDING
   * Not in = out
   * _excludes
 
-* Output
+Output
+------
 
   * Add support for generating output formats other than JSON
 
@@ -124,13 +145,15 @@ PENDING
     * NIEM
     * Fixed width
 
-* Web services sources
+Web services sources
+--------------------
 
   * Add caching support to WS Sources
 
     * TTL support
 
-* Unsorted
+Unsorted
+--------
 
   * Improve output logging - INPROGRES
   * Empty but valid queries should return HTTP404 or HTTP200 with '{"status": "Not found"}'
@@ -181,7 +204,7 @@ PENDING
   * Improve _flatten predicate
   * Add dumb result caching
 
-   * Hash query + hash of sources = key: value = result
+    * Hash query + hash of sources = key: value = result
 
   * Add custom response header values
 
@@ -203,11 +226,5 @@ PENDING
 
   * Dynamic icons
 
-
--------------
-Password
-Scheduled update
-{ "result": "" }
-Views support
 
 
