@@ -4,7 +4,7 @@ Installation
 OS dependencies
 ---------------
 
-**LIBRE** support `Spatial queries <http://en.wikipedia.org/wiki/Spatial_query>`_
+**LIBRE** supports `Spatial queries <http://en.wikipedia.org/wiki/Spatial_query>`_
 as such is dependant on several libraries that are installed at the OS level.
 
 If using Ubuntu Linux install the required libraries with:
