@@ -46,7 +46,7 @@ class URLFileTestCase(TestCase):
         self.assertEqual(self.origin_url.data_iterator.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and')
 
     def test_copy_file(self):
-        self.assertEqual(len(self.origin_url.copy_file.read()), 10523)
+        self.assertEqual(len(self.origin_url.copy_file.read()), 10618)
         self.assertEqual(len(self.origin_url.copy_file.read()), 0)
 
 
@@ -74,5 +74,5 @@ class OriginPathTestCase(TestCase):
         self.assertEqual(self.origin_url.data_iterator.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
 
     def test_copy_file(self):
-        self.assertEqual(len(self.origin_url.copy_file.read()), 10713)
+        self.assertEqual(len(self.origin_url.copy_file.read()), 10808)
         self.assertEqual(len(self.origin_url.copy_file.read()), 0)
