@@ -16,7 +16,7 @@ urlpatterns = patterns('',
     url(r'^api/', include('data_drivers.urls')),
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^auth/token/obtain/', CustomObtainAuthToken.as_view(), name='auth_token_obtain'),
-
+    url(r'^data/', include('data_sets.urls')),
     url(r'^icons_app/', include('icons.urls')),
     url(r'^query_builder/', include('query_builder.urls', namespace='query_builder')),
 )

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+{% load staticfiles %}
+{% load version_tags %}
+
+{% block content %}
+    <table class="table table-striped table-bordered table-hover">
+      <caption>{% trans 'Available Datasets' %}</caption>
+      <thead>
+        <tr>
+          <th>{% trans 'Name' %}</th>
+          <th>{% trans 'Identifier' %}</th>
+          <th>{% trans 'Description' %}</th>
+          <th>{% trans 'Latest data' %}</th>
+        </tr>
+      </thead>
+      <tbody>
+          {% for source in sources %}
+            <tr {% if not source.versions.latest %}class="error"{% endif %}>
+              <td><a href="#">{{ source }}</a></td>
+              <td>{{ source.slug }}</td>
+              <td>{{ source.description }}</td>
+              <td style="white-space:nowrap;">{{ source.versions.latest.datetime }}</td>
+            </tr>
+         {% endfor %}
+      </tbody>
+    </table>
+{% endblock %}
+

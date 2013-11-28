@@ -571,6 +571,7 @@ class SourceDataVersion(models.Model):
         verbose_name = _('source data version')
         verbose_name_plural = _('sources data versions')
         unique_together = (('source', 'datetime'), ('source', 'timestamp'), ('source', 'checksum'))
+        get_latest_by = 'datetime'
 
 
 class SourceData(models.Model):
