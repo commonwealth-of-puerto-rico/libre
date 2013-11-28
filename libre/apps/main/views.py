@@ -7,9 +7,11 @@ from django.views.generic import TemplateView
 from rest_framework import renderers
 from rest_framework.authtoken.views import ObtainAuthToken
 
+from data_drivers.models import Source
+
 
 def home(request):
-    return render_to_response('home.html', {},
+    return render_to_response('home.html', {'sources': Source.objects.filter(published=True).order_by('?')[0:3]},
         context_instance=RequestContext(request))
 
 

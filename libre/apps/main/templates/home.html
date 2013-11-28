@@ -4,36 +4,257 @@
 {% load staticfiles %}
 {% load version_tags %}
 
+{% block content_full %}
+    <style>
+
+    /* CUSTOMIZE THE CAROUSEL
+    -------------------------------------------------- */
+
+    /* Carousel base class */
+    .carousel {
+      margin-bottom: 60px;
+    }
+
+    .carousel .container {
+      position: relative;
+      z-index: 9;
+    }
+
+    .carousel-control {
+      height: 80px;
+      margin-top: 0;
+      font-size: 120px;
+      text-shadow: 0 1px 1px rgba(0,0,0,.4);
+      background-color: transparent;
+      border: 0;
+      z-index: 10;
+    }
+
+    .carousel .item {
+      height: 500px;
+    }
+    .carousel img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      height: 500px;
+    }
+
+    .carousel-caption {
+      background-color: transparent;
+      position: static;
+      max-width: 550px;
+      padding: 0 20px;
+      margin-top: 200px;
+    }
+    .carousel-caption h1,
+    .carousel-caption .lead {
+      margin: 0;
+      line-height: 1.25;
+      color: #fff;
+      text-shadow: 0 1px 1px rgba(0,0,0,.4);
+    }
+    .carousel-caption .btn {
+      margin-top: 10px;
+    }
+
+    /* MARKETING CONTENT
+    -------------------------------------------------- */
+
+    /* Center align the text within the three columns below the carousel */
+    .marketing .span4 {
+      text-align: center;
+    }
+    .marketing h2 {
+      font-weight: normal;
+    }
+    .marketing .span4 p {
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+
+    /* Featurettes
+    ------------------------- */
+
+    .featurette-divider {
+      margin: 80px 0; /* Space out the Bootstrap <hr> more */
+    }
+    .featurette {
+      padding-top: 120px; /* Vertically center images part 1: add padding above and below text. */
+      overflow: hidden; /* Vertically center images part 2: clear their floats. */
+    }
+    .featurette-image {
+      margin-top: -120px; /* Vertically center images part 3: negative margin up the image the same amount of the padding to center it. */
+    }
+
+    /* Give some space on the sides of the floated elements so text doesn't run right into it. */
+    .featurette-image.pull-left {
+      margin-right: 40px;
+    }
+    .featurette-image.pull-right {
+      margin-left: 40px;
+    }
+
+    /* Thin out the marketing headings */
+    .featurette-heading {
+      font-size: 50px;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+
+
+
+    /* RESPONSIVE CSS
+    -------------------------------------------------- */
+
+    @media (max-width: 979px) {
+
+      .container.navbar-wrapper {
+        margin-bottom: 0;
+        width: auto;
+      }
+
+      .carousel .item {
+        height: 500px;
+      }
+      .carousel img {
+        width: auto;
+        height: 500px;
+      }
+
+      .featurette {
+        height: auto;
+        padding: 0;
+      }
+      .featurette-image.pull-left,
+      .featurette-image.pull-right {
+        display: block;
+        float: none;
+        max-width: 40%;
+        margin: 0 auto 20px;
+      }
+    }
+
+    @media (max-width: 767px) {
+
+      .carousel {
+        margin-left: -20px;
+        margin-right: -20px;
+      }
+      .carousel .container {
+
+      }
+      .carousel .item {
+        height: 300px;
+      }
+      .carousel img {
+        height: 300px;
+      }
+      .carousel-caption {
+        width: 65%;
+        padding: 0 70px;
+        margin-top: 100px;
+      }
+      .carousel-caption h1 {
+        font-size: 30px;
+      }
+      .carousel-caption .lead,
+      .carousel-caption .btn {
+        font-size: 18px;
+      }
+
+      .marketing .span4 + .span4 {
+        margin-top: 40px;
+      }
+
+      .featurette-heading {
+        font-size: 30px;
+      }
+      .featurette .lead {
+        font-size: 18px;
+        line-height: 1.5;
+      }
+
+    }
+    </style>
+
+    <!-- Carousel
+    ================================================== -->
+    <div id="myCarousel" class="carousel slide">
+      <div class="carousel-inner">
+        <div class="item active">
+          <img src="{% static 'images/slide-01.jpg' %}" alt="">
+          <div class="container">
+            <div class="carousel-caption">
+                <h1>{% trans 'L.I.B.R.E.' %}</h1>
+                <p class="lead">{% blocktrans %}LIBRE stands for Large Information Batch Restructuring Engine.{% endblocktrans %}
+                {% blocktrans %}It is a FOSS data restructuring, versioning and exporting tool. {% endblocktrans %}</p>
+                <a class="btn btn-large btn-primary" href="#">{% trans 'Learn more' %}</a>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <img src="{% static 'images/slide-02.jpg' %}" alt="">
+          <div class="container">
+            <div class="carousel-caption">
+                <h1>{% trans 'Technology' %}</h1>
+                <p class="lead">{% blocktrans %}LIBRE was conceived taking into account all members of the data pipeline. From the producer of data, system administrators, end users and developers.{% endblocktrans %}</p>
+                <a class="btn btn-large btn-primary" href="http://www.slideshare.net/registrowebprgov/engine-apilibre">{% trans 'See how it all began' %}</a>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <img src="{% static 'images/slide-03.jpg' %}" alt="">
+          <div class="container">
+            <div class="carousel-caption">
+                <h1>{% trans 'Analisys' %}</h1>
+                <p class="lead">{% blocktrans %}Once imported, your data has new value as it can now be queried easily.{% endblocktrans %}</p>
+                <a class="btn btn-large btn-primary" href="https://github.com/commonwealth-of-puerto-rico/libre">{% trans 'Access the source code' %}</a>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <img src="{% static 'images/slide-04.jpg' %}" alt="">
+          <div class="container">
+            <div class="carousel-caption">
+                <h1>{% trans 'Documentation' %}</h1>
+                <p class="lead">{% blocktrans %}From installation, to usage and how to contribute, all the information at your finger tips.{% endblocktrans %}</p>
+                <a class="btn btn-large btn-primary" href="https://libre.readthedocs.org">{% trans 'Read the documentation' %}</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a class="left carousel-control" href="#myCarousel" data-slide="prev">&lsaquo;</a>
+      <a class="right carousel-control" href="#myCarousel" data-slide="next">&rsaquo;</a>
+    </div><!-- /.carousel -->
+{% endblock %}
+
 {% block content %}
-      <div class="masthead">
-        <ul class="nav pull-right">
-            {% if request.user.is_anonymous %}
-                <li><span>{% blocktrans with request.user as user %}Not logged in{% endblocktrans %}<a href="{% url 'rest_framework:login' %}?next=/"> ({% trans 'Login' %})</a></span></li>
-            {% else %}
-                <li><span>{% blocktrans with request.user as user %}Logged in as: {{ user }}{% endblocktrans %}<a href="{% url 'rest_framework:logout' %}?next=/"> ({% trans 'Logout' %})</a></span></li>
-            {% endif %}
-            <li><span><a href="{% url 'auth_token_obtain' %}">{% trans 'Obtain API token' %}</a></span></li>
-        </ul>
-        <h3><a href='{% url "home" %}'>{% trans 'LIBRE' %}</a></h3>
-      </div>
-
-      <hr>
-
-      <div class="jumbotron">
-        <img src="{% static 'images/libre_logo.png' %}" />
-        <h1>{% trans 'L.I.B.R.E.' %}</h1>
-        <h5>{% trans '(Large Information Batch Restructuring Engine)' %}</h5>
-        <p class="lead">{% trans 'FOSS data restructuring, versioning and exporting tool' %}</p>
-        <a class="btn btn-large btn-success" href="{% url 'api_root' %}">{% trans 'API' %}</a>
-        <a class="btn btn-large btn-success" href="{% url 'query_builder:index' %}">{% trans 'Query builder' %}</a>
-        <a class="btn btn-large btn-success" href="{% url 'admin:index' %}">{% trans 'Admin interface' %}</a>
-      </div>
+      <!-- Three columns of text below the carousel -->
+      <div class="row">
+        {% for source in sources %}
+            <div class="span4">
+              <img class="img-circle" data-src="holder.js/140x140">
+              <h2>{{ source }}</h2>
+              <p>{{ source.description }}</p>
+              <p><a class="btn" href="{{ source.get_absolute_url }}">{% trans 'View details' %} &raquo;</a></p>
+            </div><!-- /.span4 -->
+        {% endfor %}
+      </div><!-- /.row -->
+      <!-- START THE FEATURETTES -->
+    <hr class="featurette-divider">
 {% endblock %}
 
-{% block footer %}
-      <div class="footer">
-        <p>{% project_version as project_version %} {% blocktrans with project_version as project_version %}Version: {{ project_version }}{% endblocktrans %}<br/>
-        {% trans 'Copyright &copy; 2013 Office of the Chief Information Officer, Commonwealth of Puerto Rico' %}<br/>
-        {% trans 'Created by Roberto Rosario' %}</p>
-      </div>
-{% endblock %}
+{% block javascript %}
+    <script>
+      !function ($) {
+        $(function(){
+          // carousel demo
+          $('#myCarousel').carousel()
+        })
+      }(window.jQuery)
+    </script>
+    <script src="{% static 'js/holder.js' %}"></script>
+{% endblock javascript %}

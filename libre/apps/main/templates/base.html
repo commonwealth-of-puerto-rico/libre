@@ -1,4 +1,6 @@
 {% load staticfiles %}
+{% load i18n %}
+{% load version_tags %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -10,62 +12,156 @@
     <meta name="author" content="">
 
     <!-- Le styles -->
-    <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 20px;
-        padding-bottom: 40px;
-      }
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'bootstrap/css/bootstrap-responsive.min.css' %}" rel="stylesheet">
+    <style>
 
-      /* Custom container */
-      .container-narrow {
-        margin: 0 auto;
-        max-width: 700px;
-      }
-      .container-narrow > hr {
-        margin: 30px 0;
-      }
+    /* GLOBAL STYLES
+    -------------------------------------------------- */
+    /* Padding below the footer and lighter body text */
 
-      .container-wide {
-        margin: 0 auto;
-        max-width: 99%;
-      }
-      .container-wide > hr {
-        margin: 30px 0;
-      }
+    body {
+      padding-bottom: 40px;
+      color: #5a5a5a;
+    }
 
-      /* Main marketing message and sign up button */
-      .jumbotron {
-        margin: 60px 0;
-        text-align: center;
-      }
-      .jumbotron h1 {
-        font-size: 72px;
-        line-height: 1;
-      }
-      .jumbotron .btn {
-        font-size: 21px;
-        padding: 14px 24px;
-      }
 
-      /* Supporting marketing content */
-      .marketing {
-        margin: 60px 0;
+
+    /* CUSTOMIZE THE NAVBAR
+    -------------------------------------------------- */
+
+    /* Special class on .container surrounding .navbar, used for positioning it into place. */
+    .navbar-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      margin-top: 20px;
+      margin-bottom: -90px; /* Negative margin to pull up carousel. 90px is roughly margins and height of navbar. */
+    }
+    .navbar-wrapper .navbar {
+
+    }
+
+    /* Remove border and change up box shadow for more contrast */
+    .navbar .navbar-inner {
+      border: 0;
+      -webkit-box-shadow: 0 2px 10px rgba(0,0,0,.25);
+         -moz-box-shadow: 0 2px 10px rgba(0,0,0,.25);
+              box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    }
+
+    /* Downsize the brand/project name a bit */
+    .navbar .brand {
+      padding: 14px 20px 16px; /* Increase vertical padding to match navbar links */
+      font-size: 16px;
+      font-weight: bold;
+      text-shadow: 0 -1px 0 rgba(0,0,0,.5);
+    }
+
+    /* Navbar links: increase padding for taller navbar */
+    .navbar .nav > li > a {
+      padding: 15px 20px;
+    }
+
+    /* Offset the responsive button for proper vertical alignment */
+    .navbar .btn-navbar {
+      margin-top: 10px;
+    }
+
+    /* RESPONSIVE CSS
+    -------------------------------------------------- */
+
+    @media (max-width: 979px) {
+
+      .container.navbar-wrapper {
+        margin-bottom: 0;
+        width: auto;
       }
-      .marketing p + h4 {
-        margin-top: 28px;
+      .navbar-inner {
+        border-radius: 0;
+        margin: -20px 0;
       }
+    }
+
+    @media (max-width: 767px) {
+
+      .navbar-inner {
+        margin: -20px;
+      }
+    }
     </style>
-    <link href="{% static 'css/bootstrap-responsive.css' %}" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="../assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <link rel="shortcut icon" href="../assets/ico/favicon.png">
   </head>
+
   <body>
-    <div class="container-wide">
+    <!-- NAVBAR
+    ================================================== -->
+    <div class="navbar-wrapper">
+      <!-- Wrap the .navbar in .container to center it within the absolutely positioned parent. -->
+      <div class="container">
+        <div class="navbar navbar-inverse">
+          <div class="navbar-inner">
+            <!-- Responsive Navbar Part 1: Button for triggering responsive navbar (not covered in tutorial). Include responsive CSS to utilize. -->
+            <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="brand" href="{% url 'home' %}">{% trans 'LIBRE' %}</a>
+            <p class="navbar-text pull-right">
+                {% if request.user.is_anonymous %}
+                    <span>{% blocktrans with request.user as user %}Not logged in{% endblocktrans %}<a href="{% url 'rest_framework:login' %}?next=/"> ({% trans 'Login' %})</a></span>
+                {% else %}
+                    <span>{% blocktrans with request.user as user %}Logged in as: {{ user }}{% endblocktrans %}<a href="{% url 'rest_framework:logout' %}?next=/"> ({% trans 'Logout' %})</a></span>
+                {% endif %}
+                <span><a href="{% url 'auth_token_obtain' %}">{% trans 'Obtain API token' %}</a></span>
+            </p>
+            <!-- Responsive Navbar Part 2: Place all navbar contents you want collapsed withing .navbar-collapse.collapse. -->
+            <div class="nav-collapse collapse">
+              <ul class="nav">
+                <li><a href="{% url 'home' %}">{% trans 'Home' %}</a></li>
+                <li><a href="{% url 'api_root' %}">{% trans 'API' %}</a></li>
+                <li><a href="{% url 'query_builder:index' %}">{% trans 'Query Builder' %}</a></li>
+                <li><a href="{% url 'admin:index' %}">{% trans 'Admin Interface' %}</a></li>
+                <li><a href="#about">{% trans 'About' %}</a></li>
+              </ul>
+            </div><!--/.nav-collapse -->
+          </div><!-- /.navbar-inner -->
+        </div><!-- /.navbar -->
+
+      </div> <!-- /.container -->
+    </div><!-- /.navbar-wrapper -->
+
+    {% block content_full %}{% endblock %}
+
+    <div style="margin-top: 80px;">
         {% block content_wide %}{% endblock %}
-    </div> <!-- /container -->
-    <div class="container-narrow">
+    </div>
+
+    <div class="container marketing">
         {% block content %}{% endblock %}
-        <hr />
-        {% block footer %}{% endblock %}
-    </div> <!-- /container -->
+
+      <!-- FOOTER -->
+      <footer>
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>&copy; {% trans '2013 Office of the Chief Information Officer, Commonwealth of Puerto Rico' %}</p>
+      </footer>
+
+    </div>
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="{% static 'js/jquery-2.0.3.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    {% block javascript %}{% endblock javascript %}
   </body>
 </html>
