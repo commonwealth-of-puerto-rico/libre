@@ -11,7 +11,7 @@ from data_drivers.models import Source
 
 
 def home(request):
-    return render_to_response('home.html', {'sources': Source.objects.filter(published=True).order_by('?')[0:3]},
+    return render_to_response('home.html', {'sources': Source.allowed.for_user(request.user).filter(published=True).order_by('?')[0:3]},
         context_instance=RequestContext(request))
 
 
