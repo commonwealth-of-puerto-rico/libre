@@ -129,10 +129,21 @@
             <div class="nav-collapse collapse">
               <ul class="nav">
                 <li><a href="{% url 'home' %}">{% trans 'Home' %}</a></li>
-                <li><a href="{% url 'api_root' %}">{% trans 'API' %}</a></li>
-                <li><a href="{% url 'query_builder:index' %}">{% trans 'Query Builder' %}</a></li>
-                <li><a href="{% url 'admin:index' %}">{% trans 'Admin Interface' %}</a></li>
+                <li><a href="{% url 'sources_view' %}">{% trans 'Datasets' %}</a></li>
+
+                <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% trans 'For developers' %} <b class="caret"></b></a>
+                  <ul class="dropdown-menu">
+                    <li><a href="{% url 'api_root' %}">{% trans 'API' %}</a></li>
+                    <li><a href="{% url 'query_builder:index' %}">{% trans 'Query Builder' %}</a></li>
+                    <li class="divider"></li>
+                    <li class="nav-header">{% trans 'Administrators' %}</li>
+                    <li><a href="{% url 'admin:index' %}">{% trans 'Admin Interface' %}</a></li>
+                  </ul>
+                </li>
+
                 <li><a href="#about">{% trans 'About' %}</a></li>
+
               </ul>
             </div><!--/.nav-collapse -->
           </div><!-- /.navbar-inner -->
