@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import base64
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -7,7 +9,6 @@ except ImportError:
 import logging
 
 import PIL
-
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse
@@ -25,24 +26,24 @@ class Icon(models.Model):
     def __unicode__(self):
         return self.label or self.name
 
-    def compose(self, base64=False):
+    def compose(self, as_base64=False):
         try:
             self.__class__._cache.setdefault(self.pk, {})
-            return self.__class__._cache[self.pk][base64]
+            return self.__class__._cache[self.pk][as_base64]
         except KeyError:
             image = PIL.Image.open(self.icon_file.file)
             output = StringIO()
             image.save(output, 'PNG')
             contents = output.getvalue()
             output.close()
-            if base64:
-                contents = 'data:image/png;base64,%s' % contents.encode('base64')
+            if as_base64:
+                contents = 'data:image/png;base64,%s' % base64.b64encode(contents)
             self.__class__._cache.setdefault(self.pk, {})
-            self.__class__._cache[self.pk][base64] = contents
+            self.__class__._cache[self.pk][as_base64] = contents
             return contents
 
     def compose_base64(self):
-        return self.compose(base64=True)
+        return self.compose(as_base64=True)
 
     def get_absolute_url(self):
         return reverse('display', args=[self.name])

@@ -38,7 +38,7 @@
             var markers = {
                 {% for marker in markers.all %}
                     '{{ marker.slug }}': L.icon({
-                        iconUrl: '{{ marker.icon.get_absolute_url }}',
+                        iconUrl: '{{ marker.icon.compose_base64 }}',
                         {% if marker.shadow %}
                             shadowUrl: '{{ marker.shadow.get_absolute_url }}',
                         {% endif %}
