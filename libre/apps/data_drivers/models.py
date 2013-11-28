@@ -44,6 +44,7 @@ class Source(models.Model):
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
     slug = models.SlugField(unique=True, blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
     description = models.TextField(blank=True, verbose_name=_('description'))
+    image = models.ImageField(null=True, blank=True, upload_to='images', verbose_name=_('image'))
     published = models.BooleanField(default=False, verbose_name=_('published'))
     allowed_groups = models.ManyToManyField(Group, verbose_name=_('allowed groups'), blank=True, null=True)
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))

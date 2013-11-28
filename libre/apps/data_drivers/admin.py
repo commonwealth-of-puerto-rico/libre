@@ -62,7 +62,7 @@ class SourceAdmin(admin.ModelAdmin):
     fieldsets = (
         (_('Basic information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('name', 'slug', 'description', 'published', 'origin')
+            'fields': ('name', 'slug', 'description', 'image', 'published', 'origin')
         }),
         (_('Result limiting'), {
             'classes': ('suit-tab suit-tab-configuration',),

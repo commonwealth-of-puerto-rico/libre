@@ -236,7 +236,11 @@
       <div class="row">
         {% for source in sources %}
             <div class="span4">
-              <img class="img-circle" data-src="holder.js/140x140">
+                {% if source.image %}
+                    <img src="{{ source.image.url }}"/>
+                {% else %}
+                    <img class="img-circle" data-src="holder.js/140x140">
+                {% endif %}
               <h2>{{ source }}</h2>
               <p>{{ source.description }}</p>
               <p><a class="btn" href="{{ source.get_absolute_url }}">{% trans 'View details' %} &raquo;</a></p>
