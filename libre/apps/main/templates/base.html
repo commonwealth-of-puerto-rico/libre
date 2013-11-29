@@ -100,6 +100,7 @@
 
     <!-- Fav and touch icons -->
     <link rel="shortcut icon" href="../assets/ico/favicon.png">
+    {% block style %}{% endblock style %}
   </head>
 
   <body>
@@ -160,6 +161,8 @@
 
     <div class="container marketing">
         {% block content %}{% endblock %}
+
+    <hr class="featurette-divider">
 
       <!-- FOOTER -->
       <footer>

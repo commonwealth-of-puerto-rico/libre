@@ -25,7 +25,7 @@
                         <img class="img-polaroid" data-src="holder.js/50x50/text:{% trans 'No Image' %}">
                     {% endif %}
                 </td>
-                <td><a href="#">{{ source }}</a></td>
+                <td><a href="{{ source.get_absolute_url }}">{{ source }}</a></td>
                 <td>{{ source.description }}</td>
                 <td style="white-space:nowrap;">{{ source.versions.latest.datetime }}</td>
             </tr>

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+{% load staticfiles %}
+{% load version_tags %}
+
+{% block style %}
+    <style type="text/css">
+     /* Custom container */
+      .container-narrow {
+        margin: 0 auto;
+        max-width: 700px;
+      }
+      .container-narrow > hr {
+        margin: 30px 0;
+      }
+
+      /* Main marketing message and sign up button */
+      .jumbotron {
+        margin: 60px 0;
+        text-align: center;
+      }
+      .jumbotron h1 {
+        font-size: 50px;
+        line-height: 1;
+      }
+      .jumbotron .btn {
+        font-size: 21px;
+        padding: 14px 24px;
+      }
+
+      /* Supporting marketing content */
+      .marketing {
+        margin: 60px 0;
+      }
+      .marketing p + h4 {
+        margin-top: 28px;
+      }
+    </style>
+{% endblock style %}
+
+{% block content %}
+   <div class="container-narrow">
+      <div class="jumbotron">
+        {% if source.image %}
+            <img src="{{ source.showcase_image.url }}"/>
+        {% else %}
+            <img class="img-polaroid" data-src="holder.js/140x140/text:{% trans 'No Image' %}">
+        {% endif %}
+
+        <h1>{{ source }}</h1>
+        <p>{{ source.description }}</p>
+      </div>
+
+      <hr>
+
+      <div class="row-fluid marketing">
+        <div class="span6">
+          <h4>{% trans 'Details' %}</h4>
+          <p>Type: {{ source.source_type }}</p>
+          <p>Link: <a href="{{ source.get_absolute_url }}">{{ source.get_absolute_url }}</a></p>
+          <p>Slug: {{ source.slug }}</p>
+          <p>Published: {{ source.published }}</p>
+          <p>Row limit: {{ source.limit }}</p>
+
+          <p style="white-space:nowrap;">Latest data: {{ source.versions.latest.datetime }}</p>
+        </div>
+
+        <div class="span6">
+          <h4>{% trans 'Access control' %}</h4>
+          <p>Allowed groups:
+              <ul>
+              {% for group in source.allowed_groups.all  %}
+                  <li>{{ group }}</li>
+              {% endfor %}
+              </ul>
+          </p>
+
+          <h4>{% trans 'Scheduling' %}</h4>
+          <p>Scheduling enabled: {{ source.schedule_enabled }}</p>
+          <p>Scheduling: {{ source.schedule_string|default:"None" }}</p>
+
+          <h4>{% trans 'API' %}</h4>
+          <p>Info: <a href="{% url 'source-detail' source.slug %}">{% url 'source-detail' source.slug %}</a></p>
+          <p>Data: <a href="{% url 'source-get_all' source.slug %}">{% url 'source-get_all' source.slug %}</a></p>
+        </div>
+      </div>
+
+    </div>
+{% endblock %}
+
+{% block javascript %}
+    <script src="{% static 'packages/holder-2.2.0/holder.js' %}"></script>
+{% endblock javascript %}
