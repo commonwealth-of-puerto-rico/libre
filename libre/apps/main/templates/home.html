@@ -240,7 +240,7 @@
                 {% if source.image %}
                     <img src="{{ source.showcase_image.url }}"/>
                 {% else %}
-                    <img class="img-circle" data-src="holder.js/140x140/sky">
+                    <img class="img-polaroid" data-src="holder.js/140x140/text:{% trans 'No Image' %}">
                 {% endif %}
               <h2>{{ source }}</h2>
               <p>{{ source.description }}</p>
@@ -261,5 +261,5 @@
         })
       }(window.jQuery)
     </script>
-    <script src="{% static 'js/holder.js' %}"></script>
+    <script src="{% static 'packages/holder-2.2.0/holder.js' %}"></script>
 {% endblock javascript %}

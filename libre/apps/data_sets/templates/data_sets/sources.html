@@ -18,9 +18,11 @@
       <tbody>
           {% for source in sources %}
             <tr {% if not source.versions.latest %}class="error"{% endif %}>
-                <td>
+                <td style="text-align: center;">
                     {% if source.image %}
                         <img src="{{ source.showcase_image.url }}"/>
+                    {% else %}
+                        <img class="img-polaroid" data-src="holder.js/50x50/text:{% trans 'No Image' %}">
                     {% endif %}
                 </td>
                 <td><a href="#">{{ source }}</a></td>
@@ -32,3 +34,6 @@
     </table>
 {% endblock %}
 
+{% block javascript %}
+    <script src="{% static 'packages/holder-2.2.0/holder.js' %}"></script>
+{% endblock javascript %}
