@@ -2,6 +2,7 @@
 
 {% load i18n %}
 {% load staticfiles %}
+
 {% load version_tags %}
 
 {% block content_full %}
@@ -237,9 +238,9 @@
         {% for source in sources %}
             <div class="span4">
                 {% if source.image %}
-                    <img src="{{ source.image.url }}"/>
+                    <img src="{{ source.showcase_image.url }}"/>
                 {% else %}
-                    <img class="img-circle" data-src="holder.js/140x140">
+                    <img class="img-circle" data-src="holder.js/140x140/sky">
                 {% endif %}
               <h2>{{ source }}</h2>
               <p>{{ source.description }}</p>

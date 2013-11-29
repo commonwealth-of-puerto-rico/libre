@@ -9,8 +9,8 @@
       <caption>{% trans 'Available Datasets' %}</caption>
       <thead>
         <tr>
+          <th>{% trans 'Image' %}</th>
           <th>{% trans 'Name' %}</th>
-          <th>{% trans 'Identifier' %}</th>
           <th>{% trans 'Description' %}</th>
           <th>{% trans 'Latest data' %}</th>
         </tr>
@@ -18,10 +18,14 @@
       <tbody>
           {% for source in sources %}
             <tr {% if not source.versions.latest %}class="error"{% endif %}>
-              <td><a href="#">{{ source }}</a></td>
-              <td>{{ source.slug }}</td>
-              <td>{{ source.description }}</td>
-              <td style="white-space:nowrap;">{{ source.versions.latest.datetime }}</td>
+                <td>
+                    {% if source.image %}
+                        <img src="{{ source.showcase_image.url }}"/>
+                    {% endif %}
+                </td>
+                <td><a href="#">{{ source }}</a></td>
+                <td>{{ source.description }}</td>
+                <td style="white-space:nowrap;">{{ source.versions.latest.datetime }}</td>
             </tr>
          {% endfor %}
       </tbody>

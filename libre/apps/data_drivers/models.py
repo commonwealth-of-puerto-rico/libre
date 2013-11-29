@@ -15,6 +15,8 @@ from django.utils.timezone import now
 from django.template.defaultfilters import slugify, truncatechars
 
 import fiona
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToCover, ResizeToFill, ResizeToFit
 from model_utils.managers import InheritanceManager
 from picklefield.fields import PickledObjectField
 from pyproj import Proj, transform
@@ -35,24 +37,32 @@ from .utils import DATA_TYPE_FUNCTIONS
 
 logger = logging.getLogger(__name__)
 
-
 class Source(models.Model):
     source_type = _('Base source class')
     renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
     support_column_regex = False
 
+    # Base data
     name = models.CharField(max_length=128, verbose_name=_('name'), help_text=('Human readable name for this source.'))
     slug = models.SlugField(unique=True, blank=True, max_length=48, verbose_name=_('slug'), help_text=('URL friendly description of this source. If none is specified the name will be used.'))
     description = models.TextField(blank=True, verbose_name=_('description'))
+
+    # Images
     image = models.ImageField(null=True, blank=True, upload_to='images', verbose_name=_('image'))
+    showcase_image = ImageSpecField(source='image', processors=[ResizeToCover(140, 140)], format='PNG', options={'quality': 90})
+    thumbnail_image = ImageSpecField(source='image', processors=[ResizeToFit(50, 50)], format='PNG', options={'quality': 60})
+
+    # Data engine
     published = models.BooleanField(default=False, verbose_name=_('published'))
     allowed_groups = models.ManyToManyField(Group, verbose_name=_('allowed groups'), blank=True, null=True)
     limit = models.PositiveIntegerField(default=DEFAULT_LIMIT, verbose_name=_('limit'), help_text=_('Maximum number of items to show when all items are requested.'))
     origin = models.ForeignKey(Origin, verbose_name=_('origin'))
 
+    # Scheduling
     schedule_string = models.CharField(max_length=128, blank=True, verbose_name=_('schedule string'), help_text=_('Use CRON style format.'))
     schedule_enabled = models.BooleanField(default=False, verbose_name=_('schedule enabled'), help_text=_('Enabled scheduled check for source\' origin updates.'))
 
+    # Managers
     objects = InheritanceManager()
     allowed = SourceAccessManager()
 

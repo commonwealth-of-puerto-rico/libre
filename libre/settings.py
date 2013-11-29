@@ -146,6 +146,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'crispy_forms',
+    'imagekit',
     'lock_manager',
     'data_sets',
     'scheduler',
