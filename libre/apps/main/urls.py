@@ -4,6 +4,7 @@ from django.views.generic import RedirectView
 
 urlpatterns = patterns('main.views',
     url(r'^$', 'home', (), 'home'),
+    url(r'^about/$', 'about_view', (), 'about_view'),
 )
 
 urlpatterns += patterns('',

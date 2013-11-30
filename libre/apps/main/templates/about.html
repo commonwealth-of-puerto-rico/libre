@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+{% load staticfiles %}
+
+{% load version_tags %}
+
+{% block content %}
+
+<div class="row">
+    <div class="span2">
+        <p class="text-center"><img src={% static 'images/libre_logo.png' %}/></p>
+    </div>
+    <div class="span10">
+        <h1>{% trans 'LIBRE' %}</h1>
+        <h2>{% trans 'Large Information Batch Restructuring Engine' %}</h2>
+        <p>{% trans 'Free, Open source, Django based FOSS data restructuring, versioning and exporting tool. LIBRE was created by the Office of the Chief Information Officer of the Commonwealth of Puerto Rico to power the liberation of government data. It has been made available as Free software with the hopes that other countries and individuals may benefit from it too.' %}</p>
+        {% project_version as project_version %}
+        <p>{% blocktrans %}Version: {{ project_version }}{% endblocktrans %}</p>
+
+        <p>{% trans 'Source code' %}: <a href="https://github.com/commonwealth-of-puerto-rico/libre">https://github.com/commonwealth-of-puerto-rico/libre</a></p>
+        <p>{% trans 'Issues' %}: <a href="https://github.com/commonwealth-of-puerto-rico/libre/issues?state=open">https://github.com/commonwealth-of-puerto-rico/libre/issues?state=open</a></p>
+        <p>{% trans 'PyPI' %}: <a href="https://pypi.python.org/pypi/libre">https://pypi.python.org/pypi/libre</a></p>
+        <p>{% trans 'Documentation' %}: <a href="https://libre.readthedocs.org/">https://libre.readthedocs.org/</a></p>
+        {{ authors|safe }}
+        <p><img src="{% static 'images/gplv3-127x51.png' %}"/></p>
+        <p><img src="{% static 'images/djangopowered126x54.gif' %}"/></p>
+        <p><img src="{% static 'images/logo_ogp_full.png' %}"/></p>
+    </div>
+</div>
+{% endblock content %}

@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 
+import docutils.core
+import docutils.writers.html4css1
+
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.generic import TemplateView
@@ -8,6 +11,17 @@ from rest_framework import renderers
 from rest_framework.authtoken.views import ObtainAuthToken
 
 from data_drivers.models import Source
+
+
+def about_view(request):
+    with open('AUTHORS.rst') as f:
+        authors = f.read()
+
+    writer = docutils.writers.html4css1.Writer()
+    docutils.core.publish_string(authors, 'body', writer=writer)
+
+    return render_to_response('about.html', {'authors': writer.parts['body'].replace('h1', 'h3')},
+        context_instance=RequestContext(request))
 
 
 def home(request):
