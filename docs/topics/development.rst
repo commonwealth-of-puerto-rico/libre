@@ -14,7 +14,7 @@ issue on the `GitHub issue tracker`_. To submit patches, please send a pull requ
 
 .. _scm:
 
---------------
+
 Source Control
 --------------
 
@@ -24,6 +24,7 @@ Source Control
 The project is publicly accessible, hosted and can be cloned from **GitHub** using::
 
     $ git clone https://github.com/commonwealth-of-puerto-rico/libre.git
+
 
 Git branch structure
 --------------------
@@ -50,8 +51,12 @@ To familiarize yourself with the technical details of the project read the :ref:
 
 .. _docs:
 
+How To Contribute
+-----------------
 
----------
+.. include:: contributing.rst
+
+
 Debugging
 ---------
 
