@@ -10,9 +10,53 @@ except ImportError:
 
 import libre
 
+PACKAGE_NAME = 'libre'
+PACKAGE_DIR = 'libre'
+
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
     sys.exit()
+
+
+def fullsplit(path, result=None):
+    """
+    Split a pathname into components (the opposite of os.path.join) in a
+    platform-neutral way.
+    """
+    if result is None:
+        result = []
+    head, tail = os.path.split(path)
+    if head == '':
+        return [tail] + result
+    if head == path:
+        return result
+    return fullsplit(head, [tail] + result)
+
+
+def find_packages(directory):
+    # Compile the list of packages available, because distutils doesn't have
+    # an easy way to do this.
+    packages, data_files = [], []
+    root_dir = os.path.dirname(__file__)
+    if root_dir != '':
+        os.chdir(root_dir)
+
+    for dirpath, dirnames, filenames in os.walk(directory):
+        # Ignore dirnames that start with '.'
+        if os.path.basename(dirpath).startswith('.'):
+            continue
+        if '__init__.py' in filenames:
+            packages.append('.'.join(fullsplit(dirpath)))
+        elif filenames:
+            data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
+    return packages
+
+
+def get_requirements():
+    with open(os.path.join(PACKAGE_DIR, 'requirements/common.txt')) as f:
+        requires = [requirement.replace('==', '>=') for requirement in f.readlines()]
+    return requires
+
 
 with open('README.rst') as f:
     readme = f.read()
@@ -20,14 +64,10 @@ with open('HISTORY.rst') as f:
     history = f.read()
 with open('LICENSE') as f:
     license = f.read()
-with open('libre/requirements/common.txt') as f:
-    requires = f.readlines()
+with open('AUTHORS.rst') as f:
+    authors = f.read()
 
-packages=['libre', 'libre.management', 'libre.apps', 'libre.management.commands',
-    'libre.apps.origins', 'libre.apps.icons', 'libre.apps.main', 'libre.apps.query_builder',
-    'libre.apps.data_drivers', 'libre.apps.scheduler', 'libre.apps.lock_manager',
-    'libre.apps.origins.migrations', 'libre.apps.icons.migrations', 'libre.apps.icons.templatetags',
-    'libre.apps.main.templatetags', 'libre.apps.data_drivers.migrations', 'libre.apps.lock_manager.migrations']
+
 
 setup(
     author='Roberto Rosario',
@@ -51,11 +91,11 @@ setup(
     ],
     description='A Python based open data API engine.',
     include_package_data=True,
-    install_requires=requires,
+    install_requires=get_requirements(),
     license=license,
-    long_description=readme + '\n\n' + history,
-    name='libre',
-    packages=packages,
+    long_description=readme + '\n\n' + history + '\n\n' + authors,
+    name=PACKAGE_NAME,
+    packages=find_packages(PACKAGE_DIR),
     platforms=['any'],
     scripts=['libre/bin/libre-admin.py'],
     url='https://github.com/commonwealth-of-puerto-rico/libre',
