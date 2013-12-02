@@ -1,8 +1,11 @@
 from __future__ import absolute_import
 
+import os
+
 import docutils.core
 import docutils.writers.html4css1
 
+from django.conf import settings
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.generic import TemplateView
@@ -14,7 +17,7 @@ from data_drivers.models import Source
 
 
 def about_view(request):
-    with open('AUTHORS.rst') as f:
+    with open(os.path.join(getattr(settings, 'SITE_ROOT'), 'AUTHORS.rst')) as f:
         authors = f.read()
 
     writer = docutils.writers.html4css1.Writer()
