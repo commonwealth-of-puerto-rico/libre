@@ -51,6 +51,21 @@ To familiarize yourself with the technical details of the project read the :ref:
 
 .. _docs:
 
+Versioning
+----------
+**LIBRE** follows the `Semantic Versioning specification <http://semver.org/>`_.
+
+Summary:
+
+Given a version number ``MAJOR.MINOR.PATCH``, increment the:
+
+``MAJOR`` version when you make incompatible API changes,
+``MINOR`` version when you add functionality in a backwards-compatible manner, and
+``PATCH`` version when you make backwards-compatible bug fixes.
+Additional labels for pre-release and build metadata are available as extensions
+to the ``MAJOR.MINOR.PATCH`` format.
+
+
 How To Contribute
 -----------------
 

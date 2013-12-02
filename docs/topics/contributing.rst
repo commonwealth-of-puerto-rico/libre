@@ -1,4 +1,4 @@
-LIBRE is always open for suggestions and contributions by developers. Here are a few tips to get you started.
+**LIBRE** is always open for suggestions and contributions by developers. Here are a few tips to get you started.
 
 Please:
 
@@ -8,7 +8,7 @@ Please:
 - Write `good commit messages`_.
 - Ideally, squash_ your commits, i.e. make your pull requests just one commit.
 
-Thank you for considering to contribute to LIBRE!
+Thank you for considering to contribute to **LIBRE**!
 
 
 .. _`squash`: http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html
