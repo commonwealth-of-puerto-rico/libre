@@ -134,9 +134,10 @@
                 <li><a href="{% url 'home' %}">{% trans 'Home' %}</a></li>
                 <li><a href="{% url 'sources_view' %}">{% trans 'Datasets' %}</a></li>
                 <li class="dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% trans 'For developers' %} <b class="caret"></b></a>
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% trans 'Advanced' %} <b class="caret"></b></a>
                   <ul class="dropdown-menu">
-                    <li><a href="{% url 'api_root' %}">{% trans 'API' %}</a></li>
+                    <li class="nav-header">{% trans 'Developers' %}</li>
+                    <li><a href="{% url 'api_root' %}">{% trans 'Browseable API' %}</a></li>
                     <li><a href="{% url 'query_builder:index' %}">{% trans 'Query Builder' %}</a></li>
                     <li><a href="{% url 'auth_token_obtain' %}">{% trans 'Obtain API token' %}</a></li>
                     <li class="divider"></li>
