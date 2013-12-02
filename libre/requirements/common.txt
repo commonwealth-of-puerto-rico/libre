@@ -6,7 +6,7 @@ django-imagekit==3.0.4
 django-model-utils==1.4.0
 django-picklefield==0.3.0
 django-suit==0.2.5
-djangorestframework==2.3.6
+djangorestframework==2.3.9
 docutils==0.11
 
 jsonpath-rw==1.2.0
