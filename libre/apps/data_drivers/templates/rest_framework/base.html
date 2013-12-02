@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% load url from future %}
+{% load rest_framework %}
+
+{% block meta %}
+    <meta name="robots" content="NONE,NOARCHIVE" />
+{% endblock %}
+
+{% block style %}
+    <style>
+        .form-actions {
+            background: transparent;
+            border-top-color: transparent;
+            padding-top: 0;
+        }
+
+        .navbar-inverse .brand a {
+            color: #999;
+        }
+        .navbar-inverse .brand:hover a {
+            color: white;
+            text-decoration: none;
+        }
+
+        /*=== dabapps bootstrap styles ====*/
+
+        body{
+          background: url("../img/grid.png") repeat-x;
+          background-attachment: fixed;
+        }
+
+        /* sticky footer and footer */
+
+        html, body {
+          height: 100%;
+        }
+
+        .form-switcher {
+            margin-bottom: 0;
+        }
+
+        .well {
+            -webkit-box-shadow: none;
+               -moz-box-shadow: none;
+                    box-shadow: none;
+        }
+
+        .well .form-actions {
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        .well form {
+            margin-bottom: 0;
+        }
+
+        .well form .help-block {
+            color: #999;
+        }
+
+        .nav-tabs {
+            border: 0;
+        }
+
+        .nav-tabs > li {
+            float: right;
+        }
+
+        .nav-tabs li a {
+            margin-right: 0;
+        }
+
+        .nav-tabs > .active > a {
+            background: #f5f5f5;
+        }
+
+        .nav-tabs > .active > a:hover {
+            background: #f5f5f5;
+        }
+
+        .tabbable.first-tab-active .tab-content
+        {
+            border-top-right-radius: 0;
+        }
+
+        .page-header {
+            border-bottom: none;
+            padding-bottom: 0px;
+            margin-bottom: 20px;
+        }
+
+        /* custom general page styles */
+
+        #content a span{
+            text-decoration: underline;
+         }
+
+        .request-info {
+            clear:both;
+        }
+
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'rest_framework/css/prettify.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'rest_framework/css/default.css' %}"/>
+
+    <style>
+        ul.breadcrumb {
+            margin: 0px 0 0 0;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+  <body class="{% block bodyclass %}{% endblock %} container">
+
+    <div class="wrapper">
+
+    {% block breadcrumbs %}
+    <ul class="breadcrumb">
+        {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
+            <li>
+                <a href="{{ breadcrumb_url }}" {% if forloop.last %}class="active"{% endif %}>{{ breadcrumb_name }}</a> {% if not forloop.last %}<span class="divider">&rsaquo;</span>{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+    {% endblock %}
+
+    <!-- Content -->
+    <div id="content">
+
+        {% if 'GET' in allowed_methods %}
+            <form id="get-form" class="pull-right">
+                <fieldset>
+                    <div class="btn-group format-selection">
+                        <a class="btn btn-primary js-tooltip" href='{{ request.get_full_path }}' rel="nofollow" title="Make a GET request on the {{ name }} resource">GET</a>
+
+                        <button class="btn btn-primary dropdown-toggle js-tooltip" data-toggle="dropdown" title="Specify a format for the GET request">
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% for format in available_formats %}
+                                <li>
+                                    <a class="js-tooltip format-option" href='{% add_query_param request api_settings.URL_FORMAT_OVERRIDE format %}' rel="nofollow" title="Make a GET request on the {{ name }} resource with the format set to `{{ format }}`">{{ format }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                </fieldset>
+            </form>
+        {% endif %}
+
+        {% if options_form %}
+            <form class="button-form" action="{{ request.get_full_path }}" method="POST" class="pull-right">
+                {% csrf_token %}
+                <input type="hidden" name="{{ api_settings.FORM_METHOD_OVERRIDE }}" value="OPTIONS" />
+                <button class="btn btn-primary js-tooltip" title="Make an OPTIONS request on the {{ name }} resource">OPTIONS</button>
+            </form>
+        {% endif %}
+
+        {% if delete_form %}
+            <form class="button-form" action="{{ request.get_full_path }}" method="POST" class="pull-right">
+                {% csrf_token %}
+                <input type="hidden" name="{{ api_settings.FORM_METHOD_OVERRIDE }}" value="DELETE" />
+                <button class="btn btn-danger js-tooltip" title="Make a DELETE request on the {{ name }} resource">DELETE</button>
+            </form>
+        {% endif %}
+
+        <div class="content-main">
+            <div class="page-header"><h1>{{ name }}</h1></div>
+            {% block description %}
+            {{ description }}
+            {% endblock %}
+            <div class="request-info" style="clear: both" >
+                <pre class="prettyprint"><b>{{ request.method }}</b> {{ request.get_full_path }}</pre>
+            </div>
+            <div class="response-info">
+                <pre class="prettyprint"><div class="meta nocode"><b>HTTP {{ response.status_code }} {{ response.status_text }}</b>{% autoescape off %}
+{% for key, val in response.items %}<b>{{ key }}:</b> <span class="lit">{{ val|break_long_headers|urlize_quoted_links }}</span>
+{% endfor %}
+</div>{{ content|urlize_quoted_links }}</pre>{% endautoescape %}
+            </div>
+        </div>
+
+            {% if display_edit_forms %}
+
+                {% if post_form or raw_data_post_form %}
+                <div {% if post_form %}class="tabbable"{% endif %}>
+                    {% if post_form %}
+                    <ul class="nav nav-tabs form-switcher">
+                        <li><a name='html-tab' href="#object-form" data-toggle="tab">HTML form</a></li>
+                        <li><a name='raw-tab' href="#generic-content-form" data-toggle="tab">Raw data</a></li>
+                    </ul>
+                    {% endif %}
+                    <div class="well tab-content">
+                        {% if post_form %}
+                        <div class="tab-pane" id="object-form">
+                            {% with form=post_form %}
+                            <form action="{{ request.get_full_path }}" method="POST" enctype="multipart/form-data" class="form-horizontal">
+                                <fieldset>
+                                    {{ post_form }}
+                                    <div class="form-actions">
+                                        <button class="btn btn-primary" title="Make a POST request on the {{ name }} resource">POST</button>
+                                    </div>
+                                </fieldset>
+                            </form>
+                            {% endwith %}
+                        </div>
+                        {% endif %}
+                        <div {% if post_form %}class="tab-pane"{% endif %} id="generic-content-form">
+                            {% with form=raw_data_post_form %}
+                            <form action="{{ request.get_full_path }}" method="POST" class="form-horizontal">
+                                <fieldset>
+                                    {% include "rest_framework/raw_data_form.html" %}
+                                    <div class="form-actions">
+                                        <button class="btn btn-primary" title="Make a POST request on the {{ name }} resource">POST</button>
+                                    </div>
+                                </fieldset>
+                            </form>
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if put_form or raw_data_put_form or raw_data_patch_form %}
+                <div {% if put_form %}class="tabbable"{% endif %}>
+                    {% if put_form %}
+                    <ul class="nav nav-tabs form-switcher">
+                        <li><a name='html-tab' href="#object-form" data-toggle="tab">HTML form</a></li>
+                        <li><a  name='raw-tab' href="#generic-content-form" data-toggle="tab">Raw data</a></li>
+                    </ul>
+                    {% endif %}
+                    <div class="well tab-content">
+                        {% if put_form %}
+                        <div class="tab-pane" id="object-form">
+                            <form action="{{ request.get_full_path }}" method="POST" enctype="multipart/form-data" class="form-horizontal">
+                                <fieldset>
+                                    {{ put_form }}
+                                    <div class="form-actions">
+                                        <button class="btn btn-primary js-tooltip" name="{{ api_settings.FORM_METHOD_OVERRIDE }}" value="PUT" title="Make a PUT request on the {{ name }} resource">PUT</button>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        {% endif %}
+                        <div {% if put_form %}class="tab-pane"{% endif %} id="generic-content-form">
+                            {% with form=raw_data_put_or_patch_form %}
+                            <form action="{{ request.get_full_path }}" method="POST" class="form-horizontal">
+                                <fieldset>
+                                    {% include "rest_framework/raw_data_form.html" %}
+                                    <div class="form-actions">
+                                        {% if raw_data_put_form %}
+                                        <button class="btn btn-primary js-tooltip" name="{{ api_settings.FORM_METHOD_OVERRIDE }}" value="PUT" title="Make a PUT request on the {{ name }} resource">PUT</button>
+                                        {% endif %}
+                                        {% if raw_data_patch_form %}
+                                        <button class="btn btn-primary js-tooltip" name="{{ api_settings.FORM_METHOD_OVERRIDE }}" value="PATCH" title="Make a PATCH request on the {{ name }} resource">PATCH</button>
+                                        {% endif %}
+                                    </div>
+                                </fieldset>
+                            </form>
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+
+        </div>
+        <!-- END content-main -->
+
+    </div>
+    <!-- END Content -->
+
+        <div id="push"></div>
+
+    </div>
+
+    </div><!-- ./wrapper -->
+
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'rest_framework/js/jquery-1.8.1-min.js' %}"></script>
+    <script src="{% static 'rest_framework/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'rest_framework/js/prettify-min.js' %}"></script>
+    <script src="{% static 'rest_framework/js/default.js' %}"></script>
+{% endblock %}
