@@ -124,7 +124,6 @@
                 {% else %}
                     <span>{% blocktrans with request.user as user %}Logged in as: {{ user }}{% endblocktrans %}<a href="{% url 'rest_framework:logout' %}?next=/"> ({% trans 'Logout' %})</a></span>
                 {% endif %}
-                <span><a href="{% url 'auth_token_obtain' %}">{% trans 'Obtain API token' %}</a></span>
             </p>
             <!-- Responsive Navbar Part 2: Place all navbar contents you want collapsed withing .navbar-collapse.collapse. -->
             <div class="nav-collapse collapse">
@@ -136,6 +135,7 @@
                   <ul class="dropdown-menu">
                     <li><a href="{% url 'api_root' %}">{% trans 'API' %}</a></li>
                     <li><a href="{% url 'query_builder:index' %}">{% trans 'Query Builder' %}</a></li>
+                    <li><a href="{% url 'auth_token_obtain' %}">{% trans 'Obtain API token' %}</a></li>
                     <li class="divider"></li>
                     <li class="nav-header">{% trans 'Administrators' %}</li>
                     <li><a href="{% url 'admin:index' %}">{% trans 'Admin Interface' %}</a></li>
