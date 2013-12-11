@@ -47,10 +47,6 @@ Filebased sources
 General
 -------
 
-  * Parse values
-
-    * True values, False values
-
   * Add Relationship support
   * Specify number of versions to keep, deleting old ones
   * Add instructions to sources, per source type
@@ -228,4 +224,4 @@ Unsorted
   * Dynamic icons
   * Add renderer directives text box entry in the query builder
   * Add password change views and templates
-
+  * Update Twitter bootstrap version used to 3.0
