@@ -292,6 +292,7 @@ Values for the map_leaflet renderer:
 * longitude
 * latitude
 * geometry
+* enable_clustering = <``True`` or ``False``>; Enable the Leaflet Marker Clustering plugin
 
 Example: ``_renderer__zoom_level=13&_renderer__longitude=-66.116079&_renderer__latitude=18.464386``
 

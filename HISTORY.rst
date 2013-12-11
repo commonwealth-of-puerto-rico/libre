@@ -19,3 +19,9 @@ Release History
 - Reduce the data source origin data check resolution to 45 seconds
 - Fail gracefully when GIS features have no bounds
 - Add new PythonScript origin
+
+1.1.0 (2013-12-x)
+++++++++++++++++++
+- New frontend for non technical users, dataset browser, dataset showcase
+- Support for boolean values to LQL
+- Support for clustering map features

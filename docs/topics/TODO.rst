@@ -226,3 +226,6 @@ Unsorted
     * http://www.ics.uci.edu/~eppstein/161/python/mergesort-generators.py
 
   * Dynamic icons
+  * Add renderer directives text box entry in the query builder
+  * Add password change views and templates
+
