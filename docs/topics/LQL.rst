@@ -1,16 +1,20 @@
 LQL LIBRE Query Language
 ========================
 
-Version 1.0 of the **LIBRE** Query Language specification.
+Version 1.1 of the **LIBRE** Query Language specification.
 LQL is a mixture of SQL, Django's ORM, Python's syntax and geospatial queries constructs using the URL query strings to create a RESTful query language.
 
+Changelog
+---------
+* 2013-12-11 Added support for boolean values
+* 2013-12-11 Bump version to 1.1
 
 Values
 ------
 LQL accepts as input:
 
 * numbers - Any value not enclosed in double quotes.
-* boolean - Any of the two following two value, not enclosed in double quotes: ``True``, and ``False``.
+* boolean - Any of the following two values, not enclosed in double quotes: ``True`` or ``False``.
 * strings - Any value enclosed in double quotes.
 * lists - Any value enclosed with brackets.
 * geometries - Any value enclosed in the geometry specifier ``Point(coordinates)``, ``LineStrings(coordinates)``, ``LinearRings(coordinates)``, ``Polygon(exterior[, interiors=None])``, ``MultiPoint(points)``, ``MultiLineString(lines)``, ``MultiPolygon(polygons)`` or ``Geometry(GeoJSON)``.
@@ -39,6 +43,8 @@ A time: ``Time(10:00pm)`` or ``Time(22:00)``
 A date and time: ``DateTime(2013-01-01 1:00pm)``
 
 A subquery: ``births=<census-prmunnet&_aggregate__aggregated_most_births=Max(births)&_json_path=most_births>``
+
+A boolean: ``_format=map_leaflet&_join_type=AND&_renderer__enable_clustering=True``
 
 
 Filtering
