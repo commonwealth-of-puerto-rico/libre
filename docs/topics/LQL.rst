@@ -10,6 +10,7 @@ Values
 LQL accepts as input:
 
 * numbers - Any value not enclosed in double quotes.
+* boolean - Any of the two following two value, not enclosed in double quotes: ``True``, and ``False``.
 * strings - Any value enclosed in double quotes.
 * lists - Any value enclosed with brackets.
 * geometries - Any value enclosed in the geometry specifier ``Point(coordinates)``, ``LineStrings(coordinates)``, ``LinearRings(coordinates)``, ``Polygon(exterior[, interiors=None])``, ``MultiPoint(points)``, ``MultiLineString(lines)``, ``MultiPolygon(polygons)`` or ``Geometry(GeoJSON)``.

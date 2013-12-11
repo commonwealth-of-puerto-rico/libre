@@ -66,6 +66,12 @@ def parse_value(string):
         # Strip quotes
         return unicode(string[1:-1])
 
+    elif string == 'True':
+        return True
+
+    elif string == 'False':
+        return False
+
     elif any(map(string.startswith, ['Point', 'LineString', 'LinearRings', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'Geometry'])):
         logger.debug('is a geometry')
         return parse_as_geometry(string)
