@@ -10,7 +10,11 @@
 
         <!-- Leaflet -->
         <link rel="stylesheet" href="{% static 'packages/leaflet-0.7/leaflet.css' %}" />
-        <script src="{% static 'packages/leaflet-0.7/leaflet.js' %}"></script>
+        {% if template_extra_context.enable_clustering %}
+            <link rel="stylesheet" href="{% static 'packages/leaflet.markercluster.20131204/MarkerCluster.css' %}" />
+            <link rel="stylesheet" href="{% static 'packages/leaflet.markercluster.20131204/MarkerCluster.Default.css' %}" />
+        {% endif %}
+
     <style>
         body {
             padding: 0;
@@ -24,6 +28,13 @@
     </head>
     <body>
         <div id="map"></div>
+
+        <script src="{% static 'packages/leaflet-0.7/leaflet.js' %}"></script>
+
+        {% if template_extra_context.enable_clustering %}
+            <script src="{% static 'packages/leaflet.markercluster.20131204/leaflet.markercluster.js' %}"></script>
+        {% endif %}
+
         <script>
             // create a map in the "map" div, set the view to a given place and zoom
             var map = L.map('map')
@@ -32,8 +43,6 @@
             L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="http://osm.org/copyright"></a>OpenStreetMap & contributors'
             }).addTo(map);
-
-            var geoJSONdata = {{ data|safe }};
 
             var markers = {
                 {% for marker in markers.all %}
@@ -52,7 +61,7 @@
                 {% endfor %}
             }
             // Features with custom marker
-            var main_features = L.geoJson(geoJSONdata, {
+            var geoJsonLayer = L.geoJson({{ data|safe }}, {
                 onEachFeature: function (feature, layer) {
                     layer.bindPopup(feature.properties._popup);
                 },
@@ -63,7 +72,15 @@
                         return L.marker(latlng);
                     }
                 },
-            }).addTo(map);
+            });
+
+            {% if template_extra_context.enable_clustering %}
+                var clusterLayer = L.markerClusterGroup();
+                clusterLayer.addLayer(geoJsonLayer);
+                map.addLayer(clusterLayer);
+            {% else %}
+                map.addLayer(geoJsonLayer);
+            {% endif %}
 
             {% if template_extra_context.geometry %}
                 var feature = {
@@ -99,7 +116,6 @@
             {% else %}
                 map.locate({setView: true, maxZoom: {{ template_extra_context.zoom_level|default:10 }}});
             {% endif %}
-
         </script>
     </body>
 </html>
