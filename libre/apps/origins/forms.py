@@ -39,6 +39,7 @@ class OriginRESTAPIForm(OriginForm):
         widgets = {
             'description': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
             'url': EnclosedInput(prepend='icon-globe', attrs={'class': 'input-xxlarge'}),
+            'parameters': AutosizedTextarea(attrs={'rows': 3, 'class': 'input-xxlarge'}),
         }
 
 

@@ -69,7 +69,7 @@ class OriginRESTAPIAdmin(OriginAdmin):
     fieldsets = OriginAdmin.fieldsets + (
         (_('Specific information'), {
             'classes': ('suit-tab suit-tab-configuration',),
-            'fields': ('url',)
+            'fields': ('url', 'parameters')
         }),
     )
     list_display = OriginAdmin.list_display + ('url',)

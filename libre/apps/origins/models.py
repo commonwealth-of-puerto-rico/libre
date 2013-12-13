@@ -230,12 +230,18 @@ class OriginDatabase(Origin):
 class OriginRESTAPI(OriginURL):
     origin_type = _('REST API')
 
-    # TODO Add support for parameters
+    parameters = models.TextField(blank=True, verbose_name=_('parameters'))
+
     def get_binary_iterator(self):
         raise AttributeError
 
     def get_string_iterator(self):
-        return (item for item in requests.get(self.url).json())
+        if self.parameters:
+            parameters = literal_eval(self.parameters)
+        else:
+            parameters = {}
+
+        return (item for item in requests.get(self.url, params=parameters).json())
 
     class Meta:
         verbose_name = _('REST API origin')
