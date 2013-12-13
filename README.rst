@@ -48,6 +48,13 @@ Query your data afterwards too!
 .. image:: https://raw.github.com/commonwealth-of-puerto-rico/libre/master/docs/_static/math_query.png
 
 
+Links
+=====
+
+- Documentation: https://libre.readthedocs.org/en/latest/
+- PyPI: https://pypi.python.org/pypi/libre
+- Source: https://github.com/commonwealth-of-puerto-rico/libre
+- Video: http://www.youtube.com/watch?v=pbY_dKlniHM
 
 Installation
 ============
@@ -128,11 +135,6 @@ The default username and password for the Docker image are:
 Username: **admin** | Password: **libre**
 
 Once up and running go to `<your ip>:8000` in your browser to use **LIBRE**.
-
-Documentation
--------------
-
-Documentation is available at http://libre.readthedocs.org
 
 
 .. image:: https://d2weczhvl823v0.cloudfront.net/commonwealth-of-puerto-rico/libre/trend.png
