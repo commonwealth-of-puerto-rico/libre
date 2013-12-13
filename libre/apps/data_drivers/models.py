@@ -21,6 +21,7 @@ from model_utils.managers import InheritanceManager
 from picklefield.fields import PickledObjectField
 from pyproj import Proj, transform
 from shapely import geometry
+from unicodecsv import DictReader
 import xlrd
 
 from icons.models import Icon
@@ -259,7 +260,6 @@ class Source(models.Model):
         verbose_name_plural = _('sources')
         ordering = ['name', 'slug']
 
-from unicodecsv import DictReader
 
 class SourceCSV(Source):
     source_type = _('CSV file')
@@ -307,7 +307,7 @@ class SourceFixedWidth(Source):
 
         functions_map = self.get_functions_map()
 
-        for row_id, row in enumerate(self.origin_subclass_instance.data_iterator, 1):
+        for row_id, row in enumerate(self.origin_subclass_instance.copy_file, 1):
             try:
                 row_dict = dict(zip(column_names, parse(row)))
             except struct.error as exception:
@@ -428,7 +428,7 @@ class SourceShape(Source):
     template_header = models.TextField(blank=True, verbose_name=_('template header'), help_text=_('Place here custom styles, javascript or asset loading.'))
 
     @staticmethod
-    def transform(old_projection, new_projection, geometry, geometry_type=None):
+    def _transform(old_projection, new_projection, geometry, forced_geometry_type=None):
         # TODO: Support all types
         # Point (A single (x, y) tuple) - DONE
         # LineString (A list of (x, y) tuple vertices) - DONE
@@ -444,19 +444,24 @@ class SourceShape(Source):
         # 3D MultiLineString
         # 3D MultiPolygon
         # 3D GeometryCollection
-        if geometry_type:
+
+        if forced_geometry_type:
+            geometry_type = forced_geometry_type
             coordinates = geometry
         else:
+            geometry_type = geometry['type']
             coordinates = geometry['coordinates']
 
-        if geometry_type == 'Point' or (not geometry_type and geometry['type'] == 'Point'):
-            return transform(old_projection, new_projection, *coordinates)
-        elif geometry_type == 'LineString' or (not geometry_type and geometry['type'] == 'LineString'):
+        logger.debug('geometry_type: %s' % geometry_type)
+
+        if geometry_type == 'Point':
+            return _transform(old_projection, new_projection, *coordinates)
+        elif geometry_type == 'LineString':
             result = []
             for x, y in coordinates:
                 result.append(transform(old_projection, new_projection, x, y))
             return result
-        elif geometry_type == 'Polygon' or (not geometry_type and geometry['type'] == 'Polygon'):
+        elif geometry_type == 'Polygon':
             result = []
             for ring in coordinates:
                 element_result = []
@@ -467,17 +472,17 @@ class SourceShape(Source):
         elif geometry['type'] == 'MultiPolygon':
             result = []
             for polygon in coordinates:
-                result.append(SourceShape.transform(old_projection, new_projection, polygon, geometry_type='Polygon'))
+                result.append(SourceShape._transform(old_projection, new_projection, polygon, forced_geometry_type='Polygon'))
             return result
         elif geometry['type'] == 'MultiPoint':
             result = []
             for point in coordinates:
-                result.append(SourceShape.transform(old_projection, new_projection, point, geometry_type='Point'))
+                result.append(SourceShape._transform(old_projection, new_projection, point, forced_geometry_type='Point'))
             return result
         elif geometry['type'] == 'MultiLineString':
             result = []
             for line in coordinates:
-                result.append(SourceShape.transform(old_projection, new_projection, line, geometry_type='LineString'))
+                result.append(SourceShape._transform(old_projection, new_projection, line, forced_geometry_type='LineString'))
             return result
         else:
             # Unsuported geometry type, return coordinates as is
@@ -490,7 +495,7 @@ class SourceShape(Source):
         self.origin_subclass_instance.copy_file.name = self.filename
 
         self.source = fiona.open('', vfs='zip://%s' % self.filename)
-        return self.source.crs
+        return self.source.meta
 
     def _get_rows(self):
         if self.new_projection:
@@ -501,8 +506,12 @@ class SourceShape(Source):
 
         functions_map = self.get_functions_map()
 
+        feature_number = 1
         for feature in self.source:
-            if feature['geometry']:
+            logger.debug('importing feature number: %d' % feature_number)
+            feature_number += 1
+
+            try:
                 fields = {}
                 for field in self.columns.filter(import_column=True):
                     fields[field.new_name] = functions_map[field.name](feature['properties'].get(field.name, field.default))
@@ -510,11 +519,13 @@ class SourceShape(Source):
                 feature['properties'] = fields
 
                 if new_projection:
-                    feature['geometry']['coordinates'] = SourceShape.transform(old_projection, new_projection, feature['geometry'])
+                    feature['geometry']['coordinates'] = SourceShape._transform(old_projection, new_projection, feature['geometry'])
 
                 if self.process_regex(fields):
                     feature['geometry'] = geometry.shape(feature['geometry'])
                     yield feature
+            except Exception as exception:
+                logging.exception('Error processing feature %s; %s', (feature['id'], exception))
 
     class Meta:
         verbose_name = _('shape source')
@@ -526,8 +537,7 @@ class SourceDirect(Source):
     support_column_regex = False
 
     def _get_rows(self):
-        for row in self.origin_subclass_instance.data_iterator:
-            yield row
+        return self.origin_subclass_instance.copy_file
 
     class Meta:
         verbose_name = _('direct source')
@@ -541,7 +551,7 @@ class SourceSimple(Source):
     def _get_rows(self):
         functions_map = self.get_functions_map()
 
-        for row in self.origin_subclass_instance.data_iterator:
+        for row in self.origin_subclass_instance.copy_file:
             fields = {}
             for field in self.columns.filter(import_column=True):
                 fields[field.new_name] = functions_map[field.name](row.get(field.name, field.default))

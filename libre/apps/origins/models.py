@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from ast import literal_eval
-import fileinput
 import hashlib
 from itertools import izip
 import logging
@@ -14,7 +13,6 @@ from django.db import load_backend as django_load_backend
 from django.utils.translation import ugettext_lazy as _
 
 from model_utils.managers import InheritanceManager
-from picklefield.fields import dbsafe_encode, dbsafe_decode
 import requests
 from suds.client import Client
 
@@ -47,34 +45,23 @@ class Origin(models.Model):
         storing it serialized as well as in it's raw form and calculate
         a running hash of the serialized representation
         """
-        hash_function = hashlib.sha256()
+        HASH_FUNCTION = hashlib.sha256()
 
-        self.temporary_file = tempfile.NamedTemporaryFile(mode='w+')
         self.copy_file = tempfile.NamedTemporaryFile(mode='w+b')
 
         for row in self.get_data_iteraror():
-            data = dbsafe_encode(row)
-            self.temporary_file.write(dbsafe_encode(row))
-            self.temporary_file.write('\n')
-            hash_function.update(data)
-            if isinstance(row, types.StringTypes):
-                self.copy_file.write(row)
-                self.copy_file.write('\n')  # Added here so that CSV reader could differentiate file lines
+            self.copy_file.write(row)
+            HASH_FUNCTION.update(row)
 
-        self.temporary_file.seek(0)
         self.copy_file.seek(0)
-        self.new_hash = hash_function.hexdigest()
-        self.data_iterator = (dbsafe_decode(line[:-1]) for line in self.temporary_file)
-
-        # Return the serialized content, an iterator to decode the serialized content, a handler to the raw content and the hash
-        return self.temporary_file, self.data_iterator, self.copy_file, self.new_hash
+        self.new_hash = HASH_FUNCTION.hexdigest()
 
     def discard_copy(self):
         """
         Close all the TemporaryFile handles so that the space on disk
         can be garbage collected
         """
-        self.temporary_file.close()
+        #self.temporary_file.close()
         self.copy_file.close()
 
     @property
@@ -98,8 +85,11 @@ class OriginURL(Origin):
     # TODO Add support for credentials
 
     def get_data_iteraror(self):
-        # TODO: checks if iter_lines break remote binary files
-        return (item for item in requests.get(self.url).iter_lines())
+        """
+        Generator to stream the remote file piece by piece.
+        """
+        CHUNK_SIZE = 1024
+        return (item for item in requests.get(self.url).iter_content(CHUNK_SIZE))
 
     @property
     def identifier(self):
@@ -125,7 +115,19 @@ class OriginPath(Origin, ContainerOrigin):
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
 
     def get_data_iteraror(self):
-        return fileinput.input(self.path)
+        """
+        Generator to read a file piece by piece.
+        """
+        CHUNK_SIZE = 1024
+        file_object = open(self.path)
+
+        while True:
+            data = file_object.read(CHUNK_SIZE)
+            if not data:
+                break
+            yield data
+
+        file_object.close()
 
     @property
     def identifier(self):
