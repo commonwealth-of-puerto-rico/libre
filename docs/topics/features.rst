@@ -7,7 +7,7 @@ Dataset browser
 ```````````````
 
 .. figure:: ../_static/dataset_browser.png
-   :scale: 50 %
+   :scale: 75 %
    :alt: dataset browser screenshot
    :align: center
 
@@ -73,11 +73,12 @@ Query engine
 .. figure:: ../_static/point_buffer.png
    :scale: 25 %
    :alt: heterogeneous subquery screenshot
-   :align: left
+   :align: center
 
 .. figure:: ../_static/polygon.png
    :scale: 25 %
    :alt: heterogeneous subquery screenshot
+   :align: center
 
 
 .. centered:: Because the LIBRE Query Language was created from the start to be a RESTful query language and not depend on a specific database manager client software, complex geometries can be specified straight from the browser URL and used for geo fencing the results.
@@ -128,11 +129,12 @@ Integration
 .. figure:: ../_static/integration_1.png
    :scale: 25 %
    :alt: integration example screenshot
-   :align: left
+   :align: center
 
 .. figure:: ../_static/integration_2.png
    :scale: 25 %
    :alt: integration example screenshot
+   :align: center
 
 
 .. centered:: Integration was a design goal from day 0, as such LIBRE's output is meant to be easily captured for integration into other software, such a business intelligence software. This design philosophy allows developers to add many of LIBRE features to their software without writting a single line of code.
