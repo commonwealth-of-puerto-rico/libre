@@ -282,7 +282,7 @@ class SourceCSV(Source):
 
         logger.debug('column_names: %s' % column_names)
 
-        for row_dict in DictReader(self.origin_subclass_instance.copy_file, encoding=self.encoding, errors='replace', fieldnames=column_names, **kwargs):
+        for row_dict in DictReader(self.origin_subclass_instance.data_iterator, encoding=self.encoding, errors='replace', fieldnames=column_names, **kwargs):
             if self.process_regex(row_dict):
                 fields = {}
                 for field in self.columns.filter(import_column=True):
@@ -307,7 +307,7 @@ class SourceFixedWidth(Source):
 
         functions_map = self.get_functions_map()
 
-        for row_id, row in enumerate(self.origin_subclass_instance.copy_file, 1):
+        for row_id, row in enumerate(self.origin_subclass_instance.data_iterator, 1):
             try:
                 row_dict = dict(zip(column_names, parse(row)))
             except struct.error as exception:
@@ -366,7 +366,7 @@ class SourceSpreadsheet(Source):
     def _get_rows(self):
         logger.debug('opening workbook')
 
-        self._book = xlrd.open_workbook(file_contents=self.origin_subclass_instance.copy_file.read())
+        self._book = xlrd.open_workbook(file_contents=self.origin_subclass_instance.data_iterator.read())
 
         logger.debug('opening sheet: %s' % self.sheet)
 
@@ -489,10 +489,10 @@ class SourceShape(Source):
             return geometry['coordinates']
 
     def _get_metadata(self):
-        old_filename = self.origin_subclass_instance.copy_file.name
+        old_filename = self.origin_subclass_instance.data_iterator.name
         self.filename = old_filename + '.zip'
         os.rename(old_filename, self.filename)
-        self.origin_subclass_instance.copy_file.name = self.filename
+        self.origin_subclass_instance.data_iterator.name = self.filename
 
         self.source = fiona.open('', vfs='zip://%s' % self.filename)
         return self.source.meta
@@ -537,7 +537,7 @@ class SourceDirect(Source):
     support_column_regex = False
 
     def _get_rows(self):
-        return self.origin_subclass_instance.copy_file
+        return self.origin_subclass_instance.data_iterator
 
     class Meta:
         verbose_name = _('direct source')
@@ -551,7 +551,7 @@ class SourceSimple(Source):
     def _get_rows(self):
         functions_map = self.get_functions_map()
 
-        for row in self.origin_subclass_instance.copy_file:
+        for row in self.origin_subclass_instance.data_iterator:
             fields = {}
             for field in self.columns.filter(import_column=True):
                 fields[field.new_name] = functions_map[field.name](row.get(field.name, field.default))

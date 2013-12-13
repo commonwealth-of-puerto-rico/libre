@@ -13,10 +13,12 @@ from django.db import load_backend as django_load_backend
 from django.utils.translation import ugettext_lazy as _
 
 from model_utils.managers import InheritanceManager
+from picklefield.fields import dbsafe_encode, dbsafe_decode
 import requests
 from suds.client import Client
 
 from .literals import BACKEND_CHOICES, BACKEND_CLASSES
+from .utils import recursive_asdict
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +49,30 @@ class Origin(models.Model):
         """
         HASH_FUNCTION = hashlib.sha256()
 
-        self.copy_file = tempfile.NamedTemporaryFile(mode='w+b')
+        try:
+            binary_iterator = self.get_binary_iterator()
+        except AttributeError:
+            string_iterator = self.get_string_iterator()
+            self.copy_file = tempfile.NamedTemporaryFile(mode='w+')
 
-        for row in self.get_data_iteraror():
-            self.copy_file.write(row)
-            HASH_FUNCTION.update(row)
+            for part in string_iterator:
+                encoded_part = dbsafe_encode(part)
+                self.copy_file.write(encoded_part)
+                HASH_FUNCTION.update(encoded_part)
 
-        self.copy_file.seek(0)
+            self.copy_file.seek(0)
+            self.data_iterator = (dbsafe_decode(line[:-1]) for line in self.copy_file)
+
+        else:
+            self.copy_file = tempfile.NamedTemporaryFile(mode='w+b')
+
+            for part in binary_iterator:
+                self.copy_file.write(part)
+                HASH_FUNCTION.update(part)
+
+            self.copy_file.seek(0)
+            self.data_iterator = self.copy_file
+
         self.new_hash = HASH_FUNCTION.hexdigest()
 
     def discard_copy(self):
@@ -61,7 +80,6 @@ class Origin(models.Model):
         Close all the TemporaryFile handles so that the space on disk
         can be garbage collected
         """
-        #self.temporary_file.close()
         self.copy_file.close()
 
     @property
@@ -84,7 +102,7 @@ class OriginURL(Origin):
     url = models.URLField(verbose_name=_('URL'), help_text=_('URL from which to read the data.'))
     # TODO Add support for credentials
 
-    def get_data_iteraror(self):
+    def get_binary_iterator(self):
         """
         Generator to stream the remote file piece by piece.
         """
@@ -114,7 +132,7 @@ class OriginPath(Origin, ContainerOrigin):
 
     path = models.TextField(blank=True, null=True, verbose_name=_('path to file'), help_text=_('Location to a file in the filesystem.'))
 
-    def get_data_iteraror(self):
+    def get_binary_iterator(self):
         """
         Generator to read a file piece by piece.
         """
@@ -151,7 +169,7 @@ class OriginUploadedFile(Origin, ContainerOrigin):
 
     file = models.FileField(blank=True, null=True, upload_to='uploaded_files', verbose_name=_('uploaded file'))
 
-    def get_data_iteraror(self):
+    def get_binary_iterator(self):
         self.file.seek(0)
         return self.file
 
@@ -175,7 +193,7 @@ class OriginDatabase(Origin):
     db_port = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('port'))
     db_query = models.TextField(verbose_name=_('query'))
 
-    def get_data_iteraror(self):
+    def get_string_iterator(self):
         cursor = self.load_backend().cursor()
         cursor.execute(self.db_query)
 
@@ -213,8 +231,10 @@ class OriginRESTAPI(OriginURL):
     origin_type = _('REST API')
 
     # TODO Add support for parameters
+    def get_binary_iterator(self):
+        raise AttributeError
 
-    def get_data_iteraror(self):
+    def get_string_iterator(self):
         return (item for item in requests.get(self.url).json())
 
     class Meta:
@@ -228,14 +248,17 @@ class OriginSOAPWebService(OriginURL):
     endpoint = models.CharField(max_length=64, verbose_name=_('endpoint'), help_text=_('Endpoint, function or method to call.'))
     parameters = models.TextField(blank=True, verbose_name=_('parameters'))
 
-    def get_data_iteraror(self):
+    def get_binary_iterator(self):
+        raise AttributeError
+
+    def get_string_iterator(self):
         client = Client(self.url)
         if self.parameters:
             parameters = literal_eval(self.parameters)
         else:
             parameters = {}
 
-        return (dict(item) for item in getattr(client.service, self.endpoint)(**parameters))
+        return (recursive_asdict(item) for item in getattr(client.service, self.endpoint)(**parameters))
 
     class Meta:
         verbose_name = _('SOAP webservice origin')
@@ -247,7 +270,7 @@ class OriginPythonScript(Origin):
 
     script_text = models.TextField(verbose_name=_('script text'), help_text=_('Assign resulting values to the _results variable. Ideally it should be a list of dictionaries.'))
 
-    def get_data_iteraror(self):
+    def get_string_iterator(self):
         _results = []
         code = compile(self.script_text, '<string>', 'exec')
         exec code
