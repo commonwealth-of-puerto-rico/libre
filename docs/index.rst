@@ -28,6 +28,8 @@ User Guide
    :maxdepth: 2
 
    topics/installation
+   topics/changelog
+   topics/features
 
 API Documentation
 -----------------

@@ -3,8 +3,26 @@
 Release History
 ---------------
 
+1.1.0 (2013-12-13)
+++++++++++++++++++
 
-1.0.0 (2013-09-19)
+- New frontend for non technical users, dataset browser, dataset showcase
+- Support for boolean values to LQL
+- Support for clustering map features
+- Fix handling of dates as key when using _as_dict_list
+- Increased required version of Fiona to 1.0.2
+- Updated Leaflet version used to 0.7
+- Added boolean values support to LQL
+- Added Leaflet marker clustering plugin support
+- Optimize Leaflet's marker's use by encode markers as base64 PNG images and embedding them in the renderer's HTML output
+- Menu reorganization and cleanup
+- Add support to add an image to a source dataset
+- Documentation updates
+- Update required version of djangorestframework
+- Origins module now copies local files in chunks and streams remote HTTP files improving memory usage during imports
+
+
+1.0.0 (2013-11-19)
 ++++++++++++++++++
 
 - Accepted: Added Command Line Interface (CLI) for update_admin_user (#10)
@@ -20,8 +38,3 @@ Release History
 - Fail gracefully when GIS features have no bounds
 - Add new PythonScript origin
 
-1.1.0 (2013-12-x)
-++++++++++++++++++
-- New frontend for non technical users, dataset browser, dataset showcase
-- Support for boolean values to LQL
-- Support for clustering map features
