@@ -307,7 +307,7 @@ class SourceFixedWidth(Source):
 
         functions_map = self.get_functions_map()
 
-        for row_id, row in enumerate(self.origin_subclass_instance.data_iterator, 1):
+        for row_id, row in enumerate(self.origin_subclass_instance.copy_file, 1):
             try:
                 row_dict = dict(zip(column_names, parse(row)))
             except struct.error as exception:
@@ -526,8 +526,7 @@ class SourceDirect(Source):
     support_column_regex = False
 
     def _get_rows(self):
-        for row in self.origin_subclass_instance.data_iterator:
-            yield row
+        return self.origin_subclass_instance.copy_file
 
     class Meta:
         verbose_name = _('direct source')
@@ -541,7 +540,7 @@ class SourceSimple(Source):
     def _get_rows(self):
         functions_map = self.get_functions_map()
 
-        for row in self.origin_subclass_instance.data_iterator:
+        for row in self.origin_subclass_instance.copy_file:
             fields = {}
             for field in self.columns.filter(import_column=True):
                 fields[field.new_name] = functions_map[field.name](row.get(field.name, field.default))
