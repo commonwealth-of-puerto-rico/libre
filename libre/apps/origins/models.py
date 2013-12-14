@@ -50,23 +50,24 @@ class Origin(models.Model):
         HASH_FUNCTION = hashlib.sha256()
 
         try:
-            binary_iterator = self.get_binary_iterator()
+            raw_iterator = self.get_binary_iterator()
         except AttributeError:
-            string_iterator = self.get_string_iterator()
+            raw_iterator = self.get_non_binary_iterator()
             self.copy_file = tempfile.NamedTemporaryFile(mode='w+')
 
-            for part in string_iterator:
+            for part in raw_iterator:
                 encoded_part = dbsafe_encode(part)
                 self.copy_file.write(encoded_part)
+                self.copy_file.write('\n')
                 HASH_FUNCTION.update(encoded_part)
 
             self.copy_file.seek(0)
-            self.data_iterator = (dbsafe_decode(line[:-1]) for line in self.copy_file)
+            self.data_iterator = (dbsafe_decode(line) for line in self.copy_file)
 
         else:
             self.copy_file = tempfile.NamedTemporaryFile(mode='w+b')
 
-            for part in binary_iterator:
+            for part in raw_iterator:
                 self.copy_file.write(part)
                 HASH_FUNCTION.update(part)
 
@@ -233,15 +234,23 @@ class OriginRESTAPI(OriginURL):
     parameters = models.TextField(blank=True, verbose_name=_('parameters'))
 
     def get_binary_iterator(self):
+        # We are a subclass of OriginURL which has a get_binary_iterator method, invalidate it
         raise AttributeError
 
-    def get_string_iterator(self):
+    def get_non_binary_iterator(self):
         if self.parameters:
             parameters = literal_eval(self.parameters)
         else:
             parameters = {}
 
-        return (item for item in requests.get(self.url, params=parameters).json())
+        logger.debug('raw parameters: %s' % self.parameters)
+        logger.debug('evaluated parameters: %s' % parameters)
+
+        response = requests.get(self.url, params=parameters)
+
+        logger.debug('response: %s' % response)
+
+        return (item for item in response.json())
 
     class Meta:
         verbose_name = _('REST API origin')
@@ -255,9 +264,10 @@ class OriginSOAPWebService(OriginURL):
     parameters = models.TextField(blank=True, verbose_name=_('parameters'))
 
     def get_binary_iterator(self):
+        # We are a subclass of OriginURL which has a get_binary_iterator method, invalidate it
         raise AttributeError
 
-    def get_string_iterator(self):
+    def get_non_binary_iterator(self):
         client = Client(self.url)
         if self.parameters:
             parameters = literal_eval(self.parameters)
@@ -276,7 +286,7 @@ class OriginPythonScript(Origin):
 
     script_text = models.TextField(verbose_name=_('script text'), help_text=_('Assign resulting values to the _results variable. Ideally it should be a list of dictionaries.'))
 
-    def get_string_iterator(self):
+    def get_non_binary_iterator(self):
         _results = []
         code = compile(self.script_text, '<string>', 'exec')
         exec code
