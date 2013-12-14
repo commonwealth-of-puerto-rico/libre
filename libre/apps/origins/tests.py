@@ -28,21 +28,21 @@ class URLFileTestCase(TestCase):
     def tearDown(self):
         self.origin_url.discard_copy()
 
-    def test_copy_file_creation(self):
-        self.assertEqual(temp_path_status(self.origin_url.copy_file.name), 'File exists')
+    def test_data_iterator_creation(self):
+        self.assertEqual(temp_path_status(self.origin_url.data_iterator.name), 'File exists')
 
     def test_hash(self):
         self.assertEqual(self.origin_url.new_hash, '81f81877c664b9863628e253ebfdff2cc53b05cbf8020735cb37eef46901ebe8')
 
     def test_iterator(self):
-        self.assertEqual(self.origin_url.copy_file.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
-        self.assertEqual(self.origin_url.copy_file.next(), 'Demographic Components of Population Change: April 1, 1990 to July 1, 1999\r\n')
-        self.origin_url.copy_file.seek(0)
-        self.assertEqual(self.origin_url.copy_file.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
+        self.assertEqual(self.origin_url.data_iterator.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
+        self.assertEqual(self.origin_url.data_iterator.next(), 'Demographic Components of Population Change: April 1, 1990 to July 1, 1999\r\n')
+        self.origin_url.data_iterator.seek(0)
+        self.assertEqual(self.origin_url.data_iterator.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
 
-    def test_copy_file(self):
-        self.assertEqual(len(self.origin_url.copy_file.read()), 10713)
-        self.assertEqual(len(self.origin_url.copy_file.read()), 0)
+    def test_data_iterator(self):
+        self.assertEqual(len(self.origin_url.data_iterator.read()), 10713)
+        self.assertEqual(len(self.origin_url.data_iterator.read()), 0)
 
 
 class OriginPathTestCase(TestCase):
@@ -53,18 +53,18 @@ class OriginPathTestCase(TestCase):
     def tearDown(self):
         self.origin_url.discard_copy()
 
-    def test_copy_file_creation(self):
-        self.assertEqual(temp_path_status(self.origin_url.copy_file.name), 'File exists')
+    def test_data_iterator_creation(self):
+        self.assertEqual(temp_path_status(self.origin_url.data_iterator.name), 'File exists')
 
     def test_hash(self):
         self.assertEqual(self.origin_url.new_hash, '81f81877c664b9863628e253ebfdff2cc53b05cbf8020735cb37eef46901ebe8')
 
     def test_iterator(self):
-        self.assertEqual(self.origin_url.copy_file.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
-        self.assertEqual(self.origin_url.copy_file.next(), 'Demographic Components of Population Change: April 1, 1990 to July 1, 1999\r\n')
-        self.origin_url.copy_file.seek(0)
-        self.assertEqual(self.origin_url.copy_file.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
+        self.assertEqual(self.origin_url.data_iterator.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
+        self.assertEqual(self.origin_url.data_iterator.next(), 'Demographic Components of Population Change: April 1, 1990 to July 1, 1999\r\n')
+        self.origin_url.data_iterator.seek(0)
+        self.assertEqual(self.origin_url.data_iterator.next(), 'PR-99-1 Estimates of the Population of Puerto Rico Municipios, July 1, 1999, and\r\n')
 
-    def test_copy_file(self):
-        self.assertEqual(len(self.origin_url.copy_file.read()), 10713)
-        self.assertEqual(len(self.origin_url.copy_file.read()), 0)
+    def test_data_iterator(self):
+        self.assertEqual(len(self.origin_url.data_iterator.read()), 10713)
+        self.assertEqual(len(self.origin_url.data_iterator.read()), 0)
