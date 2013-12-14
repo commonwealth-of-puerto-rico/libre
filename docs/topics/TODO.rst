@@ -90,10 +90,6 @@ LQL
     * Ascending (field name)
     * Descending (-field name)
 
-  * Add range exclusion
-
-    * _xrange, _not_in_range, _nrange
-
   * Add regex support
 
     * _match
@@ -126,7 +122,6 @@ LQL
     * _select=(field_name, field_name)
 
   * _distinct
-  * Not in = out
   * _excludes
 
 Output
@@ -152,10 +147,8 @@ Web services sources
 Unsorted
 --------
 
-  * Improve output logging - INPROGRES
   * Empty but valid queries should return HTTP404 or HTTP200 with '{"status": "Not found"}'
   * Show required argument for WS
-  * Interpret WS arguments
   * Result count
   * Fix upload_to
   * Calculate geometries area, size, lenghts in pin template
@@ -165,7 +158,6 @@ Unsorted
   * Move _fields parsing to allow being parsed on get_one method
   * Optimize AND type join
   * Use islice
-  * Dataset human browser
   * Data store browser
   * Add support for item-based and result-based evaluation
   * Add support for JSON Pointer
@@ -190,7 +182,6 @@ Unsorted
     * http://blogs.fluidinfo.com/terry/2010/11/25/jsongrep-py-python-for-extracting-pieces-of-json-objects/
 
   * Migrate DatabaseSource's get_one and get_all solution to other source classes
-  * Get rid of WSResultField WSArgument and use SourceColumnBase instead
   * Icon preview in admin
   * Add webhooks support
 
@@ -211,10 +202,6 @@ Unsorted
     * response = Response(result)
       response['X-LIBRE-count'] = count
       return response
-
-  * Get rid of fetch_all on the DB backend
-
-    * cursor.rowcount
 
   * Improve sort with Sort generators
 

@@ -7,7 +7,9 @@ development
 +++++++++++
 
 - Fixed WebService and REST API origin data copying
-- Added element count field to SourceDataVersion to display the total elements for each dataset data version
+- Add support for storing the total number of elements imported by each source data version
+- Add parameters support to the REST API origin
+- PEP8 cleanups
 
 1.1.0 (2013-12-13)
 ++++++++++++++++++
