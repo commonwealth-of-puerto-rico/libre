@@ -142,6 +142,7 @@ class Source(models.Model):
 
         source_data_version.ready = True
         source_data_version.active = True
+        source_data_version.elements = row_count
         source_data_version.save()
 
         self.origin_subclass_instance.discard_copy()
@@ -580,6 +581,7 @@ class SourceDataVersion(models.Model):
     ready = models.BooleanField(default=False, verbose_name=_('ready'))
     active = models.BooleanField(default=False, verbose_name=_('active'))
     metadata = PickledObjectField(blank=True, verbose_name=_('metadata'))
+    elements = models.PositiveIntegerField(default=0, verbose_name=_('elements'))
 
     def save(self, *args, **kwargs):
         self.timestamp = datetime.datetime.strftime(self.datetime, '%Y%m%d%H%M%S%f')

@@ -57,32 +57,35 @@
       <div class="row-fluid marketing">
         <div class="span6">
           <h4>{% trans 'Details' %}</h4>
-          <p>Type: {{ source.source_type }}</p>
-          <p>Link: <a href="{{ source.get_absolute_url }}">{{ source.get_absolute_url }}</a></p>
-          <p>Slug: {{ source.slug }}</p>
-          <p>Published: {{ source.published }}</p>
-          <p>Row limit: {{ source.limit }}</p>
+          <p>{% trans 'Type' %}: {{ source.source_type }}</p>
+          <p>{% trans 'Link' %}: <a href="{{ source.get_absolute_url }}">{{ source.get_absolute_url }}</a></p>
+          <p>{% trans 'Slug' %}: {{ source.slug }}</p>
+          <p>{% trans 'Published' %}: {{ source.published }}</p>
+          <p>{% trans 'Row limit' %}: {{ source.limit }}</p>
+          <p style="white-space:nowrap;">{% trans 'Latest data' %}: {{ source.versions.latest.datetime }}</p>
+          <p>{% trans 'Elements' %}: {{ source.versions.latest.elements }}</p>
 
-          <p style="white-space:nowrap;">Latest data: {{ source.versions.latest.datetime }}</p>
         </div>
 
         <div class="span6">
           <h4>{% trans 'Access control' %}</h4>
-          <p>Allowed groups:
+          <p>{% trans 'Allowed groups' %}:
               <ul>
               {% for group in source.allowed_groups.all  %}
                   <li>{{ group }}</li>
+              {% empty %}
+                {% trans 'None' %}
               {% endfor %}
               </ul>
           </p>
 
           <h4>{% trans 'Scheduling' %}</h4>
-          <p>Scheduling enabled: {{ source.schedule_enabled }}</p>
-          <p>Scheduling: {{ source.schedule_string|default:"None" }}</p>
+          <p>{% trans 'Scheduling enabled' %}: {{ source.schedule_enabled }}</p>
+          <p>{% trans 'Scheduling' %}: {% if source.schedule_string %}{{ source.schedule_string }}{% else %}{% trans 'None' %}{% endif %}</p>
 
           <h4>{% trans 'API' %}</h4>
-          <p>Info: <a href="{% url 'source-detail' source.slug %}">{% url 'source-detail' source.slug %}</a></p>
-          <p>Data: <a href="{% url 'source-get_all' source.slug %}">{% url 'source-get_all' source.slug %}</a></p>
+          <p>{% trans 'Info' %}: <a href="{% url 'source-detail' source.slug %}">{% url 'source-detail' source.slug %}</a></p>
+          <p>{% trans 'Data' %}: <a href="{% url 'source-get_all' source.slug %}">{% url 'source-get_all' source.slug %}</a></p>
         </div>
       </div>
 

@@ -49,8 +49,8 @@ class SimpleSourceColumnInline(SourceColumnInline):
 
 class SourceDataVersionInline(admin.TabularInline):
     model = SourceDataVersion
-    fields = ('active', 'datetime', 'timestamp', 'truncated_checksum', 'metadata', 'ready')
-    readonly_fields = ('datetime', 'timestamp', 'truncated_checksum', 'metadata', 'ready')
+    fields = ('active', 'datetime', 'timestamp', 'truncated_checksum', 'metadata', 'elements', 'ready')
+    readonly_fields = ('datetime', 'timestamp', 'truncated_checksum', 'metadata', 'elements', 'ready')
     extra = 0
     max_num = 0  # Don't allowing adding new versions by hand
     suit_classes = 'suit-tab suit-tab-versions'

@@ -3,6 +3,12 @@
 Release History
 ---------------
 
+development
++++++++++++
+
+- Fixed WebService and REST API origin data copying
+- Added element count field to SourceDataVersion to display the total elements for each dataset data version
+
 1.1.0 (2013-12-13)
 ++++++++++++++++++
 
