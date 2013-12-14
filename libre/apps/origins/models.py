@@ -5,7 +5,6 @@ import hashlib
 from itertools import izip
 import logging
 import tempfile
-import types
 
 from django.conf import settings
 from django.db import models

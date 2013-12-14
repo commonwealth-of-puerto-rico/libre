@@ -9,7 +9,8 @@ admin.site = SitePlus()
 admin.autodiscover()
 
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^admin/', include(admin.site.urls)),
 
     url(r'^', include('main.urls')),
@@ -27,6 +28,4 @@ if settings.DEVELOPMENT:
     from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
     urlpatterns += staticfiles_urlpatterns()
-
-    urlpatterns += patterns('',
-    ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += patterns('',) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

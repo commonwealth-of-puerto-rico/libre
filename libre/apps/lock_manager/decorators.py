@@ -6,7 +6,7 @@ from . import logger
 from . import Lock
 from .exceptions import LockError
 
-    
+
 def simple_locking(lock_id, expiration=None):
     """
     A decorator that wraps a function in a single lock getting algorithm

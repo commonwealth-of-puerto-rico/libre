@@ -15,9 +15,9 @@ class AdminMixin(object):
 
         urls = super(AdminMixin, self).get_urls()
         del urls[0]
-        custom_url = patterns('',
-               url(r'^$', self.admin_view(DashboardWelcomeView.as_view()),
-                    name="index")
+        custom_url = patterns(
+            '',
+            url(r'^$', self.admin_view(DashboardWelcomeView.as_view()), name="index")
         )
 
         return custom_url + urls

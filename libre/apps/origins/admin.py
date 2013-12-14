@@ -3,9 +3,11 @@ from __future__ import absolute_import
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
-from .forms import (OriginPathForm, OriginPythonScriptForm, OriginURLFileForm, OriginUploadedFileForm,
+from .forms import (
+    OriginPathForm, OriginPythonScriptForm, OriginURLFileForm, OriginUploadedFileForm,
     OriginRESTAPIForm, OriginSOAPWebServiceForm)
-from .models import (OriginDatabase, OriginFTPFile, OriginUploadedFile,
+from .models import (
+    OriginDatabase, OriginFTPFile, OriginUploadedFile,
     OriginURLFile, OriginPath, OriginPythonScript, OriginRESTAPI, OriginSOAPWebService)
 
 

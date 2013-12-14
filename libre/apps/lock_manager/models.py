@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import logging
 
-from django.db import close_connection
 from django.db import (models, transaction, DatabaseError)
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
@@ -44,7 +43,6 @@ class Lock(models.Model):
             transaction.rollback()
         else:
             logger.debug('lock: %s, released' % self.name)
-
 
     class Meta:
         verbose_name = _(u'lock')

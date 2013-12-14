@@ -23,17 +23,19 @@ def about_view(request):
     writer = docutils.writers.html4css1.Writer()
     docutils.core.publish_string(authors, 'body', writer=writer)
 
-    return render_to_response('about.html', {'authors': writer.parts['body'].replace('h1', 'h3')},
+    return render_to_response(
+        'about.html', {'authors': writer.parts['body'].replace('h1', 'h3')},
         context_instance=RequestContext(request))
 
 
 def home(request):
-    return render_to_response('home.html', {'sources': Source.allowed.for_user(request.user).filter(published=True).order_by('?')[0:3]},
+    return render_to_response(
+        'home.html', {'sources': Source.allowed.for_user(request.user).filter(published=True).order_by('?')[0:3]},
         context_instance=RequestContext(request))
 
 
 class CustomObtainAuthToken(ObtainAuthToken):
-    renderer_classes = (renderers.JSONRenderer,renderers.BrowsableAPIRenderer)
+    renderer_classes = (renderers.JSONRenderer, renderers.BrowsableAPIRenderer)
 
 
 class DashboardWelcomeView(TemplateView):

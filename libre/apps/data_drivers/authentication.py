@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from rest_framework import exceptions, HTTP_HEADER_ENCODING
+from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework.authtoken.models import Token
 

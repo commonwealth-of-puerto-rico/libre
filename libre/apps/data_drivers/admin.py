@@ -4,10 +4,12 @@ from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
 from .actions import check_updated, clear_versions, clone
-from .forms import (FixedWidthColumnForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
+from .forms import (
+    FixedWidthColumnForm, CSVColumnForm, LeafletMarkerForm, ShapefileColumnForm,
     SpreadsheetColumnForm, SourceSpreadsheetForm, SourceCSVForm, SourceFixedWidthForm,
     SourceShapeForm, SimpleSourceColumnForm)
-from .models import (CSVColumn, SimpleSourceColumn, FixedWidthColumn, SourceDirect, LeafletMarker,
+from .models import (
+    CSVColumn, SimpleSourceColumn, FixedWidthColumn, SourceDirect, LeafletMarker,
     ShapefileColumn, SourceCSV, SourceDataVersion, SourceFixedWidth, SourceShape,
     SourceSpreadsheet, SourceSimple, SpreadsheetColumn)
 

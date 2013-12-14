@@ -11,7 +11,8 @@ import jsonpath_rw
 from .aggregates import AGGREGATES_NAMES
 from .exceptions import LQLParseError
 from .filters import FILTER_CLASS_MAP, FILTER_NAMES
-from .literals import (DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPES,
+from .literals import (
+    DOUBLE_DELIMITER, JOIN_TYPE_AND, JOIN_TYPES,
     JOIN_TYPE_OR)
 from .settings import LQL_DELIMITER
 from .utils import attrib_sorter, parse_value, return_attrib

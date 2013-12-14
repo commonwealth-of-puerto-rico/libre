@@ -40,8 +40,7 @@ class CustomResponse(Response):
             ret = renderer.render(content, media_type, context)
 
         if isinstance(ret, six.text_type):
-            assert charset, 'renderer returned unicode, and did not specify ' \
-            'a charset value.'
+            assert charset, 'renderer returned unicode, and did not specify a charset value.'
             return bytes(ret.encode(charset))
         return ret
 

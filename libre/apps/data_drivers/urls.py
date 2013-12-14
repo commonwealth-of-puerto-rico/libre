@@ -2,12 +2,12 @@ from django.conf.urls.defaults import patterns, url
 
 from rest_framework.urlpatterns import format_suffix_patterns
 
-
-from .views import (LibreMetadataList, SourceDataVersionList, SourceDataVersionDetail,
+from .views import (
+    LibreMetadataList, SourceDataVersionList, SourceDataVersionDetail,
     SourceDetail, SourceList, SourceGetAll, SourceGetOne)
 
-
-urlpatterns = patterns('data_drivers.views',
+urlpatterns = patterns(
+    'data_drivers.views',
     url(r'^$', 'api_root', name='api_root'),
 
     url(r'^libre/$', LibreMetadataList.as_view(), name='libremetadata-list'),

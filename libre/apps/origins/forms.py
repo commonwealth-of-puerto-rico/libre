@@ -1,6 +1,6 @@
 from django.forms import ModelForm
 
-from suit.widgets import AutosizedTextarea, EnclosedInput, NumberInput
+from suit.widgets import AutosizedTextarea, EnclosedInput
 
 
 class OriginForm(ModelForm):

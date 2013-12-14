@@ -16,5 +16,6 @@ def query_builder_index_view(request):
         'form': form,
     }
 
-    return render_to_response('query_builder.html', context,
+    return render_to_response(
+        'query_builder.html', context,
         context_instance=RequestContext(request))

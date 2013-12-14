@@ -1,4 +1,4 @@
-from rest_framework.exceptions import APIException, ParseError
+from rest_framework.exceptions import ParseError
 
 
 class LIBREError(Exception):

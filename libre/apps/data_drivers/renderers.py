@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from itertools import islice
-import logging
 import json
 import types
 
@@ -98,8 +97,7 @@ class LeafletRenderer(renderers.TemplateHTMLRenderer):
         except TemplateSyntaxError as exception:
             marker_template = Template(exception)
 
-        # TODO: fix this, use isinstace
-        if type(data) == type({}):
+        if isinstance(data, dict):
             features.append(self.process_feature(data, popup_template, marker_template))
         else:
             for feature in data:

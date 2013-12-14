@@ -10,7 +10,8 @@ from dateutil.parser import parse
 import pyparsing
 from shapely import geometry
 
-from .literals import (DATA_TYPE_DATE, DATA_TYPE_DATETIME, DATA_TYPE_NUMBER, DATA_TYPE_STRING,
+from .literals import (
+    DATA_TYPE_DATE, DATA_TYPE_DATETIME, DATA_TYPE_NUMBER, DATA_TYPE_STRING,
     DATA_TYPE_TIME, THOUSAND_SYMBOL, DECIMAL_SYMBOL)
 from .exceptions import LIBREValueError
 

@@ -16,7 +16,7 @@ from django.template.defaultfilters import slugify, truncatechars
 
 import fiona
 from imagekit.models import ImageSpecField
-from imagekit.processors import ResizeToCover, ResizeToFill, ResizeToFit
+from imagekit.processors import ResizeToCover, ResizeToFit
 from model_utils.managers import InheritanceManager
 from picklefield.fields import PickledObjectField
 from pyproj import Proj, transform
@@ -30,13 +30,15 @@ from origins.models import Origin
 
 from .exceptions import LIBREAPIError
 from .job_processing import Job
-from .literals import (DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
+from .literals import (
+    DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
     RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
 from .managers import SourceAccessManager
 from .query import Query
 from .utils import DATA_TYPE_FUNCTIONS
 
 logger = logging.getLogger(__name__)
+
 
 class Source(models.Model):
     source_type = _('Base source class')
@@ -455,7 +457,7 @@ class SourceShape(Source):
         logger.debug('geometry_type: %s' % geometry_type)
 
         if geometry_type == 'Point':
-            return _transform(old_projection, new_projection, *coordinates)
+            return transform(old_projection, new_projection, *coordinates)
         elif geometry_type == 'LineString':
             result = []
             for x, y in coordinates:

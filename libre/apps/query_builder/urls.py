@@ -4,6 +4,7 @@ from django.conf.urls.defaults import patterns, url
 
 from .views import query_builder_index_view
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^$', query_builder_index_view, name='index'),
 )
