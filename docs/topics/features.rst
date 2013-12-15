@@ -7,11 +7,20 @@ Dataset browser
 ```````````````
 
 .. figure:: ../_static/dataset_browser.png
-   :scale: 75 %
+   :scale: 50 %
    :alt: dataset browser screenshot
    :align: center
 
 .. centered:: The dataset browser provides a simple detail view of each dataset properties and metadata.
+
+
+.. figure:: ../_static/dataset_data_preview.png
+   :scale: 50 %
+   :alt: dataset data previewer screenshot
+   :align: center
+
+.. centered:: The dataset browser also allows previewing the dataset data.
+
 
 Browseable API
 ``````````````
@@ -40,7 +49,7 @@ Query builder
    :alt: query builder screenshot
    :align: center
 
-.. centered:: Query builder also allows for quick test of queries, returning the final LQL query to repeat the same resultset outside the query builder.
+.. centered:: The Query builder also allows for quick test of queries, returning the final LQL query to repeat the same resultset outside the query builder.
 
 
 Query engine
