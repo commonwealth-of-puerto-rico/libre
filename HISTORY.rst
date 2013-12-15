@@ -4,7 +4,7 @@ Release History
 ---------------
 
 1.2.0 (2013-12-15)
-+++++++++++
+++++++++++++++++++
 
 - Fixed WebService and REST API origin data copying
 - Add support for storing the total number of elements imported by each source data version
