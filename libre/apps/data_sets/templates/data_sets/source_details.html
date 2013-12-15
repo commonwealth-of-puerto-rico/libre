@@ -6,100 +6,80 @@
 
 {% block style %}
     <style type="text/css">
-     /* Custom container */
 
-
-      /* Main marketing message and sign up button */
       .jumbotron {
-        margin: 60px 0;
+        margin: 10px 0 0 0;
         text-align: center;
       }
       .jumbotron h1 {
-        font-size: 30px;
+        font-size: 25px;
         line-height: 1;
       }
-      .jumbotron .btn {
-        font-size: 21px;
-        padding: 14px 24px;
-      }
-
-      /* Supporting marketing content */
-
     </style>
 {% endblock style %}
 
 {% block content %}
-   <div class="container">
-      <div class="jumbotron">
-        {% if source.image %}
-            <img src="{{ source.showcase_image.url }}"/>
-        {% else %}
-            <img class="img-polaroid" data-src="holder.js/140x140/text:{% trans 'No Image' %}">
-        {% endif %}
+    <div class="container">
+        <div class="jumbotron">
+            {% if source.image %}
+                <img src="{{ source.showcase_image.url }}"/>
+            {% else %}
+                <img class="img-polaroid" data-src="holder.js/140x140/text:{% trans 'No Image' %}">
+            {% endif %}
 
-        <h1>{{ source }}</h1>
-        <p>{{ source.description }}</p>
-      </div>
-
-
-    <ul class="nav nav-tabs" id="myTab">
-        <li class="active"><a href="#details" data-toggle="tab">{% trans 'Details' %}</a></li>
-        <li><a href="#preview" data-toggle="tab">{% trans 'Data' %}</a></li>
-    </ul>
-
-    <div class="tab-content">
-        <div class="tab-pane active" id="details">
-
-         <div class="row-fluid marketing">
-        <div class="span6">
-          <h4>{% trans 'Details' %}</h4>
-          <p>{% trans 'Type' %}: {{ source.source_type }}</p>
-          <p>{% trans 'Link' %}: <a href="{{ source.get_absolute_url }}">{{ source.get_absolute_url }}</a></p>
-          <p>{% trans 'Slug' %}: {{ source.slug }}</p>
-          <p>{% trans 'Published' %}: {{ source.published }}</p>
-          <p>{% trans 'Row limit' %}: {{ source.limit }}</p>
-          <p style="white-space:nowrap;">{% trans 'Latest data' %}: {{ source.versions.latest.datetime }}</p>
-          <p>{% trans 'Elements' %}: {{ source.versions.latest.elements }}</p>
+            <h1>{{ source }}</h1>
+            <p>{{ source.description }}</p>
         </div>
 
-        <div class="span6">
-          <h4>{% trans 'Access control' %}</h4>
-          <p>{% trans 'Allowed groups' %}:
-              <ul>
-              {% for group in source.allowed_groups.all  %}
-                  <li>{{ group }}</li>
-              {% empty %}
-                {% trans 'None' %}
-              {% endfor %}
-              </ul>
-          </p>
+        <ul class="nav nav-tabs" id="myTab">
+            <li class="active"><a href="#details" data-toggle="tab">{% trans 'Details' %}</a></li>
+            <li><a href="#preview" data-toggle="tab">{% trans 'Data Preview' %}</a></li>
+        </ul>
 
-          <h4>{% trans 'Scheduling' %}</h4>
-          <p>{% trans 'Scheduling enabled' %}: {{ source.schedule_enabled }}</p>
-          <p>{% trans 'Scheduling' %}: {% if source.schedule_string %}{{ source.schedule_string }}{% else %}{% trans 'None' %}{% endif %}</p>
+        <div class="tab-content">
+            <div class="tab-pane active" id="details">
+                <div class="row-fluid">
+                    <div class="span6">
+                        <h4>{% trans 'Details' %}</h4>
+                        <p>{% trans 'Type' %}: {{ source.source_type }}</p>
+                        <p>{% trans 'Link' %}: <a href="{{ source.get_absolute_url }}">{{ source.get_absolute_url }}</a></p>
+                        <p>{% trans 'Slug' %}: {{ source.slug }}</p>
+                        <p>{% trans 'Published' %}: {{ source.published }}</p>
+                        <p>{% trans 'Row limit' %}: {{ source.limit }}</p>
+                        <p style="white-space:nowrap;">{% trans 'Latest data' %}: {{ source.versions.latest.datetime }}</p>
+                        <p>{% trans 'Elements' %}: {{ source.versions.latest.elements }}</p>
+                    </div>
 
-          <h4>{% trans 'API' %}</h4>
-          <p>{% trans 'Info' %}: <a href="{% url 'source-detail' source.slug %}">{% url 'source-detail' source.slug %}</a></p>
-          <p>{% trans 'Data' %}: <a href="{% url 'source-get_all' source.slug %}?_format=json">{% url 'source-get_all' source.slug %}</a></p>
+                    <div class="span6">
+                        <h4>{% trans 'Access control' %}</h4>
+                          <p>{% trans 'Allowed groups' %}:
+                              <ul>
+                              {% for group in source.allowed_groups.all  %}
+                                  <li>{{ group }}</li>
+                              {% empty %}
+                                {% trans 'None' %}
+                              {% endfor %}
+                              </ul>
+                          </p>
+
+                        <h4>{% trans 'Scheduling' %}</h4>
+                        <p>{% trans 'Scheduling enabled' %}: {{ source.schedule_enabled }}</p>
+                        <p>{% trans 'Scheduling' %}: {% if source.schedule_string %}{{ source.schedule_string }}{% else %}{% trans 'None' %}{% endif %}</p>
+
+                        <h4>{% trans 'API' %}</h4>
+                        <p>{% trans 'Info' %}: <a href="{% url 'source-detail' source.slug %}">{% url 'source-detail' source.slug %}</a></p>
+                        <p>{% trans 'Data' %}: <a href="{% url 'source-get_all' source.slug %}?_format=json">{% url 'source-get_all' source.slug %}</a></p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane" id="preview">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <iframe src="{% url 'source-get_all' source.slug %}?_format={{ renderer }}&_renderer__page_size=15" style="width: 99%; min-height: 510px; border: 1px solid;"></iframe>
+                    </div>
+                </div>
+            </div>
         </div>
-
-
-      </div>
-
-        </div>
-
-      <div class="tab-pane" id="preview">
-
-            <iframe src="{% url 'source-get_all' source.slug %}?_format={{ renderer }}" style="width: 99%; min-height: 400px;"></iframe>
-
-
-      </div>
-    </div>
-
-
-
-
-
     </div>
 {% endblock %}
 
