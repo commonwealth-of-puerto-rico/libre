@@ -4,7 +4,8 @@ from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import renderers
 
-from .renderers import CustomJSONRenderer, CustomXMLRenderer, LeafletRenderer
+from .renderers import (
+    CustomJSONRenderer, CustomXMLRenderer, LeafletRenderer, DataGridRenderer)
 from .settings import LQL_DELIMITER
 
 # Row based
@@ -34,6 +35,7 @@ RENDERER_JSON = 2
 RENDERER_XML = 3
 RENDERER_YAML = 4
 RENDERER_LEAFLET = 5
+RENDERER_DATAGRID = 6
 
 RENDERER_MAPPING = {
     RENDERER_BROWSEABLE_API: renderers.BrowsableAPIRenderer,
@@ -41,6 +43,7 @@ RENDERER_MAPPING = {
     RENDERER_XML: CustomXMLRenderer,
     RENDERER_YAML: renderers.YAMLRenderer,
     RENDERER_LEAFLET: LeafletRenderer,
+    RENDERER_DATAGRID: DataGridRenderer,
 }
 
 JOIN_TYPE_OR = 1

@@ -178,3 +178,45 @@ class CustomXMLRenderer(renderers.XMLRenderer):
 
 class CustomJSONRenderer(renderers.JSONRenderer):
     encoder_class = JSONEncoder
+
+
+class DataGridRenderer(renderers.TemplateHTMLRenderer):
+    template_name = 'data_drivers/datagrid.html'
+    format = 'datagrid'
+    exception_template_names = ['leaflet_exception.html']
+    encoder_class = JSONEncoder
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        renderer_context = renderer_context or {}
+        view = renderer_context['view']
+        request = renderer_context['request']
+        response = renderer_context['response']
+        extra_context = renderer_context['extra_context']
+        obj = view.get_object()
+
+        if response.exception:
+            template = self.get_exception_template(response)
+        else:
+            template_names = self.get_template_names(response, view)
+            template = self.resolve_template(template_names)
+
+        context = self.resolve_context(data, request, response)
+
+        ret = json.dumps(data, cls=self.encoder_class, ensure_ascii=True)
+
+        # On python 2.x json.dumps() returns bytestrings if ensure_ascii=True,
+        # but if ensure_ascii=False, the return type is underspecified,
+        # and may (or may not) be unicode.
+        # On python 3.x json.dumps() returns unicode strings.
+        if isinstance(ret, six.text_type):
+            ret = bytes(ret.encode(self.charset))
+
+        context.update({'source': obj, 'data': ret})
+
+        if response.exception:
+            context.update({'template_extra_context': extra_context})
+            return template.render(context)
+
+        context.update({'template_extra_context': extra_context})
+
+        return template.render(context)

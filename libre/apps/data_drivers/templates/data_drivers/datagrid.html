@@ -1,0 +1,71 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>L.I.B.R.E.</title>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+        <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+        <link href="{% static 'bootstrap/css/bootstrap-responsive.min.css' %}" rel="stylesheet">
+        <link rel="stylesheet" href="{% static 'packages/backgrid-0.2.6/lib/backgrid.css' %}" />
+
+        <style>
+            body {
+                padding: 0;
+                margin: 0;
+            }
+            html, body, #datagrid {
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="datagrid" class="backgrid-container"></div>
+
+        <script src="{% static 'js/jquery-2.0.3.min.js' %}"></script>
+        <script src="{% static 'packages/underscorejs-1.5.2/underscore-min.js' %}"></script>
+        <script src="{% static 'packages/backbone-1.1.0/backbone-min.js' %}"></script>
+        <script src="{% static 'packages/backgrid-0.2.6/lib/backgrid.min.js' %}"></script>
+        <script>
+            var Entry = Backbone.Model.extend({});
+
+            var Entries = Backbone.Collection.extend({
+              model: Entry,
+            });
+
+            var entries = new Entries();
+
+            var columns = [
+                {
+                    name: "_id",
+                    label: "ID",
+                    editable: false,
+                    cell: Backgrid.IntegerCell.extend({
+                    orderSeparator: ''
+                    }),
+                },
+                {% for column in source.columns.all %}
+                    {
+                        name: "{{ column.name }}",
+                        cell: "string",
+                        editable: false,
+                    },
+                {% endfor %}
+            ];
+
+            var grid = new Backgrid.Grid({
+              columns: columns,
+              collection: entries
+            });
+
+            $("#datagrid").append(grid.render().$el);
+            entries.set({{ data|safe }});
+        </script>
+    </body>
+</html>
+
+
+

@@ -23,6 +23,7 @@ renderer_choices = (
     ('xml', _('XML')),
     ('map_leaflet', _('Leaflet')),
     ('api', _('Browseable API')),
+    ('datagrid', _('Datagrid')),
 )
 
 

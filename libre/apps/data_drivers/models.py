@@ -32,7 +32,8 @@ from .exceptions import LIBREAPIError
 from .job_processing import Job
 from .literals import (
     DEFAULT_LIMIT, DEFAULT_SHEET, DATA_TYPE_CHOICES,
-    RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
+    RENDERER_BROWSEABLE_API, RENDERER_JSON, RENDERER_XML, RENDERER_YAML,
+    RENDERER_LEAFLET, RENDERER_DATAGRID)
 from .managers import SourceAccessManager
 from .query import Query
 from .utils import DATA_TYPE_FUNCTIONS
@@ -42,7 +43,8 @@ logger = logging.getLogger(__name__)
 
 class Source(models.Model):
     source_type = _('Base source class')
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML, RENDERER_DATAGRID)
+    preview_renderer = RENDERER_DATAGRID
     support_column_regex = False
 
     # Base data
@@ -421,7 +423,8 @@ class LeafletMarker(models.Model):
 
 class SourceShape(Source):
     source_type = _('Shapefile')
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML, RENDERER_LEAFLET, RENDERER_DATAGRID)
+    preview_renderer = RENDERER_LEAFLET
     support_column_regex = True
 
     popup_template = models.TextField(blank=True, verbose_name=_('popup template'), help_text=_('Template for rendering the features when displaying them on a map.'))
@@ -571,7 +574,7 @@ class SourceSimple(Source):
 
 
 class SourceDataVersion(models.Model):
-    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML)
+    renderers = (RENDERER_JSON, RENDERER_BROWSEABLE_API, RENDERER_XML, RENDERER_YAML, RENDERER_DATAGRID)
 
     source = models.ForeignKey(Source, verbose_name=_('source'), related_name='versions')
     datetime = models.DateTimeField(default=lambda: now())
