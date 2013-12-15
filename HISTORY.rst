@@ -3,7 +3,7 @@
 Release History
 ---------------
 
-development
+1.2.0 (2013-12-15)
 +++++++++++
 
 - Fixed WebService and REST API origin data copying
