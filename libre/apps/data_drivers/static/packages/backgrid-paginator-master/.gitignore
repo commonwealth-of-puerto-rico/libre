@@ -1,0 +1,15 @@
+*.min.*
+api
+test/coverage
+components
+node_modules
+.rbenv-gemsets
+.rvmrc
+\#*\#
+.*~
+*~
+.\#*
+.DS_Store
+.localized
+Thumb.db
+*.ithmb

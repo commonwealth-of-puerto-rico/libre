@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load staticfiles %}
 
 <!DOCTYPE html>
@@ -6,46 +7,44 @@
         <title>L.I.B.R.E.</title>
 
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
         <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-        <link href="{% static 'bootstrap/css/bootstrap-responsive.min.css' %}" rel="stylesheet">
-        <link rel="stylesheet" href="{% static 'packages/backgrid-0.2.6/lib/backgrid.css' %}" />
-
+        <link rel="stylesheet" href="{% static 'packages/backgrid-master/lib/backgrid.css' %}" />
+        <link rel="stylesheet" href="{% static 'packages/backgrid-paginator-master/backgrid-paginator.css' %}" />
         <style>
-            body {
-                padding: 0;
-                margin: 0;
+            .backgrid th {
+              border: 1px solid #DDD;
             }
-            html, body, #datagrid {
-                height: 100%;
+
+            .backgrid td {
+              border: 1px solid #DDD;
             }
+
         </style>
     </head>
     <body>
-        <div id="datagrid" class="backgrid-container"></div>
-
+        <div class="row-fluid">
+          <div class="span12">
+            <div id="grid"></div>
+          </div>
+        </div>
         <script src="{% static 'js/jquery-2.0.3.min.js' %}"></script>
         <script src="{% static 'packages/underscorejs-1.5.2/underscore-min.js' %}"></script>
+
         <script src="{% static 'packages/backbone-1.1.0/backbone-min.js' %}"></script>
-        <script src="{% static 'packages/backgrid-0.2.6/lib/backgrid.min.js' %}"></script>
+        <script src="{% static 'packages/backbone-pageable-1.4.2/lib/backbone-pageable.min.js' %}"></script>
+        <script src="{% static 'packages/backgrid-master/lib/backgrid.js' %}"></script>
+        <script src="{% static 'packages/backgrid-paginator-master/backgrid-paginator.js' %}"></script>
+
         <script>
-            var Entry = Backbone.Model.extend({});
-
-            var Entries = Backbone.Collection.extend({
-              model: Entry,
-            });
-
-            var entries = new Entries();
-
             var columns = [
                 {
                     name: "_id",
-                    label: "ID",
+                    label: "{% trans 'ID' %}",
                     editable: false,
                     cell: Backgrid.IntegerCell.extend({
-                    orderSeparator: ''
-                    }),
+                        orderSeparator: ''
+                    })
                 },
                 {% for column in source.columns.all %}
                     {
@@ -56,16 +55,27 @@
                 {% endfor %}
             ];
 
+            var Entries = Backbone.PageableCollection.extend({
+              state: {
+                pageSize: {{ template_extra_context.page_size|default:20 }},
+              },
+              mode: "client"
+            });
+
+            var entries = new Entries({{ data|safe }});
+
             var grid = new Backgrid.Grid({
               columns: columns,
               collection: entries
             });
 
-            $("#datagrid").append(grid.render().$el);
-            entries.set({{ data|safe }});
+            var paginator = new Backgrid.Extension.Paginator({
+              collection: entries
+            });
+
+            var $datagrid = $("#grid");
+            $datagrid.append(grid.render().$el)
+            $datagrid.append(paginator.render().$el);
         </script>
     </body>
 </html>
-
-
-
