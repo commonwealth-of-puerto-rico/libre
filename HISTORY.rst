@@ -10,6 +10,8 @@ development
 - Add support for storing the total number of elements imported by each source data version
 - Add parameters support to the REST API origin
 - PEP8 cleanups
+- Datagrid renderer
+- Allow data preview in the dataset detail view
 
 1.1.0 (2013-12-13)
 ++++++++++++++++++
@@ -30,7 +32,7 @@ development
 - Origins module now copies local files in chunks and streams remote HTTP files improving memory usage during imports
 
 
-1.0.0 (2013-11-19)
+1.0.0 (2013-11-26)
 ++++++++++++++++++
 
 - Accepted: Added Command Line Interface (CLI) for update_admin_user (#10)

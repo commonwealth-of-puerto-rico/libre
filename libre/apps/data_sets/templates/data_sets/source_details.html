@@ -7,13 +7,7 @@
 {% block style %}
     <style type="text/css">
      /* Custom container */
-      .container-narrow {
-        margin: 0 auto;
-        max-width: 700px;
-      }
-      .container-narrow > hr {
-        margin: 30px 0;
-      }
+
 
       /* Main marketing message and sign up button */
       .jumbotron {
@@ -21,7 +15,7 @@
         text-align: center;
       }
       .jumbotron h1 {
-        font-size: 50px;
+        font-size: 30px;
         line-height: 1;
       }
       .jumbotron .btn {
@@ -30,17 +24,12 @@
       }
 
       /* Supporting marketing content */
-      .marketing {
-        margin: 60px 0;
-      }
-      .marketing p + h4 {
-        margin-top: 28px;
-      }
+
     </style>
 {% endblock style %}
 
 {% block content %}
-   <div class="container-narrow">
+   <div class="container">
       <div class="jumbotron">
         {% if source.image %}
             <img src="{{ source.showcase_image.url }}"/>
@@ -52,9 +41,16 @@
         <p>{{ source.description }}</p>
       </div>
 
-      <hr>
 
-      <div class="row-fluid marketing">
+    <ul class="nav nav-tabs" id="myTab">
+        <li class="active"><a href="#details" data-toggle="tab">{% trans 'Details' %}</a></li>
+        <li><a href="#preview" data-toggle="tab">{% trans 'Data' %}</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane active" id="details">
+
+         <div class="row-fluid marketing">
         <div class="span6">
           <h4>{% trans 'Details' %}</h4>
           <p>{% trans 'Type' %}: {{ source.source_type }}</p>
@@ -64,7 +60,6 @@
           <p>{% trans 'Row limit' %}: {{ source.limit }}</p>
           <p style="white-space:nowrap;">{% trans 'Latest data' %}: {{ source.versions.latest.datetime }}</p>
           <p>{% trans 'Elements' %}: {{ source.versions.latest.elements }}</p>
-
         </div>
 
         <div class="span6">
@@ -85,13 +80,34 @@
 
           <h4>{% trans 'API' %}</h4>
           <p>{% trans 'Info' %}: <a href="{% url 'source-detail' source.slug %}">{% url 'source-detail' source.slug %}</a></p>
-          <p>{% trans 'Data' %}: <a href="{% url 'source-get_all' source.slug %}">{% url 'source-get_all' source.slug %}</a></p>
+          <p>{% trans 'Data' %}: <a href="{% url 'source-get_all' source.slug %}?_format=json">{% url 'source-get_all' source.slug %}</a></p>
         </div>
+
+
       </div>
+
+        </div>
+
+      <div class="tab-pane" id="preview">
+
+            <iframe src="{% url 'source-get_all' source.slug %}?_format={{ renderer }}" style="width: 99%; min-height: 400px;"></iframe>
+
+
+      </div>
+    </div>
+
+
+
+
 
     </div>
 {% endblock %}
 
 {% block javascript %}
     <script src="{% static 'packages/holder-2.2.0/holder.js' %}"></script>
+    <script>
+      $(function () {
+        $('#myTab a:first').tab('show');
+      })
+    </script>
 {% endblock javascript %}

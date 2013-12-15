@@ -6,6 +6,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
 from data_drivers.models import Source
+from data_drivers.literals import RENDERER_MAPPING
 
 logger = logging.getLogger(__name__)
 
@@ -21,5 +22,5 @@ def source_view(request, source_slug):
     source = Source.objects.get_subclass(pk=source.pk)
 
     return render_to_response(
-        'data_sets/source_details.html', {'source': source},
+        'data_sets/source_details.html', {'source': source, 'renderer': RENDERER_MAPPING[source.preview_renderer].format},
         context_instance=RequestContext(request))
