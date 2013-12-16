@@ -121,13 +121,19 @@
               <span class="icon-bar"></span>
             </button>
             <a class="brand" href="{% url 'home' %}">{% trans 'LIBRE' %}</a>
-            <p class="navbar-text pull-right">
                 {% if request.user.is_anonymous %}
-                    <span>{% blocktrans with request.user as user %}Not logged in{% endblocktrans %}<a href="{% url 'rest_framework:login' %}?next=/"> ({% trans 'Login' %})</a></span>
+                    <div class="navbar-text pull-right">
+                        <span>{% blocktrans with request.user as user %}<i class="icon-user icon-white"></i> Not logged in{% endblocktrans %} <a class="btn btn-mini" style="margin: 0 auto;" href="{% url 'rest_framework:login' %}?next=/"><i class="icon-off"></i> {% trans 'Login' %}</a></span>
+                    </div>
                 {% else %}
-                    <span>{% blocktrans with request.user as user %}Logged in as: {{ user }}{% endblocktrans %}<a href="{% url 'rest_framework:logout' %}?next=/"> ({% trans 'Logout' %})</a></span>
+                    <div class="btn-group navbar-text pull-right">
+                        <a class="btn btn-primary" href="#"><i class="icon-user icon-white"></i> {{ user.get_full_name|default:user }}</a>
+                        <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                        <li><a href="{% url 'rest_framework:logout' %}?next=/"><i class="icon-off"></i> {% trans 'Logoff' %}</a></li>
+                        </ul>
+                    </div>
                 {% endif %}
-            </p>
             <!-- Responsive Navbar Part 2: Place all navbar contents you want collapsed withing .navbar-collapse.collapse. -->
             <div class="nav-collapse collapse">
               <ul class="nav">
