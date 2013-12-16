@@ -20,12 +20,17 @@
               border: 1px solid #DDD;
             }
 
+            .backgrid-paginator a {
+              border: 1px solid #DDD;
+              margin-right: 5px;
+            }
         </style>
     </head>
     <body>
         <div class="row-fluid">
           <div class="span12">
             <div id="grid"></div>
+            <div id="paginator"></div>
           </div>
         </div>
         <script src="{% static 'js/jquery-2.0.3.min.js' %}"></script>
@@ -46,9 +51,9 @@
                         orderSeparator: ''
                     })
                 },
-                {% for column in source.columns.all %}
+                {% for column in columns %}
                     {
-                        name: "{{ column.name }}",
+                        name: "{{ column }}",
                         cell: "string",
                         editable: false,
                     },
@@ -73,9 +78,9 @@
               collection: entries
             });
 
-            var $datagrid = $("#grid");
-            $datagrid.append(grid.render().$el)
-            $datagrid.append(paginator.render().$el);
+            $("#grid").append(grid.render().$el)
+            $("#paginator").append(paginator.render().$el);
+
         </script>
     </body>
 </html>

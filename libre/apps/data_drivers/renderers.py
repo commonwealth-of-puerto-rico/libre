@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from itertools import islice
+from itertools import islice, tee
 import json
 import types
 
@@ -202,6 +202,17 @@ class DataGridRenderer(renderers.TemplateHTMLRenderer):
 
         context = self.resolve_context(data, request, response)
 
+        try:
+            # Get the columns names list from the model
+            columns = obj.columns.values_list('name', flat=True)
+        except AttributeError:
+            # No Columns relation? Try to instrospect the columns names
+            # from the first row dictionary keys
+            data, backup = tee(data)
+            columns = backup.next().keys()
+            # Remove our internal _id column, it is already added by the template
+            columns.remove('_id')
+
         ret = json.dumps(data, cls=self.encoder_class, ensure_ascii=True)
 
         # On python 2.x json.dumps() returns bytestrings if ensure_ascii=True,
@@ -211,7 +222,7 @@ class DataGridRenderer(renderers.TemplateHTMLRenderer):
         if isinstance(ret, six.text_type):
             ret = bytes(ret.encode(self.charset))
 
-        context.update({'source': obj, 'data': ret})
+        context.update({'source': obj, 'data': ret, 'columns': columns})
 
         if response.exception:
             context.update({'template_extra_context': extra_context})
