@@ -3,6 +3,16 @@
 Release History
 ---------------
 
+development
++++++++++++
+
+- Improve login/logout visual idioms
+- If the data source doesn't support columns, the data grid renderer will try to instrospect them from the first row
+- LIBRE is now translatable
+- Initial Spanish translation
+- Improve carousel scaling on small screen
+- Add downloads tab to the datasource details view
+
 1.2.0 (2013-12-15)
 ++++++++++++++++++
 
@@ -30,7 +40,6 @@ Release History
 - Documentation updates
 - Update required version of djangorestframework
 - Origins module now copies local files in chunks and streams remote HTTP files improving memory usage during imports
-
 
 1.0.0 (2013-11-26)
 ++++++++++++++++++
