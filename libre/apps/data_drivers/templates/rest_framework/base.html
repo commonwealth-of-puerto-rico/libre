@@ -2,10 +2,13 @@
 
 {% load url from future %}
 {% load rest_framework %}
+{% load i18n %}
 
 {% block meta %}
     <meta name="robots" content="NONE,NOARCHIVE" />
 {% endblock %}
+
+{% block title %}{% trans 'Browseable API' %}{% endblock title %}</
 
 {% block style %}
     <style>
