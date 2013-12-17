@@ -151,8 +151,6 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'south',
     'data_drivers',
-    'rest_framework',
-    'rest_framework.authtoken',
     'crispy_forms',
     'imagekit',
     'lock_manager',
@@ -162,6 +160,8 @@ INSTALLED_APPS = (
     'origins',
     'query_builder',
     'main',
+    'rest_framework',
+    'rest_framework.authtoken',
     'libre',
 )
 
