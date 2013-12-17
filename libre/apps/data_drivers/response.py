@@ -12,6 +12,11 @@ from rest_framework.settings import api_settings
 class CustomResponse(Response):
     authentication_classes = api_settings.DEFAULT_AUTHENTICATION_CLASSES
 
+    def __init__(self, *args, **kwargs):
+        self.source = kwargs.pop('source', None)
+        self.download = kwargs.pop('download', False)
+        super(CustomResponse, self).__init__(*args, **kwargs)
+
     @property
     def rendered_content(self):
         renderer = getattr(self, 'accepted_renderer', None)
@@ -42,6 +47,10 @@ class CustomResponse(Response):
         if isinstance(ret, six.text_type):
             assert charset, 'renderer returned unicode, and did not specify a charset value.'
             return bytes(ret.encode(charset))
+
+        if self.download:
+            self['Content-Disposition'] = 'attachment; filename=%s.%s' % (self.source.slug, renderer.format)
+
         return ret
 
     def handle_exception(self, exc):

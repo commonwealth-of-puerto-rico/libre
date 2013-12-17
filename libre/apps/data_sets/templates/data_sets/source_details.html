@@ -34,6 +34,7 @@
         <ul class="nav nav-tabs" id="myTab">
             <li class="active"><a href="#details" data-toggle="tab">{% trans 'Details' %}</a></li>
             <li><a href="#preview" data-toggle="tab">{% trans 'Data Preview' %}</a></li>
+            <li><a href="#download" data-toggle="tab">{% trans 'Downloads' %}</a></li>
         </ul>
 
         <div class="tab-content">
@@ -79,6 +80,29 @@
                     </div>
                 </div>
             </div>
+
+            <div class="tab-pane" id="download">
+                <div class="row-fluid">
+                    <div class="span12">
+
+                        <ul class="thumbnails">
+                            <li class="span3">
+                                <a class="thumbnail" href="{% url 'source-download' source.slug %}?_format=xml"><legend class="text-center">{% trans 'Extensible Markup Language (XML)' %}</legend><img src="{% static 'icons/xml.png' %}" /></a>
+                            </li>
+
+                            <li class="span3">
+                                <a class="thumbnail" href="{% url 'source-download' source.slug %}?_format=json"><legend class="text-center">{% trans 'JavaScript Object Notation (JSON)' %}</legend><img src="{% static 'icons/json.png' %}" /></a>
+                            </li>
+
+                            <li class="span3">
+                                <a class="thumbnail" href="{% url 'source-download' source.slug %}?_format=yaml"><legend class="text-center">{% trans "Ain't Markup Language (YAML)" %}</legend><img src="{% static 'icons/yaml.png' %}" /></a>
+                            </li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 {% endblock %}

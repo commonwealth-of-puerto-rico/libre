@@ -123,6 +123,18 @@ class LIBREView(CustomAPIView, generics.GenericAPIView):
         self.renderer_extra_context = result
 
 
+class SourceDownload(LIBREView):
+    def get(self, request, *args, **kwargs):
+        initial_datetime = datetime.datetime.now()
+
+        source = self.get_object()
+        self.get_renderer_extra_variables(request)
+        result = source.get_all(parameters=parse_request(request))
+        logger.debug('Total view elapsed time: %s' % (datetime.datetime.now() - initial_datetime))
+
+        return CustomResponse(result, source=source, download=True)
+
+
 class SourceGetAll(LIBREView):
     def get(self, request, *args, **kwargs):
         initial_datetime = datetime.datetime.now()
