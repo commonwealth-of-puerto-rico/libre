@@ -6,6 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), './'))
 SITE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+ugettext = lambda s: s
 
 sys.path.append(os.path.join(PROJECT_ROOT, 'modules'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'customization_apps'))
@@ -50,6 +51,11 @@ TIME_ZONE = os.environ.get('TIME_ZONE', 'America/Puerto_Rico')
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = os.environ.get('LANGUAGE_CODE', 'en-us')
+
+LANGUAGES = (
+    ('en', ugettext('English')),
+    ('es', ugettext('Spanish')),
+)
 
 SITE_ID = 1
 
@@ -112,6 +118,7 @@ TEMPLATE_LOADERS = (
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

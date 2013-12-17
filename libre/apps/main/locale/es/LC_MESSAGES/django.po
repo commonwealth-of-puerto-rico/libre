@@ -1,0 +1,179 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-12-17 13:13-0400\n"
+"PO-Revision-Date: 2013-12-17 13:17-0400\n"
+"Last-Translator: Roberto Rosario <>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Translated-Using: django-rosetta 0.7.2\n"
+
+#: templates/about.html:15 templates/base.html:123
+msgid "LIBRE"
+msgstr ""
+
+#: templates/about.html:16
+msgid "Large Information Batch Restructuring Engine"
+msgstr "Motor de Re-estructuración de Información en Bloque"
+
+#: templates/about.html:17
+msgid ""
+"Free, Open source, Django based FOSS data restructuring, versioning and "
+"exporting tool. LIBRE was created by the Office of the Chief Information "
+"Officer of the Commonwealth of Puerto Rico to power the liberation of "
+"government data. It has been made available as Free software with the hopes "
+"that other countries and individuals may benefit from it too."
+msgstr ""
+
+#: templates/about.html:19
+#, python-format
+msgid "Version: %(project_version)s"
+msgstr "Versión: %(project_version)s"
+
+#: templates/about.html:21
+msgid "Source code"
+msgstr "Código fuente"
+
+#: templates/about.html:22
+msgid "Issues"
+msgstr ""
+
+#: templates/about.html:23
+msgid "PyPI"
+msgstr "PyPI"
+
+#: templates/about.html:24 templates/home.html:223
+msgid "Documentation"
+msgstr "Documentación"
+
+#: templates/base.html:137
+msgid "<i class=\"icon-user icon-white\"></i> Not logged in"
+msgstr ""
+
+#: templates/base.html:137
+msgid "Login"
+msgstr ""
+
+#: templates/base.html:144
+msgid "Logoff"
+msgstr ""
+
+#: templates/base.html:151
+msgid "Home"
+msgstr "Inicio"
+
+#: templates/base.html:152
+msgid "Datasets"
+msgstr "Conjunto de datos"
+
+#: templates/base.html:154
+msgid "Advanced"
+msgstr "Avanzado"
+
+#: templates/base.html:156
+msgid "Developers"
+msgstr "Desarrolladores"
+
+#: templates/base.html:157
+msgid "Browseable API"
+msgstr ""
+
+#: templates/base.html:158
+msgid "Query Builder"
+msgstr "Constructor de Consulta"
+
+#: templates/base.html:159
+msgid "Obtain API token"
+msgstr ""
+
+#: templates/base.html:161
+msgid "Administrators"
+msgstr "Administradores"
+
+#: templates/base.html:162
+msgid "Admin Interface"
+msgstr "Interfase Administrativa"
+
+#: templates/base.html:165
+msgid "About"
+msgstr "Acerca"
+
+#: templates/base.html:188
+msgid ""
+"2013 Office of the Chief Information Officer, Commonwealth of Puerto Rico"
+msgstr ""
+"2013 Oficina del Principal Ejecutivo de Informática, Estado Libre Asociado "
+"de Puerto Rico"
+
+#: templates/home.html:192
+msgid "L.I.B.R.E."
+msgstr "L.I.B.R.E."
+
+#: templates/home.html:193
+msgid "LIBRE stands for Large Information Batch Restructuring Engine."
+msgstr ""
+
+#: templates/home.html:194
+msgid "It is a FOSS data restructuring, versioning and exporting tool. "
+msgstr ""
+"Es una herramienta de codigó libre para re-estructurar y exportar datos."
+
+#: templates/home.html:195
+msgid "Learn more"
+msgstr "Aprenda mas"
+
+#: templates/home.html:203
+msgid "Technology"
+msgstr "Tecnología"
+
+#: templates/home.html:204
+msgid ""
+"LIBRE was conceived taking into account all members of the data pipeline. "
+"From the producer of data, system administrators, end users and developers."
+msgstr ""
+
+#: templates/home.html:205
+msgid "See how it all began"
+msgstr "Vea como comenzo todo"
+
+#: templates/home.html:213
+msgid "Analisys"
+msgstr "Analisis"
+
+#: templates/home.html:214
+msgid ""
+"Once imported, your data has new value as it can now be queried easily."
+msgstr ""
+
+#: templates/home.html:215
+msgid "Access the source code"
+msgstr "Acceda el código fuente"
+
+#: templates/home.html:224
+msgid ""
+"From installation, to usage and how to contribute, all the information at "
+"your finger tips."
+msgstr ""
+
+#: templates/home.html:225
+msgid "Read the documentation"
+msgstr "Leer la documentación"
+
+#: templates/home.html:243
+msgid "No Image"
+msgstr "No Imagen"
+
+#: templates/home.html:247
+msgid "View details"
+msgstr "Ver detalles"

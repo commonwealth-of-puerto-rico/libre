@@ -1,0 +1,270 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-12-17 13:19-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: admin.py:15
+msgid "Configuration"
+msgstr ""
+
+#: admin.py:18
+msgid "Basic information"
+msgstr ""
+
+#: admin.py:29 admin.py:39 admin.py:50 admin.py:61 admin.py:72 admin.py:83
+#: admin.py:94
+msgid "Specific information"
+msgstr ""
+
+#: literals.py:10
+msgid "PostgreSQL (psycopg2)"
+msgstr ""
+
+#: literals.py:11
+msgid "PostgreSQL"
+msgstr ""
+
+#: literals.py:12
+msgid "MySQL"
+msgstr ""
+
+#: literals.py:13
+msgid "SQLite"
+msgstr ""
+
+#: literals.py:14
+msgid "Oracle"
+msgstr ""
+
+#: models.py:26
+msgid "uncompress"
+msgstr ""
+
+#: models.py:27
+msgid "contained file list"
+msgstr ""
+
+#: models.py:31
+msgid "compressed origin"
+msgstr ""
+
+#: models.py:32
+msgid "compressed origins"
+msgstr ""
+
+#: models.py:36
+msgid "base origin"
+msgstr ""
+
+#: models.py:38
+msgid "label"
+msgstr ""
+
+#: models.py:38
+msgid "A text by which this origin will be identified."
+msgstr ""
+
+#: models.py:39
+msgid "description"
+msgstr ""
+
+#: models.py:94
+msgid "origin"
+msgstr ""
+
+#: models.py:95
+msgid "origins"
+msgstr ""
+
+#: models.py:100 models.py:102
+msgid "URL"
+msgstr ""
+
+#: models.py:102
+msgid "URL from which to read the data."
+msgstr ""
+
+#: models.py:118
+msgid "URL origin"
+msgstr ""
+
+#: models.py:119
+msgid "URL origins"
+msgstr ""
+
+#: models.py:123
+msgid "URL file"
+msgstr ""
+
+#: models.py:126
+msgid "URL file origin"
+msgstr ""
+
+#: models.py:127
+msgid "URL file origins"
+msgstr ""
+
+#: models.py:131
+msgid "disk path"
+msgstr ""
+
+#: models.py:133
+msgid "path to file"
+msgstr ""
+
+#: models.py:133
+msgid "Location to a file in the filesystem."
+msgstr ""
+
+#: models.py:155
+msgid "disk path origin"
+msgstr ""
+
+#: models.py:156
+msgid "disk path origins"
+msgstr ""
+
+#: models.py:160
+msgid "FTP file"
+msgstr ""
+
+#: models.py:163
+msgid "FTP file origin"
+msgstr ""
+
+#: models.py:164
+msgid "FTP file origins"
+msgstr ""
+
+#: models.py:168 models.py:170
+msgid "uploaded file"
+msgstr ""
+
+#: models.py:181
+msgid "uploaded file origin"
+msgstr ""
+
+#: models.py:182
+msgid "uploaded file origins"
+msgstr ""
+
+#: models.py:186
+msgid "database"
+msgstr ""
+
+#: models.py:188
+msgid "database backend"
+msgstr ""
+
+#: models.py:189
+msgid "name"
+msgstr ""
+
+#: models.py:189
+msgid "Name or path to database."
+msgstr ""
+
+#: models.py:190
+msgid "user"
+msgstr ""
+
+#: models.py:190 models.py:191
+msgid "Not used with sqlite3."
+msgstr ""
+
+#: models.py:191
+msgid "password"
+msgstr ""
+
+#: models.py:192
+msgid "host"
+msgstr ""
+
+#: models.py:192
+msgid "Set to empty string for localhost. Not used with sqlite3."
+msgstr ""
+
+#: models.py:193
+msgid "port"
+msgstr ""
+
+#: models.py:194
+msgid "query"
+msgstr ""
+
+#: models.py:226
+msgid "database origin"
+msgstr ""
+
+#: models.py:227
+msgid "database origins"
+msgstr ""
+
+#: models.py:231
+msgid "REST API"
+msgstr ""
+
+#: models.py:233 models.py:263
+msgid "parameters"
+msgstr ""
+
+#: models.py:255
+msgid "REST API origin"
+msgstr ""
+
+#: models.py:256
+msgid "REST API origins"
+msgstr ""
+
+#: models.py:260
+msgid "SOAP webservice"
+msgstr ""
+
+#: models.py:262
+msgid "endpoint"
+msgstr ""
+
+#: models.py:262
+msgid "Endpoint, function or method to call."
+msgstr ""
+
+#: models.py:279
+msgid "SOAP webservice origin"
+msgstr ""
+
+#: models.py:280
+msgid "SOAP webservice origins"
+msgstr ""
+
+#: models.py:284
+msgid "Python script"
+msgstr ""
+
+#: models.py:286
+msgid "script text"
+msgstr ""
+
+#: models.py:286
+msgid ""
+"Assign resulting values to the _results variable. Ideally it should be a "
+"list of dictionaries."
+msgstr ""
+
+#: models.py:296 models.py:297
+msgid "python script origin"
+msgstr ""

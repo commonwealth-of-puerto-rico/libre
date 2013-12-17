@@ -12,6 +12,7 @@ admin.autodiscover()
 urlpatterns = patterns(
     '',
     url(r'^admin/', include(admin.site.urls)),
+    (r'^i18n/', include('django.conf.urls.i18n')),
 
     url(r'^', include('main.urls')),
     url(r'^api/', include('data_drivers.urls')),
@@ -29,3 +30,8 @@ if settings.DEVELOPMENT:
 
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += patterns('',) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+    if 'rosetta' in settings.INSTALLED_APPS:
+        urlpatterns += patterns('',
+            url(r'^rosetta/', include('rosetta.urls'), name='rosetta'),
+        )

@@ -121,19 +121,30 @@
               <span class="icon-bar"></span>
             </button>
             <a class="brand" href="{% url 'home' %}">{% trans 'LIBRE' %}</a>
-                {% if request.user.is_anonymous %}
-                    <div class="navbar-text pull-right">
-                        <span>{% blocktrans with request.user as user %}<i class="icon-user icon-white"></i> Not logged in{% endblocktrans %} <a class="btn btn-mini" style="margin: 0 auto;" href="{% url 'rest_framework:login' %}?next=/"><i class="icon-off"></i> {% trans 'Login' %}</a></span>
-                    </div>
-                {% else %}
-                    <div class="btn-group navbar-text pull-right">
-                        <a class="btn btn-primary" href="#"><i class="icon-user icon-white"></i> {{ user.get_full_name|default:user }}</a>
-                        <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
-                        <ul class="dropdown-menu">
-                        <li><a href="{% url 'rest_framework:logout' %}?next=/"><i class="icon-off"></i> {% trans 'Logoff' %}</a></li>
-                        </ul>
-                    </div>
-                {% endif %}
+
+            <li class="btn-group navbar-text pull-right" style="margin: 10px 0 -20px 10px;">
+                <form action="/i18n/setlang/" method="post">{% csrf_token %}
+                    <select name="language" onchange="this.form.submit()">
+                        {% for lang in LANGUAGES %}
+                            <option value="{{ lang.0 }}" {% if lang.0 == LANGUAGE_CODE %}selected="selected"{% endif %}>{{ lang.0|language_name_local|capfirst }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </li>
+
+            {% if request.user.is_anonymous %}
+                <div class="navbar-text pull-right">
+                    <span>{% blocktrans with request.user as user %}<i class="icon-user icon-white"></i> Not logged in{% endblocktrans %} <a class="btn btn-mini" style="margin: 0 auto;" href="{% url 'rest_framework:login' %}?next=/"><i class="icon-off"></i> {% trans 'Login' %}</a></span>
+                </div>
+            {% else %}
+                <div class="btn-group navbar-text pull-right">
+                    <a class="btn btn-primary" href="#"><i class="icon-user icon-white"></i> {{ user.get_full_name|default:user }}</a>
+                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                    <li><a href="{% url 'rest_framework:logout' %}?next=/"><i class="icon-off"></i> {% trans 'Logoff' %}</a></li>
+                    </ul>
+                </div>
+            {% endif %}
             <!-- Responsive Navbar Part 2: Place all navbar contents you want collapsed withing .navbar-collapse.collapse. -->
             <div class="nav-collapse collapse">
               <ul class="nav">
