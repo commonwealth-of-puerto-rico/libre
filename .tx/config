@@ -1,0 +1,38 @@
+[main]
+host = https://www.transifex.net
+
+[libre.origins]
+file_filter = apps/origins/locale/<lang>/LC_MESSAGES/django.po
+source_lang = en
+source_file = apps/origins/locale/en/LC_MESSAGES/django.po
+type = PO
+
+[libre.icons]
+file_filter = apps/icons/locale/<lang>/LC_MESSAGES/django.po
+source_lang = en
+source_file = apps/icons/locale/en/LC_MESSAGES/django.po
+type = PO
+
+[libre.main]
+file_filter = apps/main/locale/<lang>/LC_MESSAGES/django.po
+source_lang = en
+source_file = apps/main/locale/en/LC_MESSAGES/django.po
+type = PO
+
+[libre.query_builder]
+file_filter = apps/query_builder/locale/<lang>/LC_MESSAGES/django.po
+source_lang = en
+source_file = apps/query_builder/locale/en/LC_MESSAGES/django.po
+type = PO
+
+[libre.data_drivers]
+file_filter = apps/data_drivers/locale/<lang>/LC_MESSAGES/django.po
+source_lang = en
+source_file = apps/data_drivers/locale/en/LC_MESSAGES/django.po
+type = PO
+
+[libre.data_sets]
+file_filter = apps/data_sets/locale/<lang>/LC_MESSAGES/django.po
+source_lang = en
+source_file = apps/data_sets/locale/en/LC_MESSAGES/django.po
+type = PO

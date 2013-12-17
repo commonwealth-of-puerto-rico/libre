@@ -1,0 +1,127 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-12-17 16:14-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: templates/data_sets/source_details.html:27
+#: templates/data_sets/sources.html:25
+msgid "No Image"
+msgstr ""
+
+#: templates/data_sets/source_details.html:35
+#: templates/data_sets/source_details.html:44
+msgid "Details"
+msgstr ""
+
+#: templates/data_sets/source_details.html:36
+msgid "Data Preview"
+msgstr ""
+
+#: templates/data_sets/source_details.html:37
+msgid "Downloads"
+msgstr ""
+
+#: templates/data_sets/source_details.html:45
+msgid "Type"
+msgstr ""
+
+#: templates/data_sets/source_details.html:46
+msgid "Link"
+msgstr ""
+
+#: templates/data_sets/source_details.html:47
+msgid "Slug"
+msgstr ""
+
+#: templates/data_sets/source_details.html:48
+msgid "Published"
+msgstr ""
+
+#: templates/data_sets/source_details.html:49
+msgid "Row limit"
+msgstr ""
+
+#: templates/data_sets/source_details.html:50
+#: templates/data_sets/sources.html:15
+msgid "Latest data"
+msgstr ""
+
+#: templates/data_sets/source_details.html:51
+msgid "Elements"
+msgstr ""
+
+#: templates/data_sets/source_details.html:55
+msgid "Access control"
+msgstr ""
+
+#: templates/data_sets/source_details.html:56
+msgid "Allowed groups"
+msgstr ""
+
+#: templates/data_sets/source_details.html:61
+#: templates/data_sets/source_details.html:68
+msgid "None"
+msgstr ""
+
+#: templates/data_sets/source_details.html:66
+#: templates/data_sets/source_details.html:68
+msgid "Scheduling"
+msgstr ""
+
+#: templates/data_sets/source_details.html:67
+msgid "Scheduling enabled"
+msgstr ""
+
+#: templates/data_sets/source_details.html:70
+msgid "API"
+msgstr ""
+
+#: templates/data_sets/source_details.html:71
+msgid "Info"
+msgstr ""
+
+#: templates/data_sets/source_details.html:72
+msgid "Data"
+msgstr ""
+
+#: templates/data_sets/source_details.html:90
+msgid "Extensible Markup Language (XML)"
+msgstr ""
+
+#: templates/data_sets/source_details.html:94
+msgid "JavaScript Object Notation (JSON)"
+msgstr ""
+
+#: templates/data_sets/source_details.html:98
+msgid "Ain't Markup Language (YAML)"
+msgstr ""
+
+#: templates/data_sets/sources.html:9
+msgid "Available Datasets"
+msgstr ""
+
+#: templates/data_sets/sources.html:12
+msgid "Image"
+msgstr ""
+
+#: templates/data_sets/sources.html:13
+msgid "Name"
+msgstr ""
+
+#: templates/data_sets/sources.html:14
+msgid "Description"
+msgstr ""

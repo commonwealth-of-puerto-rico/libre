@@ -1,0 +1,534 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-12-17 16:14-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: actions.py:16
+#, python-format
+msgid "Error opening file for source: %(source)s; %(exception)s"
+msgstr ""
+
+#: actions.py:27
+msgid "Check for updated source file"
+msgstr ""
+
+#: actions.py:36
+#, python-format
+msgid "Error opening file for source: %s"
+msgstr ""
+
+#: actions.py:45
+msgid "Clear all source versions"
+msgstr ""
+
+#: actions.py:61
+msgid "copy"
+msgstr ""
+
+#: actions.py:80
+msgid "1 source was"
+msgstr ""
+
+#: actions.py:82
+#, python-format
+msgid "%s sources were"
+msgstr ""
+
+#: actions.py:83
+#, python-format
+msgid "%s copied."
+msgstr ""
+
+#: actions.py:85
+msgid "Copy the selected source"
+msgstr ""
+
+#: admin.py:62
+msgid "Configuration"
+msgstr ""
+
+#: admin.py:62
+msgid "Authorization"
+msgstr ""
+
+#: admin.py:62
+msgid "Versions"
+msgstr ""
+
+#: admin.py:62
+msgid "Schedule"
+msgstr ""
+
+#: admin.py:65
+msgid "Basic information"
+msgstr ""
+
+#: admin.py:69
+msgid "Result limiting"
+msgstr ""
+
+#: admin.py:73
+msgid "Authorized groups"
+msgstr ""
+
+#: admin.py:77
+msgid "Origin check schedule"
+msgstr ""
+
+#: admin.py:95 admin.py:108 admin.py:114 admin.py:120 admin.py:140
+msgid "Fields"
+msgstr ""
+
+#: admin.py:98
+msgid "Comma delimited files"
+msgstr ""
+
+#: admin.py:120
+msgid "Renderers"
+msgstr ""
+
+#: admin.py:124
+msgid "Source data transformation"
+msgstr ""
+
+#: admin.py:128
+msgid "Leaflet renderer"
+msgstr ""
+
+#: admin.py:142
+msgid "In-file location"
+msgstr ""
+
+#: literals.py:26
+msgid "String"
+msgstr ""
+
+#: literals.py:27
+msgid "Number"
+msgstr ""
+
+#: literals.py:28
+msgid "Date & time"
+msgstr ""
+
+#: literals.py:29
+msgid "Date"
+msgstr ""
+
+#: literals.py:30
+msgid "Time"
+msgstr ""
+
+#: literals.py:58
+msgid "OR"
+msgstr ""
+
+#: literals.py:59
+msgid "AND"
+msgstr ""
+
+#: models.py:45
+msgid "Base source class"
+msgstr ""
+
+#: models.py:51 models.py:623
+msgid "name"
+msgstr ""
+
+#: models.py:52 models.py:399
+msgid "slug"
+msgstr ""
+
+#: models.py:53
+msgid "description"
+msgstr ""
+
+#: models.py:56
+msgid "image"
+msgstr ""
+
+#: models.py:61
+msgid "published"
+msgstr ""
+
+#: models.py:62
+msgid "allowed groups"
+msgstr ""
+
+#: models.py:63
+msgid "limit"
+msgstr ""
+
+#: models.py:63
+msgid "Maximum number of items to show when all items are requested."
+msgstr ""
+
+#: models.py:64
+msgid "origin"
+msgstr ""
+
+#: models.py:67
+msgid "schedule string"
+msgstr ""
+
+#: models.py:67
+msgid "Use CRON style format."
+msgstr ""
+
+#: models.py:68
+msgid "schedule enabled"
+msgstr ""
+
+#: models.py:68
+msgid "Enabled scheduled check for source' origin updates."
+msgstr ""
+
+#: models.py:264 models.py:579
+msgid "source"
+msgstr ""
+
+#: models.py:265
+msgid "sources"
+msgstr ""
+
+#: models.py:270
+msgid "CSV file"
+msgstr ""
+
+#: models.py:273
+msgid "delimiter"
+msgstr ""
+
+#: models.py:274
+msgid "quote character"
+msgstr ""
+
+#: models.py:275
+msgid "encoding"
+msgstr ""
+
+#: models.py:275
+msgid ""
+"File encoding. Check http://docs.python.org/2/library/codecs.html#standard-"
+"encodings for a list of valid encodings."
+msgstr ""
+
+#: models.py:298 models.py:631
+msgid "CSV source"
+msgstr ""
+
+#: models.py:299
+msgid "CSV sources"
+msgstr ""
+
+#: models.py:303
+msgid "Fixed width column file"
+msgstr ""
+
+#: models.py:331
+msgid "Fixed width source"
+msgstr ""
+
+#: models.py:332
+msgid "Fixed width sources"
+msgstr ""
+
+#: models.py:336
+msgid "Spreadsheet file"
+msgstr ""
+
+#: models.py:339
+msgid "sheet"
+msgstr ""
+
+#: models.py:394 models.py:654
+msgid "spreadsheet source"
+msgstr ""
+
+#: models.py:395
+msgid "spreadsheet sources"
+msgstr ""
+
+#: models.py:400
+msgid "label"
+msgstr ""
+
+#: models.py:401
+msgid "icon"
+msgstr ""
+
+#: models.py:402
+msgid "shadow"
+msgstr ""
+
+#: models.py:403
+msgid "icon anchor (horizontal)"
+msgstr ""
+
+#: models.py:404
+msgid "icon anchor (vertical)"
+msgstr ""
+
+#: models.py:405
+msgid "shadow anchor (horizontal)"
+msgstr ""
+
+#: models.py:406
+msgid "shadow anchor (vertical)"
+msgstr ""
+
+#: models.py:407
+msgid "popup anchor (horizontal)"
+msgstr ""
+
+#: models.py:408
+msgid "popup anchor (vertical)"
+msgstr ""
+
+#: models.py:419 models.py:420
+msgid "leaflet marker"
+msgstr ""
+
+#: models.py:425
+msgid "Shapefile"
+msgstr ""
+
+#: models.py:430
+msgid "popup template"
+msgstr ""
+
+#: models.py:430
+msgid "Template for rendering the features when displaying them on a map."
+msgstr ""
+
+#: models.py:431
+msgid "new projection"
+msgstr ""
+
+#: models.py:431
+msgid ""
+"Specify the EPSG number of the new projection to transform the geometries, "
+"leave blank otherwise."
+msgstr ""
+
+#: models.py:433
+msgid "marker template"
+msgstr ""
+
+#: models.py:433
+msgid "Template to determine what marker each respective feature will use."
+msgstr ""
+
+#: models.py:434
+msgid "template header"
+msgstr ""
+
+#: models.py:434
+msgid "Place here custom styles, javascript or asset loading."
+msgstr ""
+
+#: models.py:537
+msgid "shape source"
+msgstr ""
+
+#: models.py:538
+msgid "shape sources"
+msgstr ""
+
+#: models.py:542
+msgid "Direct"
+msgstr ""
+
+#: models.py:549
+msgid "direct source"
+msgstr ""
+
+#: models.py:550
+msgid "direct sources"
+msgstr ""
+
+#: models.py:554
+msgid "Simple"
+msgstr ""
+
+#: models.py:569 models.py:681
+msgid "simple source"
+msgstr ""
+
+#: models.py:570
+msgid "simple sources"
+msgstr ""
+
+#: models.py:581
+msgid "timestamp"
+msgstr ""
+
+#: models.py:583
+msgid "checksum"
+msgstr ""
+
+#: models.py:584
+msgid "ready"
+msgstr ""
+
+#: models.py:585
+msgid "active"
+msgstr ""
+
+#: models.py:586
+msgid "metadata"
+msgstr ""
+
+#: models.py:587
+msgid "elements"
+msgstr ""
+
+#: models.py:599 models.py:606
+msgid "source data version"
+msgstr ""
+
+#: models.py:600
+msgid "sources data versions"
+msgstr ""
+
+#: models.py:607
+msgid "row"
+msgstr ""
+
+#: models.py:608
+msgid "row id"
+msgstr ""
+
+#: models.py:614
+msgid "source data"
+msgstr ""
+
+#: models.py:615
+msgid "sources data"
+msgstr ""
+
+#: models.py:622
+msgid "import"
+msgstr ""
+
+#: models.py:624
+msgid "default"
+msgstr ""
+
+#: models.py:632 models.py:644 models.py:666 models.py:683
+msgid "data type"
+msgstr ""
+
+#: models.py:633 models.py:645 models.py:655 models.py:667 models.py:684
+msgid "skip expression"
+msgstr ""
+
+#: models.py:634 models.py:646 models.py:656 models.py:668 models.py:685
+msgid "import expression"
+msgstr ""
+
+#: models.py:637
+msgid "CSV column"
+msgstr ""
+
+#: models.py:638
+msgid "CSV columns"
+msgstr ""
+
+#: models.py:642
+msgid "fixed width source"
+msgstr ""
+
+#: models.py:643
+msgid "size"
+msgstr ""
+
+#: models.py:649
+msgid "fixed width column"
+msgstr ""
+
+#: models.py:650
+msgid "fixed width columns"
+msgstr ""
+
+#: models.py:659
+msgid "spreadsheet column"
+msgstr ""
+
+#: models.py:660
+msgid "spreadsheet columns"
+msgstr ""
+
+#: models.py:664
+msgid "shapefile source"
+msgstr ""
+
+#: models.py:665 models.py:682
+msgid "new name"
+msgstr ""
+
+#: models.py:676
+msgid "shapefile column"
+msgstr ""
+
+#: models.py:677
+msgid "shapefile columns"
+msgstr ""
+
+#: models.py:693
+msgid "simple source column"
+msgstr ""
+
+#: models.py:694
+msgid "simple source columns"
+msgstr ""
+
+#: serializers.py:19
+msgid "None"
+msgstr ""
+
+#: templates/leaflet_exception.html:8
+msgid "400 ERROR: Bad request"
+msgstr ""
+
+#: templates/leaflet_exception.html:11
+msgid "Bad request (400)"
+msgstr ""
+
+#: templates/leaflet_exception.html:12
+msgid "Please check your request query syntax."
+msgstr ""
+
+#: templates/leaflet_exception.html:13
+msgid "Status code:"
+msgstr ""
+
+#: templates/leaflet_exception.html:14
+msgid "Details:"
+msgstr ""
+
+#: templates/admin/dashboard/welcome.html:13
+msgid "Dashboard"
+msgstr ""
+
+#: templates/admin/dashboard/welcome.html:16
+msgid "Alerts"
+msgstr ""
+
+#: templates/data_drivers/datagrid.html:48
+msgid "ID"
+msgstr ""
