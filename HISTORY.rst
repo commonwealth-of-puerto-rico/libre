@@ -12,6 +12,7 @@ development
 - Initial Spanish translation
 - Improve carousel scaling on small screen
 - Add downloads tab to the datasource details view
+- Bootstrap based login template
 
 1.2.0 (2013-12-15)
 ++++++++++++++++++
