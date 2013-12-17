@@ -212,3 +212,16 @@ Unsorted
   * Add renderer directives text box entry in the query builder
   * Add password change views and templates
   * Update Twitter bootstrap version used to 3.0
+  * Allow specifying VFs paths for shapefiles
+  * Import log
+  * Password change view & templates
+  * Forgotten password view & templates
+  * Querybuilder helptexts and LQL links
+  * Make datagrid pageable a toggable option
+  * Uploaded files manager
+  * Gravatar support
+  * Multitenant
+  * Nested row grid support
+  * Export to CSV, KML, ShapeZip, GeoJSON
+  * License icons
+  * Metadata: Creator, tags, title, publication date, status, usage limit, access limit, spatial proyection
