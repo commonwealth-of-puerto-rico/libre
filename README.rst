@@ -16,11 +16,12 @@ LIBRE: Libre Information Batch Restructuring Engine
         :target: https://crate.io/packages/libre/
 
 
-The engine that's powering the liberation of government data for the island of Puerto Rico.
 
-Created by the `Office of the Chief Information Officer <http://www.cio.pr.gov>`_ of
-the Commonwealth of Puerto Rico
+Created by the `Office of the Chief Information Officer <http://opei.pr.gov>`_ of
+the Commonwealth of Puerto Rico in 2013 as a prototype to show off the potential of opening data. 
 
+Resources of the Office of the CIO, once commited to this project, are no longer available. 
+We invite the community to continue its development.   
 
 .. image:: https://raw.github.com/commonwealth-of-puerto-rico/libre/master/docs/_static/libre_logo.png
 
